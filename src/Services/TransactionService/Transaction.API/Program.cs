@@ -1,0 +1,62 @@
+using Cashflow.Transaction.Application.Queries;
+using Cashflow.Transaction.Domain.ValueObjects;
+using Cashflow.Transaction.Infrastructure;
+using Cashflow.Transaction.Infrastructure.Persistence;
+using Transaction.Application.Commands;
+using Transaction.Application.Queries;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOpenApi();
+builder.Services.AddTransactionInfrastructure(builder.Configuration);
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<TransactionDbContext>();
+        await db.Database.EnsureCreatedAsync();
+        var idempotencyDb = scope.ServiceProvider.GetRequiredService<IdempotencyDbContext>();
+        await idempotencyDb.Database.EnsureCreatedAsync();
+    }
+}
+
+app.UseHttpsRedirection();
+
+app.MapPost("/api/transactions", async (
+    CreateTransactionRequest request,
+    ICreateTransactionHandler handler,
+    HttpContext http,
+    CancellationToken cancellationToken) =>
+{
+    var correlationId = http.Request.Headers["X-Correlation-Id"].FirstOrDefault() ?? Guid.NewGuid().ToString();
+    var userId = http.User.FindFirst("sub")?.Value;
+
+    var command = new CreateTransactionCommand(
+        TransactionId: Guid.NewGuid(),
+        request.AccountId,
+        request.Amount,
+        request.Currency,
+        request.Type,
+        correlationId,
+        userId);
+
+    await handler.HandleAsync(command, cancellationToken);
+
+    return Results.Created($"/api/transactions/{command.TransactionId}", new { command.TransactionId });
+})
+.WithName("CreateTransaction");
+
+app.MapGet("/api/transactions/{id:guid}", async (Guid id, IGetTransactionQueryHandler handler, CancellationToken cancellationToken) =>
+{
+    var model = await handler.HandleAsync(new GetTransactionQuery(id), cancellationToken);
+    return model is null ? Results.NotFound() : Results.Ok(model);
+})
+.WithName("GetTransaction");
+
+app.Run();
+
+record CreateTransactionRequest(Guid AccountId, decimal Amount, string Currency, TransactionType Type);

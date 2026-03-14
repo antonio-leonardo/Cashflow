@@ -1,0 +1,6 @@
+@Cashflow.Gateway_HostAddress = http://localhost:5073
+
+GET {{Cashflow.Gateway_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

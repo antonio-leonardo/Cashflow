@@ -1,0 +1,39 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Gateway/">
+    <Project Path="src/Gateway/Cashflow.Gateway/Cashflow.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/src/Outbox/">
+    <Project Path="src/Outbox/Outbox.Worker/Outbox.Worker.csproj" />
+  </Folder>
+  <Folder Name="/src/Services/" />
+  <Folder Name="/src/Services/TransactionService/">
+    <Project Path="src/Services/TransactionService/Transaction.API/Transaction.API.csproj" />
+    <Project Path="src/Services/TransactionService/Transaction.Application/Transaction.Application.csproj" />
+    <Project Path="src/Services/TransactionService/Transaction.Domain/Transaction.Domain.csproj" />
+    <Project Path="src/Services/TransactionService/Transaction.Infrastructure/Transaction.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/Cashflow.Shared.Contracts/Cashflow.Shared.Contracts.csproj" />
+    <Project Path="src/Shared/Cashflow.Shared.Events/Cashflow.Shared.Events.csproj" />
+    <Project Path="src/Shared/Cashflow.Shared.Logging/Cashflow.Shared.Logging.csproj" />
+    <Project Path="src/Shared/Cashflow.Shared.Messaging/Cashflow.Shared.Messaging.csproj" />
+  </Folder>
+  <Folder Name="/src/Workers/">
+    <Project Path="src/Workers/Audit.Worker/Audit.Worker.csproj" />
+    <Project Path="src/Workers/Balance.Worker/Balance.Worker.csproj" />
+    <Project Path="src/Workers/Report.Worker/Report.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/ConcurrencyTests/">
+    <Project Path="tests/ConcurrencyTests/Transaction.Concurrency.Tests/Transaction.Concurrency.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/IntegrationTests/">
+    <Project Path="tests/IntegrationTests/Messaging.Integration.Tests/Messaging.Integration.Tests.csproj" />
+    <Project Path="tests/IntegrationTests/Transaction.Integration.Tests/Transaction.Integration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/UnitTests/">
+    <Project Path="tests/UnitTests/Balance.Domain.Tests/Balance.Domain.Tests.csproj" />
+    <Project Path="tests/UnitTests/Transaction.Domain.Tests/Transaction.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

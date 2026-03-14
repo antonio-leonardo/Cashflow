@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: cashflow-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: cashflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:7
+    container_name: cashflow-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:7
+    container_name: cashflow-redis
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: cashflow-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24
+    container_name: cashflow-keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+
+volumes:
+
+  postgres_data:
+  mongo_data:
