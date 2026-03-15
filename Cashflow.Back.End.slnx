@@ -1,0 +1,65 @@
+<Solution>
+  <Folder Name="/Gateway/">
+    <Project Path="Back.End/Gateway/Cashflow.Back.End.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/Outbox/" />
+  <Folder Name="/Outbox/Worker/">
+    <Project Path="Back.End/Outbox/Worker/Cashflow.Back.End.Outbox.Worker.csproj" />
+  </Folder>
+  <Folder Name="/Service/" />
+  <Folder Name="/Service/Transaction/" />
+  <Folder Name="/Service/Transaction/API/">
+    <Project Path="Back.End/Service/Transaction/API/Cashflow.Back.End.Service.Transaction.API.csproj" />
+  </Folder>
+  <Folder Name="/Service/Transaction/Application/">
+    <Project Path="Back.End/Service/Transaction/Application/Cashflow.Back.End.Service.Transaction.Application.csproj" />
+  </Folder>
+  <Folder Name="/Service/Transaction/DependencyInjection/">
+    <Project Path="Back.End/Service/Transaction/DependencyInjection/Cashflow.Back.End.Service.Transaction.DependencyInjection.csproj" />
+  </Folder>
+  <Folder Name="/Service/Transaction/Domain/">
+    <Project Path="Back.End/Service/Transaction/Domain/Cashflow.Back.End.Service.Transaction.Domain.csproj" />
+  </Folder>
+  <Folder Name="/Service/Transaction/Infrastructure/">
+    <Project Path="Back.End/Service/Transaction/Infrastructure/Cashflow.Back.End.Service.Transaction.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Shared/" />
+  <Folder Name="/Shared/Contracts/">
+    <Project Path="Back.End/Shared/Contracts/Cashflow.Back.End.Shared.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Events/">
+    <Project Path="Back.End/Shared/Events/Cashflow.Back.End.Shared.Events.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Logging/">
+    <Project Path="Back.End/Shared/Logging/Cashflow.Back.End.Shared.Logging.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Messaging/" />
+  <Folder Name="/Shared/Messaging/Abstractions/">
+    <Project Path="Back.End/Shared/Messaging/Abstractions/Cashflow.Back.End.Shared.Messaging.Abstractions.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Messaging/Providers/" />
+  <Folder Name="/Shared/Messaging/Providers/RabbitMQ/">
+    <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.csproj" />
+  </Folder>
+  <Folder Name="/Shared/NoSql/" />
+  <Folder Name="/Shared/NoSql/Abstractions/">
+    <Project Path="Back.End/Shared/NoSql/Abstractions/Cashflow.Back.End.Shared.NoSql.Abstractions.csproj" />
+  </Folder>
+  <Folder Name="/Shared/NoSql/Providers/" />
+  <Folder Name="/Shared/NoSql/Providers/MongoDB/" />
+  <Folder Name="/Shared/NoSql/Providers/Redis/" />
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/ConcurrencyTests/" />
+  <Folder Name="/tests/IntegrationTests/" />
+  <Folder Name="/tests/UnitTests/" />
+  <Folder Name="/Worker/" />
+  <Folder Name="/Worker/Audit/">
+    <Project Path="Back.End/Worker/Audit/Cashflow.Back.End.Worker.Audit.csproj" />
+  </Folder>
+  <Folder Name="/Worker/Balance/">
+    <Project Path="Back.End/Worker/Balance/Cashflow.Back.End.Worker.Balance.csproj" />
+  </Folder>
+  <Folder Name="/Worker/Report/">
+    <Project Path="Back.End/Worker/Report/Cashflow.Back.End.Worker.Report.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\Logging\Cashflow.Back.End.Shared.Logging.csproj" />
+    <ProjectReference Include="..\Domain\Cashflow.Back.End.Service.Transaction.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
