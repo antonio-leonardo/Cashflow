@@ -1,5 +1,5 @@
 using Cashflow.Shared.Messaging;
-using Cashflow.Transaction.Infrastructure;
+using Cashflow.Transaction.Infrastructure.DependencyInjection;
 using Outbox.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);

@@ -13,7 +13,7 @@ public sealed class TransactionRepository : ITransactionRepository
         _db = db;
     }
 
-    public async Task AddAsync(Cashflow.Transaction.Domain.Entities.Transaction transaction, CancellationToken cancellationToken = default)
+    public async Task AddAsync(Domain.Entities.Transaction transaction, CancellationToken cancellationToken = default)
     {
         var entity = new TransactionEntity
         {

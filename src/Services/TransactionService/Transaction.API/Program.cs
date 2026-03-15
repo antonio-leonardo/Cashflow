@@ -1,6 +1,6 @@
 using Cashflow.Transaction.Application.Queries;
 using Cashflow.Transaction.Domain.ValueObjects;
-using Cashflow.Transaction.Infrastructure;
+using Cashflow.Transaction.Infrastructure.DependencyInjection;
 using Cashflow.Transaction.Infrastructure.Persistence;
 using Transaction.Application.Commands;
 using Transaction.Application.Queries;
@@ -17,10 +17,15 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     using (var scope = app.Services.CreateScope())
     {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
         var db = scope.ServiceProvider.GetRequiredService<TransactionDbContext>();
         await db.Database.EnsureCreatedAsync();
+        logger.LogInformation("TransactionDbContext initialized");
+
         var idempotencyDb = scope.ServiceProvider.GetRequiredService<IdempotencyDbContext>();
         await idempotencyDb.Database.EnsureCreatedAsync();
+        logger.LogInformation("IdempotencyDbContext initialized");
     }
 }
 

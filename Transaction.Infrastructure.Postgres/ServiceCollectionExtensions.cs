@@ -1,5 +1,7 @@
 using Cashflow.Shared.Contracts.Idempotency;
 using Cashflow.Shared.Logging;
+using Cashflow.Shared.Messaging;
+using Cashflow.Shared.Messaging.Providers.RabbitMQ;
 using Cashflow.Transaction.Infrastructure.Logging;
 using Cashflow.Transaction.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Transaction.Application.Commands;
 using Transaction.Application.Queries;
 
-namespace Cashflow.Transaction.Infrastructure
+namespace Cashflow.Transaction.Infrastructure.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
@@ -29,6 +31,11 @@ namespace Cashflow.Transaction.Infrastructure
             services.AddScoped<ILogService, ConsoleLogService>();
             services.AddScoped<ICreateTransactionHandler, CreateTransactionHandler>();
             services.AddScoped<IGetTransactionQueryHandler, GetTransactionQueryHandler>();
+
+            //Provider de mensageria: RabbitMQ
+            //services.AddOptions<RabbitMqOptions>().;
+            services.Configure<RabbitMqOptions>(configuration.GetSection("RabbitMq"));
+            services.AddSingleton<IMessageBus, RabbitMqBus>();
 
             return services;
         }

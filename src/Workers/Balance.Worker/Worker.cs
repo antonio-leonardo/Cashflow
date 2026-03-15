@@ -2,7 +2,6 @@ using Cashflow.Shared.Contracts.Idempotency;
 using Cashflow.Shared.Logging;
 using Cashflow.Shared.Messaging;
 using Cashflow.Transaction.Domain.Events;
-using Microsoft.Extensions.Hosting;
 
 namespace Cashflow.Balance.Worker
 {

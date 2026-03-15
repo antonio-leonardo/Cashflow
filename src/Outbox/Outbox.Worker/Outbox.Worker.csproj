@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\\..\\Services\\TransactionService\\Transaction.Infrastructure\\Transaction.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Transaction.Infrastructure.Postgres\Transaction.Infrastructure.DependencyInjection.csproj" />
     <ProjectReference Include="..\\..\\Services\\TransactionService\\Transaction.Domain\\Transaction.Domain.csproj" />
     <ProjectReference Include="..\\..\\Shared\\Cashflow.Shared.Messaging\\Cashflow.Shared.Messaging.csproj" />
     <ProjectReference Include="..\\..\\Shared\\Cashflow.Shared.Logging\\Cashflow.Shared.Logging.csproj" />

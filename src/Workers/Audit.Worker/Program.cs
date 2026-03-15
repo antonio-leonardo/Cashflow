@@ -1,6 +1,6 @@
 using Cashflow.Audit.Worker;
 using Cashflow.Shared.Messaging;
-using Cashflow.Transaction.Infrastructure;
+using Cashflow.Transaction.Infrastructure.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);
 

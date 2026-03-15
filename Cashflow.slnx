@@ -12,12 +12,16 @@
     <Project Path="src/Services/TransactionService/Transaction.Application/Transaction.Application.csproj" />
     <Project Path="src/Services/TransactionService/Transaction.Domain/Transaction.Domain.csproj" />
     <Project Path="src/Services/TransactionService/Transaction.Infrastructure/Transaction.Infrastructure.csproj" />
+    <Project Path="Transaction.Infrastructure.Postgres/Transaction.Infrastructure.DependencyInjection.csproj" Id="da94733e-fbd6-458a-b7b6-bc9cf674879d" />
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/Cashflow.Shared.Contracts/Cashflow.Shared.Contracts.csproj" />
     <Project Path="src/Shared/Cashflow.Shared.Events/Cashflow.Shared.Events.csproj" />
     <Project Path="src/Shared/Cashflow.Shared.Logging/Cashflow.Shared.Logging.csproj" />
     <Project Path="src/Shared/Cashflow.Shared.Messaging/Cashflow.Shared.Messaging.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/Messaging.Providers/">
+    <Project Path="Cashflow.Shared.Messaging.RabbitMQ/Cashflow.Shared.Messaging.Providers.RabbitMQ.csproj" Id="59a50ffa-5ab3-4304-a835-6738defba40d" />
   </Folder>
   <Folder Name="/src/Workers/">
     <Project Path="src/Workers/Audit.Worker/Audit.Worker.csproj" />

@@ -26,7 +26,10 @@ public sealed class TransactionDbContext : DbContext
             e.ToTable("OutboxEvents");
             e.HasKey(x => x.EventId);
             e.Property(x => x.EventType).HasMaxLength(256);
-            e.Property(x => x.Payload).HasColumnType("jsonb");
+            e.Property(x => x.Payload).IsRequired();
+            e.Property(x => x.CreatedAt).IsRequired();
+            e.Property(x => x.ProcessedAt);
+            e.Property(x => x.RetryCount).IsRequired();
         });
     }
 }

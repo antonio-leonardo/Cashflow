@@ -11,9 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Transaction.Infrastructure.Postgres\Transaction.Infrastructure.DependencyInjection.csproj" />
     <ProjectReference Include="..\Transaction.Application\Transaction.Application.csproj" />
     <ProjectReference Include="..\Transaction.Domain\Transaction.Domain.csproj" />
-    <ProjectReference Include="..\Transaction.Infrastructure\Transaction.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
