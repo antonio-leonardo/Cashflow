@@ -6,9 +6,9 @@ services:
     image: postgres:15
     container_name: cashflow-postgres
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
-      POSTGRES_DB: cashflow
+      POSTGRES__USER: admin
+      POSTGRES__PASSWORD: admin
+      POSTGRES__DB: cashflow
     ports:
       - "5432:5432"
     volumes:
@@ -32,10 +32,10 @@ services:
     image: rabbitmq:3-management
     container_name: cashflow-rabbitmq
     environment:
-      RabbitMQ_Host: rabbitmq
-      RabbitMQ_Port: 5672
-      RabbitMQ_Username: guest
-      RabbitMQ_Password: guest
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Port: 5672
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -45,8 +45,8 @@ services:
     container_name: cashflow-keycloak
     command: start-dev
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK__ADMIN: admin
+      KEYCLOAK__ADMIN_PASSWORD: admin
     ports:
       - "8080:8080"
 
