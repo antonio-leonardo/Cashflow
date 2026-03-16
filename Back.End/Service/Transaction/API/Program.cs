@@ -2,12 +2,12 @@ using Cashflow.Back.End.Service.Transaction.Application.Commands;
 using Cashflow.Back.End.Service.Transaction.Application.Queries;
 using Cashflow.Back.End.Service.Transaction.Domain;
 using Cashflow.Back.End.Service.Transaction.Infrastructure.Persistence;
-using Cashflow.Back.End.Service.Transaction.DependencyInjection;
+using Cashflow.Back.End.Service.Transaction.Providers.Postgres.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
-builder.Services.AddDependencyInjection(builder.Configuration);
+builder.Services.AddSqlDatabaseDependencyInjection(builder.Configuration);
 
 var app = builder.Build();
 

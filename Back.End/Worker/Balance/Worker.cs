@@ -1,53 +1,41 @@
 using Cashflow.Back.End.Service.Transaction.Domain;
-using Cashflow.Back.End.Shared.Contracts.Idempotency;
-using Cashflow.Back.End.Shared.Logging;
 using Cashflow.Back.End.Shared.Messaging.Abstractions;
 
-namespace Cashflow.Balance.Worker
+namespace Cashflow.Back.End.Worker.Balance
 {
     /// <summary>
     /// Worker de leitura CQRS:
     /// Read Model Balance
     /// Consumidor idempotente
     /// </summary>
-    public class Worker(
-        IMessageBus messageBus,
-        IProcessedEventStore processedEventStore,
-        ILogService logService) : BackgroundService
+    public class Worker : BackgroundService
     {
-        private const string ConsumerName = "Balance.Worker";
+        private readonly IMessageBus _bus;
+        private readonly IServiceProvider _provider;
+
+        public Worker(IMessageBus bus, IServiceProvider provider)
+        {
+            _bus = bus;
+            _provider = provider;
+        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await messageBus.SubscribeAsync<TransactionCreatedEventV1>(HandleTransactionCreatedAsync, stoppingToken);
+            await _bus.SubscribeAsync<TransactionCreatedEventV1>(
+                HandleTransactionCreated,
+                stoppingToken);
         }
 
-        private async Task HandleTransactionCreatedAsync(
+        private async Task HandleTransactionCreated(
             EventEnvelope<TransactionCreatedEventV1> envelope,
-            CancellationToken cancellationToken)
+            CancellationToken ct)
         {
-            var evt = envelope.Event;
-            if (await processedEventStore.WasProcessedAsync(evt.EventId, ConsumerName, cancellationToken))
-                return;
+            using var scope = _provider.CreateScope();
 
-            // Read model: atualizar saldo (skeleton: apenas log)
-            var context = new LogContext(
-                ServiceName: ConsumerName,
-                CorrelationId: envelope.Metadata.CorrelationId,
-                TransactionId: evt.TransactionId.ToString(),
-                UserId: null);
-            logService.Log(
-                Cashflow.Back.End.Shared.Logging.LogLevel.Information,
-                "Balance updated for account {AccountId}, amount {Amount} {Currency}.",
-                context,
-                additionalData: new Dictionary<string, object>
-                {
-                    ["AccountId"] = evt.AccountId,
-                    ["Amount"] = evt.Amount,
-                    ["Currency"] = evt.Currency
-                });
+            var handler = scope.ServiceProvider
+                .GetRequiredService<TransactionCreatedHandler>();
 
-            await processedEventStore.MarkProcessedAsync(evt.EventId, ConsumerName, cancellationToken);
+            await handler.HandleAsync(envelope.Event, ct);
         }
     }
 }

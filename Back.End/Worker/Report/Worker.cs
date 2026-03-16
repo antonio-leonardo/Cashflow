@@ -1,51 +1,36 @@
 using Cashflow.Back.End.Service.Transaction.Domain;
-using Cashflow.Back.End.Shared.Contracts.Idempotency;
-using Cashflow.Back.End.Shared.Logging;
 using Cashflow.Back.End.Shared.Messaging.Abstractions;
 
-namespace Cashflow.Report.Worker;
-
-/// <summary>
-/// Worker de leitura CQRS:
-/// Read Model Report / analítico
-/// Consumidor idempotente
-/// </summary>
-public class Worker(
-    IMessageBus messageBus,
-    IProcessedEventStore processedEventStore,
-    ILogService logService) : BackgroundService
+namespace Cashflow.Back.End.Worker.Report
 {
-    private const string ConsumerName = "Report.Worker";
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public class Worker : BackgroundService
     {
-        await messageBus.SubscribeAsync<TransactionCreatedEventV1>(HandleTransactionCreatedAsync, stoppingToken);
-    }
+        private readonly IMessageBus _bus;
+        private readonly IServiceProvider _provider;
 
-    private async Task HandleTransactionCreatedAsync(
-        EventEnvelope<TransactionCreatedEventV1> envelope,
-        CancellationToken cancellationToken)
-    {
-        var evt = envelope.Event;
-        if (await processedEventStore.WasProcessedAsync(evt.EventId, ConsumerName, cancellationToken))
-            return;
+        public Worker(IMessageBus bus, IServiceProvider provider)
+        {
+            _bus = bus;
+            _provider = provider;
+        }
 
-        var context = new LogContext(
-            ServiceName: ConsumerName,
-            CorrelationId: envelope.Metadata.CorrelationId,
-            TransactionId: evt.TransactionId.ToString(),
-            UserId: null);
-        logService.Log(
-            Cashflow.Back.End.Shared.Logging.LogLevel.Information,
-            "Report updated for transaction {TransactionId}, account {AccountId}.",
-            context,
-            additionalData: new Dictionary<string, object>
-            {
-                ["TransactionId"] = evt.TransactionId,
-                ["AccountId"] = evt.AccountId,
-                ["Amount"] = evt.Amount
-            });
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            await _bus.SubscribeAsync<TransactionCreatedEventV1>(
+                HandleTransactionCreated,
+                stoppingToken);
+        }
 
-        await processedEventStore.MarkProcessedAsync(evt.EventId, ConsumerName, cancellationToken);
+        private async Task HandleTransactionCreated(
+            EventEnvelope<TransactionCreatedEventV1> envelope,
+            CancellationToken ct)
+        {
+            using var scope = _provider.CreateScope();
+
+            var handler = scope.ServiceProvider
+                .GetRequiredService<TransactionCreatedHandler>();
+
+            await handler.HandleAsync(envelope.Event, ct);
+        }
     }
 }

@@ -12,8 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Events\Cashflow.Back.End.Shared.Events.csproj" />
-    <ProjectReference Include="..\..\Abstractions\Cashflow.Back.End.Shared.Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\..\Events\Cashflow.Back.End.Shared.Events.csproj" />
+    <ProjectReference Include="..\..\..\Abstractions\Cashflow.Back.End.Shared.Messaging.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

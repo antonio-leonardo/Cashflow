@@ -14,14 +14,15 @@
   <Folder Name="/Service/Transaction/Application/">
     <Project Path="Back.End/Service/Transaction/Application/Cashflow.Back.End.Service.Transaction.Application.csproj" />
   </Folder>
-  <Folder Name="/Service/Transaction/DependencyInjection/">
-    <Project Path="Back.End/Service/Transaction/DependencyInjection/Cashflow.Back.End.Service.Transaction.DependencyInjection.csproj" />
-  </Folder>
   <Folder Name="/Service/Transaction/Domain/">
     <Project Path="Back.End/Service/Transaction/Domain/Cashflow.Back.End.Service.Transaction.Domain.csproj" />
   </Folder>
   <Folder Name="/Service/Transaction/Infrastructure/">
     <Project Path="Back.End/Service/Transaction/Infrastructure/Cashflow.Back.End.Service.Transaction.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Service/Transaction/Providers/" />
+  <Folder Name="/Service/Transaction/Providers/Postgres/">
+    <Project Path="Back.End/Service/Transaction/Providers/Postgres/DependencyInjection/Cashflow.Back.End.Service.Transaction.Providers.Postgres.DependencyInjection.csproj" />
   </Folder>
   <Folder Name="/Shared/" />
   <Folder Name="/Shared/Contracts/">
@@ -38,16 +39,24 @@
     <Project Path="Back.End/Shared/Messaging/Abstractions/Cashflow.Back.End.Shared.Messaging.Abstractions.csproj" />
   </Folder>
   <Folder Name="/Shared/Messaging/Providers/" />
-  <Folder Name="/Shared/Messaging/Providers/RabbitMQ/">
-    <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.csproj" />
+  <Folder Name="/Shared/Messaging/Providers/RabbitMQ/" />
+  <Folder Name="/Shared/Messaging/Providers/RabbitMQ/DependecyInjection/">
+    <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/DependecyInjection/Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.DependecyInjection.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Messaging/Providers/RabbitMQ/MessageBus/">
+    <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/MessageBus/Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.MessageBus.csproj" />
   </Folder>
   <Folder Name="/Shared/NoSql/" />
   <Folder Name="/Shared/NoSql/Abstractions/">
     <Project Path="Back.End/Shared/NoSql/Abstractions/Cashflow.Back.End.Shared.NoSql.Abstractions.csproj" />
   </Folder>
   <Folder Name="/Shared/NoSql/Providers/" />
-  <Folder Name="/Shared/NoSql/Providers/MongoDB/" />
-  <Folder Name="/Shared/NoSql/Providers/Redis/" />
+  <Folder Name="/Shared/NoSql/Providers/MongoDB/">
+    <Project Path="Back.End/Shared/NoSql/Providers/MongoDB/Cashflow.Shared.NoSql.Providers.MongoDB.csproj" />
+  </Folder>
+  <Folder Name="/Shared/NoSql/Providers/Redis/">
+    <Project Path="Back.End/Shared/NoSql/Providers/Redis/Cashflow.Shared.NoSql.Providers.Redis.csproj" />
+  </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/ConcurrencyTests/" />
   <Folder Name="/tests/IntegrationTests/" />

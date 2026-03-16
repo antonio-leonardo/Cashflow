@@ -6,7 +6,7 @@ using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 
-namespace Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ
+namespace Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.MessageBus
 {
     public class RabbitMqBus : IMessageBus
     {

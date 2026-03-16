@@ -1,4 +1,4 @@
-﻿namespace Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ
+﻿namespace Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.MessageBus
 {
     public class RabbitMqOptions
     {

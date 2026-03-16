@@ -1,11 +1,25 @@
-using Cashflow.Audit.Worker;
-using Cashflow.Back.End.Service.Transaction.DependencyInjection;
-using Cashflow.Back.End.Shared.Messaging.Abstractions;
+using Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.DependecyInjection;
+using Cashflow.Back.End.Worker.Audit;
+using MongoDB.Driver;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddDependencyInjection(builder.Configuration);
-builder.Services.AddSingleton<IMessageBus, StubMessageBus>();
+builder.Services.AddMessagingDependencyInjection(builder.Configuration);
+builder.Services.AddSingleton<IMongoClient>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+
+    var connection = config["Mongo:Connection"];
+
+    return new MongoClient(connection);
+});
+
+builder.Services.AddScoped(sp =>
+{
+    var client = sp.GetRequiredService<IMongoClient>();
+    return client.GetDatabase("cashflow-audit");
+});
+builder.Services.AddScoped<TransactionCreatedHandler>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();
