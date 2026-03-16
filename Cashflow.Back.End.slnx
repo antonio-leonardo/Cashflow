@@ -59,8 +59,23 @@
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/ConcurrencyTests/" />
+  <Folder Name="/tests/ConcurrencyTests/Transaction/">
+    <Project Path="Back.End/Tests/ConcurrencyTests/Transaction/Transaction.Concurrency.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/DomainTests/" />
+  <Folder Name="/tests/DomainTests/Balance/">
+    <Project Path="Back.End/Tests/DomainTests/Balance/Balance.Domain.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/DomainTests/Transaction/">
+    <Project Path="Back.End/Tests/DomainTests/Transaction/Transaction.Domain.Tests.csproj" />
+  </Folder>
   <Folder Name="/tests/IntegrationTests/" />
-  <Folder Name="/tests/UnitTests/" />
+  <Folder Name="/tests/IntegrationTests/Messaging/">
+    <Project Path="Back.End/Tests/IntegrationTests/Messaging/Messaging.Integration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/IntegrationTests/Transaction/">
+    <Project Path="Back.End/Tests/IntegrationTests/Transaction/Transaction.Integration.Tests.csproj" />
+  </Folder>
   <Folder Name="/Worker/" />
   <Folder Name="/Worker/Audit/">
     <Project Path="Back.End/Worker/Audit/Cashflow.Back.End.Worker.Audit.csproj" />
