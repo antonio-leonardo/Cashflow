@@ -62,6 +62,10 @@
   <Folder Name="/tests/ConcurrencyTests/Transaction/">
     <Project Path="Back.End/Tests/ConcurrencyTests/Transaction/Transaction.Concurrency.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/ContractTests/" />
+  <Folder Name="/tests/ContractTests/Gateway/">
+    <Project Path="Back.End/Tests/ContractTests/Gateway/Gateway.Transaction.ContractTests.csproj" />
+  </Folder>
   <Folder Name="/tests/DomainTests/" />
   <Folder Name="/tests/DomainTests/Balance/">
     <Project Path="Back.End/Tests/DomainTests/Balance/Balance.Domain.Tests.csproj" />
@@ -69,12 +73,18 @@
   <Folder Name="/tests/DomainTests/Transaction/">
     <Project Path="Back.End/Tests/DomainTests/Transaction/Transaction.Domain.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/E2E/">
+    <Project Path="Back.End/Tests/E2E/E2E.Tests/E2E.Tests.csproj" Id="f30f097c-0196-4ada-ae12-392b686eb649" />
+  </Folder>
   <Folder Name="/tests/IntegrationTests/" />
   <Folder Name="/tests/IntegrationTests/Messaging/">
     <Project Path="Back.End/Tests/IntegrationTests/Messaging/Messaging.Integration.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/IntegrationTests/Transaction/">
     <Project Path="Back.End/Tests/IntegrationTests/Transaction/Transaction.Integration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/IntegrationTests/Worker/">
+    <Project Path="Back.End/Tests/IntegrationTests/Worker/Worker.Integration.Tests.csproj" />
   </Folder>
   <Folder Name="/Worker/" />
   <Folder Name="/Worker/Audit/">

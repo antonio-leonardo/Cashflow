@@ -1,0 +1,65 @@
+{
+  "consumer": {
+    "name": "Gateway"
+  },
+  "interactions": [
+    {
+      "description": "Create Transaction Request",
+      "request": {
+        "body": {
+          "accountId": "173f4ce3-034f-4ab4-8956-f76b4394d529",
+          "amount": 100,
+          "currency": "USD"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.accountId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.amount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.currency": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/transactions"
+      },
+      "response": {
+        "status": 201
+      }
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.27",
+      "models": "1.2.8"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "TransactionService"
+  }
+}
