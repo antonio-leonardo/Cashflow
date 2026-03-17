@@ -21,13 +21,15 @@ namespace E2E.Tests
         {
             var client = _factory.CreateClient();
 
-            var response = await client.PostAsJsonAsync("/api/transactions", new
+            var objectToRequest = new
             {
                 AccountId = Guid.NewGuid(),
                 Amount = 100,
                 Currency = "BRL",
                 Type = 1
-            });
+            };
+
+            var response = await client.PostAsJsonAsync("/api/transactions", objectToRequest);
 
             response.EnsureSuccessStatusCode();
 
@@ -35,7 +37,7 @@ namespace E2E.Tests
 
             var redis = await ConnectionMultiplexer.ConnectAsync(_infra.RedisContainerFixture.ConnectionString);
             var db = redis.GetDatabase();
-            var value = await db.StringGetAsync("balance");
+            var value = await db.StringGetAsync($"balance:{objectToRequest.AccountId}");
 
             if (value.IsNull)
             {
@@ -44,7 +46,7 @@ namespace E2E.Tests
 
                 for (int i = 0; i < retries; i++)
                 {
-                    value = await db.StringGetAsync("balance");
+                    value = await db.StringGetAsync($"balance:{objectToRequest.AccountId}");
 
                     if (!value.IsNull)
                     {

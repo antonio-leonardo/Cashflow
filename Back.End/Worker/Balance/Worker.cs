@@ -32,12 +32,12 @@ namespace Cashflow.Worker.Balance
             EventEnvelope<TransactionCreatedEventV1> envelope,
             CancellationToken ct)
         {
-            using var scope = _provider.CreateScope();
-
-            var handler = scope.ServiceProvider
+            using (var scope = _provider.CreateScope())
+            {
+                var handler = scope.ServiceProvider
                 .GetRequiredService<TransactionCreatedHandler>();
-
-            await handler.HandleAsync(envelope.Event, ct);
+                await handler.HandleAsync(envelope.Event, ct);
+            }
         }
     }
 }

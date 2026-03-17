@@ -27,65 +27,61 @@ namespace Cashflow.Outbox.Worker
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                using var scope = _provider.CreateScope();
-
-                var dbContext = scope.ServiceProvider
-                    .GetRequiredService<TransactionDbContext>();
-
-                var logService = scope.ServiceProvider
-                    .GetRequiredService<ILogService>();
-
-                var pending = await dbContext.OutboxEvents
-                    .Where(e => e.ProcessedAt == null)
-                    .OrderBy(e => e.CreatedAt)
-                    .Take(BatchSize)
-                    .ToListAsync(stoppingToken);
-
-                if (pending.Count == 0)
+                using (var scope = _provider.CreateScope())
                 {
-                    await Task.Delay(2000, stoppingToken);
-                    continue;
-                }
+                    var dbContext = scope.ServiceProvider
+                        .GetRequiredService<TransactionDbContext>();
 
-                foreach (var outboxEvent in pending)
-                {
-                    try
+                    var logService = scope.ServiceProvider
+                        .GetRequiredService<ILogService>();
+
+                    var pending = await dbContext.OutboxEvents
+                        .Where(e => e.ProcessedAt == null)
+                        .OrderBy(e => e.CreatedAt)
+                        .Take(BatchSize)
+                        .ToListAsync(stoppingToken);
+
+                    if (pending.Count == 0)
                     {
-                        var eventType = ResolveEventType(outboxEvent.EventType);
-
-                        var deserialized = (IEvent?)JsonSerializer.Deserialize(
-                            outboxEvent.Payload,
-                            eventType!);
-
-                        var metadata = new MessageMetadata(
-                            outboxEvent.EventId.ToString(),
-                            outboxEvent.EventId.ToString(),
-                            "OutboxWorker",
-                            null,
-                            DateTime.UtcNow);
-
-                        var envelopeType = typeof(EventEnvelope<>).MakeGenericType(eventType!);
-                        var envelope = Activator.CreateInstance(envelopeType, deserialized!, metadata)!;
-
-                        var publishMethod = typeof(IMessageBus)
-                            .GetMethod(nameof(IMessageBus.PublishAsync))!
-                            .MakeGenericMethod(eventType!);
-
-                        await (Task)publishMethod.Invoke(_messageBus, new[] { envelope, stoppingToken })!;
-
-                        outboxEvent.ProcessedAt = DateTime.UtcNow;
+                        await Task.Delay(2000, stoppingToken);
+                        continue;
                     }
-                    catch (Exception ex)
+
+                    foreach (var outboxEvent in pending)
                     {
-                        logService.Log(
-                            Cashflow.Shared.Logging.LogLevel.Error,
-                            "Erro ao processar outbox",
-                            new LogContext("OutboxWorker", null, null, null),
-                            ex);
-                    }
-                }
+                        try
+                        {
+                            var eventType = ResolveEventType(outboxEvent.EventType);
 
-                await dbContext.SaveChangesAsync(stoppingToken);
+                            var deserialized = (IEvent?)JsonSerializer.Deserialize(
+                                outboxEvent.Payload,
+                                eventType!);
+
+                            var metadata = new MessageMetadata(
+                                outboxEvent.EventId.ToString(),
+                                outboxEvent.EventId.ToString(),
+                                "OutboxWorker",
+                                null,
+                                DateTime.UtcNow);
+
+                            var envelopeType = typeof(EventEnvelope<>).MakeGenericType(eventType!);
+                            var envelope = Activator.CreateInstance(envelopeType, deserialized!, metadata)!;
+                            await _messageBus.PublishAsync((dynamic)envelope, stoppingToken);
+
+                            outboxEvent.ProcessedAt = DateTime.UtcNow;
+                        }
+                        catch (Exception ex)
+                        {
+                            logService.Log(
+                                Cashflow.Shared.Logging.LogLevel.Error,
+                                "Erro ao processar outbox",
+                                new LogContext("OutboxWorker", null, null, null),
+                                ex);
+                        }
+                    }
+
+                    await dbContext.SaveChangesAsync(stoppingToken);
+                }
             }
         }
 
@@ -93,7 +89,7 @@ namespace Cashflow.Outbox.Worker
         {
             // Por enquanto, lidamos apenas com eventos do domínio de Transações.
             return typeof(TransactionCreatedEventV1).Assembly.GetType(
-                $"Cashflow.Transaction.Domain.Events.{eventTypeName}");
+                $"Cashflow.Service.Transaction.Domain.{eventTypeName}");
         }
 
         //private void LogError(string message, Exception? exception)

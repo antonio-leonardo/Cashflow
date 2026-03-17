@@ -20,10 +20,10 @@ namespace Messaging.Integration.Tests
                 Uri = new Uri(_rabbitMqFixture.ConnectionString)
             };
 
-            await using var connection =
-                await factory.CreateConnectionAsync();
-
-            Assert.NotNull(connection);
+            await using (var connection = await factory.CreateConnectionAsync())
+            {
+                Assert.NotNull(connection);
+            }
         }
     }
 }

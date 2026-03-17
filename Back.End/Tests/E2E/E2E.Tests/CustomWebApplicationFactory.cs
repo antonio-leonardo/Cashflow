@@ -20,6 +20,7 @@ namespace E2E.Tests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            builder.UseEnvironment("Testing");
             builder.ConfigureAppConfiguration((context, config) =>
             {
                 var settings = new Dictionary<string, string>
@@ -34,15 +35,19 @@ namespace E2E.Tests
                 };
                 config.AddInMemoryCollection(settings!);
             });
-            builder.ConfigureServices(services =>
+
+            builder.ConfigureServices((context, services) =>
             {
-                services.AddSqlDatabaseDependencyInjection(services.BuildServiceProvider().GetRequiredService<IConfiguration>());
-                services.AddMessagingDependencyInjection(services.BuildServiceProvider().GetRequiredService<IConfiguration>());
+                var configuration = context.Configuration;
+
+                services.AddSqlDatabaseDependencyInjection(configuration);
+                services.AddMessagingDependencyInjection(configuration);
 
                 services.AddSingleton<IConnectionMultiplexer>(sp =>
                 {
                     return ConnectionMultiplexer.Connect(_infra.RedisContainerFixture.ConnectionString);
                 });
+
                 services.AddScoped<Cashflow.Worker.Balance.RedisBalanceRepository>();
                 services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
 

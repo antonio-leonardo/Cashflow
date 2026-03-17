@@ -1,4 +1,5 @@
 ﻿using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
+using Cashflow.Worker.Balance;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,40 +20,36 @@ namespace Infrastructure.Test
 
         public async Task InitializeAsync()
         {
-            var builder = Host.CreateApplicationBuilder();
+            _host = new HostBuilder()
+                .ConfigureServices((context, services) =>
+                {
+                    services.AddSingleton<IConnectionMultiplexer>(sp =>
+                        ConnectionMultiplexer.Connect(_infra.RedisContainerFixture.ConnectionString));
 
-            var config = new Dictionary<string, string>
-            {
-                ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString,
-                ["RabbitMq:Host"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Host,
-                ["RabbitMq:Port"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Port.ToString(),
-                ["RabbitMq:Username"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Username,
-                ["RabbitMq:Password"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Password,
-                ["Redis:Connection"] = _infra.RedisContainerFixture.ConnectionString
-            };
+                    services.AddScoped<RedisBalanceRepository>();
+                    services.AddScoped<TransactionCreatedHandler>();
 
-            builder.Configuration.AddInMemoryCollection(config);
+                    services.AddMessagingDependencyInjection(new ConfigurationBuilder()
+                        .AddInMemoryCollection(new Dictionary<string, string>
+                        {
+                            ["RabbitMq:Host"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Host,
+                            ["RabbitMq:Port"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Port.ToString(),
+                            ["RabbitMq:Username"] = "guest",
+                            ["RabbitMq:Password"] = "guest",
+                        })
+                        .Build());
 
-            builder.Services.AddMessagingDependencyInjection(builder.Configuration);
-            builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-            {
-                var config = sp.GetRequiredService<IConfiguration>();
-                var connection = config["Redis:Connection"];
-
-                return ConnectionMultiplexer.Connect(connection);
-            });
-            builder.Services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
-            builder.Services.AddHostedService<Cashflow.Worker.Balance.Worker>();
-
-            _host = builder.Build();
+                    services.AddHostedService<Worker>();
+                })
+                .Build();
 
             await _host.StartAsync();
         }
 
         public async Task DisposeAsync()
         {
-            if (_host != null)
-                await _host.StopAsync();
+            await _host.StopAsync();
+            _host.Dispose();
         }
     }
 }
