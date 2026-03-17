@@ -4,7 +4,7 @@ WORKDIR /src
 
 COPY . .
 RUN dotnet restore
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet publish Back.End/Gateway/Cashflow.Gateway.csproj -c Release -o /app/publish
 
 # -------- RUNTIME --------
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
