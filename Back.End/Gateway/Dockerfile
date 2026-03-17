@@ -1,12 +1,17 @@
-﻿# -------- BUILD --------
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY . .
-RUN dotnet restore
-RUN dotnet publish Back.End/Gateway/Cashflow.Gateway.csproj -c Release -o /app/publish
+COPY Back.End/Gateway/Cashflow.Gateway.csproj Back.End/Gateway
 
-# -------- RUNTIME --------
+RUN dotnet restore Back.End/Gateway/Cashflow.Gateway.csproj
+
+COPY . .
+
+RUN dotnet publish Back.End/Gateway/Cashflow.Gateway.csproj \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false
+
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 

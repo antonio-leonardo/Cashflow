@@ -33,25 +33,36 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: cashflow-rabbitmq
+    restart: always
     ports:
       - "5672:5672"
       - "15672:15672"
     networks:
       - cashflow-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      retries: 5
 
   redis:
     image: redis:7
     container_name: cashflow-redis
+    restart: always
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
       - cashflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
 
   mongo:
     image: mongo:7
     container_name: cashflow-mongo
+    restart: always
     ports:
       - "27017:27017"
     volumes:
@@ -62,6 +73,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:24
     container_name: cashflow-keycloak
+    restart: always
     command: start-dev
     environment:
       KEYCLOAK_ADMIN: admin
@@ -70,66 +82,110 @@ services:
       - "8081:8080"
     networks:
       - cashflow-network
+      
+    gateway:
+      build:
+        context: .
+        dockerfile: Back.End/Gateway/Dockerfile
+      depends_on:
+        keycloak:
+          condition: service_started
+        transaction-api:
+          condition: service_started
+      environment:
+        ASPNETCORE_ENVIRONMENT: Development
+        Keycloak__Authority: http://keycloak:8080/realms/cashflow
+        Keycloak__Audience: cashflow-api
+      ports:
+        - "5000:8080"
+      networks:
+        - cashflow-network
+      restart: always
 
   transaction-api:
     build:
-      context: ..
-      dockerfile: Back.End/Services/TransactionService/Transaction.API/Dockerfile
+      context: .
+      dockerfile: Back.End/Services/Transaction/API/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-
-      ConnectionStrings__TransactionDb: Host=postgres;Port=5432;Database=cashflow;Username=postgres;Password=postgres
-
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=cashflow;Username=postgres;Password=postgres
       RabbitMq__Host: rabbitmq
       RabbitMq__Port: 5672
     ports:
       - "5001:8080"
     networks:
       - cashflow-network
+    restart: always
+
+  worker-outbox:
+    build:
+      context: .
+      dockerfile: Back.End/Outbox/Worker/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=cashflow;Username=postgres;Password=postgres
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: 5672
+    networks:
+      - cashflow-network
+    restart: always
 
   balance-worker:
     build:
-      context: ..
+      context: .
       dockerfile: Back.End/Worker/Balance/Dockerfile
     depends_on:
-      - rabbitmq
-      - redis
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       Redis__Connection: redis:6379
       RabbitMq__Host: rabbitmq
       RabbitMq__Port: 5672
     networks:
       - cashflow-network
+    restart: always
 
   report-worker:
     build:
-      context: ..
+      context: .
       dockerfile: Back.End/Worker/Report/Dockerfile
     depends_on:
-      - rabbitmq
-      - mongo
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       Mongo__Connection: mongodb://mongo:27017
       RabbitMq__Host: rabbitmq
       RabbitMq__Port: 5672
     networks:
       - cashflow-network
+    restart: always
 
   audit-worker:
     build:
-      context: ..
+      context: .
       dockerfile: Back.End/Worker/Audit/Dockerfile
     depends_on:
-      - rabbitmq
-      - mongo
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       Mongo__Connection: mongodb://mongo:27017
       RabbitMq__Host: rabbitmq
       RabbitMq__Port: 5672
     networks:
       - cashflow-network
+    restart: always
