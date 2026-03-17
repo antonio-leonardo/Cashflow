@@ -9,7 +9,7 @@
   <Folder Name="/Service/" />
   <Folder Name="/Service/Transaction/" />
   <Folder Name="/Service/Transaction/API/">
-    <Project Path="Back.End/Service/Transaction/API/Cashflow.End.Service.Transaction.API.csproj" />
+    <Project Path="Back.End/Service/Transaction/API/Cashflow.Service.Transaction.API.csproj" />
   </Folder>
   <Folder Name="/Service/Transaction/Application/">
     <Project Path="Back.End/Service/Transaction/Application/Cashflow.Service.Transaction.Application.csproj" />
