@@ -33,4 +33,26 @@ jobs:
 
     - name: Build Docker Images
       run: |
-        docker build -t cashflow-api ./Back.End
+        echo "Building Gateway..."
+        docker build \
+          -t cashflow-api \
+          -f ./Back.End/Gateway/Dockerfile \
+          .
+          
+        echo "Building API..."
+        docker build \
+          -t cashflow-api \
+          -f ./Back.End/Service/Transaction/API/Dockerfile \
+          .
+
+        echo "Building Worker Balance..."
+        docker build \
+          -t cashflow-worker-balance \
+          -f ./Back.End/Worker/Balance/Dockerfile \
+          .
+
+        echo "Building Worker Outbox..."
+        docker build \
+          -t cashflow-worker-outbox \
+          -f ./Back.End/Outbox/Worker/Dockerfile \
+          .
