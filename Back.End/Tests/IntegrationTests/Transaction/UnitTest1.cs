@@ -1,4 +1,4 @@
-﻿using Cashflow.Back.End.Service.Transaction.Infrastructure.Persistence;
+﻿using Cashflow.Service.Transaction.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Transaction.Integration.Tests;

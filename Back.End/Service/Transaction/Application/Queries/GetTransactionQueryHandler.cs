@@ -1,6 +1,6 @@
-﻿using Cashflow.Back.End.Service.Transaction.Application.Commands;
+﻿using Cashflow.Service.Transaction.Application.Commands;
 
-namespace Cashflow.Back.End.Service.Transaction.Application.Queries
+namespace Cashflow.Service.Transaction.Application.Queries
 {
     public sealed class GetTransactionQueryHandler : IGetTransactionQueryHandler
     {

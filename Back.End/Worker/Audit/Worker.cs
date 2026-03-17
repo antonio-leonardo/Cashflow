@@ -1,7 +1,7 @@
-using Cashflow.Back.End.Service.Transaction.Domain;
-using Cashflow.Back.End.Shared.Messaging.Abstractions;
+using Cashflow.Service.Transaction.Domain;
+using Cashflow.Shared.Messaging.Abstractions;
 
-namespace Cashflow.Back.End.Worker.Audit
+namespace Cashflow.Worker.Audit
 {
     /// <summary>
     /// Worker de auditoria

@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Service\Transaction\API\Cashflow.Back.End.Service.Transaction.API.csproj" />
+    <ProjectReference Include="..\..\..\Service\Transaction\API\Cashflow.End.Service.Transaction.API.csproj" />
     <ProjectReference Include="..\..\Shared\Infrastructure.Test\Infrastructure.Test.csproj" />
   </ItemGroup>
 

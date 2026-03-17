@@ -1,4 +1,4 @@
-﻿namespace Cashflow.Back.End.Shared.NoSql.Abstractions
+﻿namespace Cashflow.Shared.NoSql.Abstractions
 {
     public interface INoSqlQueryRepository<T>
     {

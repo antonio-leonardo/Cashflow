@@ -1,4 +1,4 @@
-﻿using Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.DependecyInjection;
+﻿using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -41,8 +41,8 @@ namespace Infrastructure.Test
 
                 return ConnectionMultiplexer.Connect(connection);
             });
-            builder.Services.AddScoped<Cashflow.Back.End.Worker.Balance.TransactionCreatedHandler>();
-            builder.Services.AddHostedService<Cashflow.Back.End.Worker.Balance.Worker>();
+            builder.Services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
+            builder.Services.AddHostedService<Cashflow.Worker.Balance.Worker>();
 
             _host = builder.Build();
 

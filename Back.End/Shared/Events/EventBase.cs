@@ -1,4 +1,4 @@
-namespace Cashflow.Back.End.Shared.Events
+namespace Cashflow.Shared.Events
 {
     public abstract class EventBase : IEvent
     {

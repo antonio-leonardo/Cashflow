@@ -1,4 +1,4 @@
-﻿namespace Cashflow.Back.End.Shared.Messaging.Abstractions
+﻿namespace Cashflow.Shared.Messaging.Abstractions
 {
     public enum MessageBusKind
     {

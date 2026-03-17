@@ -1,7 +1,7 @@
 ﻿using StackExchange.Redis;
 using System.Text.Json;
 
-namespace Cashflow.Shared.NoSql.Providers.Redis
+namespace Cashflow.Shared.NoSql.Redis
 {
     public class RedisCommandRepository<T>
     {

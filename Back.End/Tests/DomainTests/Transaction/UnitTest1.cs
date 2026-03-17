@@ -1,4 +1,4 @@
-﻿using Cashflow.Back.End.Service.Transaction.Domain;
+﻿using Cashflow.Service.Transaction.Domain;
 
 namespace Transaction.Domain.Tests;
 

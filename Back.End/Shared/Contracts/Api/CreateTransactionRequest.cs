@@ -1,4 +1,4 @@
-namespace Cashflow.Back.End.Shared.Contracts.Api
+namespace Cashflow.Shared.Contracts.Api
 {
     /// <summary>
     /// Contrato compartilhado para criação de transação (API / Gateway).

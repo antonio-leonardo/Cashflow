@@ -1,61 +1,61 @@
 <Solution>
   <Folder Name="/Gateway/">
-    <Project Path="Back.End/Gateway/Cashflow.Back.End.Gateway.csproj" />
+    <Project Path="Back.End/Gateway/Cashflow.Gateway.csproj" />
   </Folder>
   <Folder Name="/Outbox/" />
   <Folder Name="/Outbox/Worker/">
-    <Project Path="Back.End/Outbox/Worker/Cashflow.Back.End.Outbox.Worker.csproj" />
+    <Project Path="Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj" />
   </Folder>
   <Folder Name="/Service/" />
   <Folder Name="/Service/Transaction/" />
   <Folder Name="/Service/Transaction/API/">
-    <Project Path="Back.End/Service/Transaction/API/Cashflow.Back.End.Service.Transaction.API.csproj" />
+    <Project Path="Back.End/Service/Transaction/API/Cashflow.End.Service.Transaction.API.csproj" />
   </Folder>
   <Folder Name="/Service/Transaction/Application/">
-    <Project Path="Back.End/Service/Transaction/Application/Cashflow.Back.End.Service.Transaction.Application.csproj" />
+    <Project Path="Back.End/Service/Transaction/Application/Cashflow.Service.Transaction.Application.csproj" />
   </Folder>
   <Folder Name="/Service/Transaction/Domain/">
-    <Project Path="Back.End/Service/Transaction/Domain/Cashflow.Back.End.Service.Transaction.Domain.csproj" />
+    <Project Path="Back.End/Service/Transaction/Domain/Cashflow.Service.Transaction.Domain.csproj" />
   </Folder>
   <Folder Name="/Service/Transaction/Infrastructure/">
-    <Project Path="Back.End/Service/Transaction/Infrastructure/Cashflow.Back.End.Service.Transaction.Infrastructure.csproj" />
+    <Project Path="Back.End/Service/Transaction/Infrastructure/Cashflow.Service.Transaction.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/Service/Transaction/Providers/" />
   <Folder Name="/Service/Transaction/Providers/Postgres/">
-    <Project Path="Back.End/Service/Transaction/Providers/Postgres/DependencyInjection/Cashflow.Back.End.Service.Transaction.Providers.Postgres.DependencyInjection.csproj" />
+    <Project Path="Back.End/Service/Transaction/Providers/Postgres/DependencyInjection/Cashflow.Service.Transaction.Postgres.DependencyInjection.csproj" />
   </Folder>
   <Folder Name="/Shared/" />
   <Folder Name="/Shared/Contracts/">
-    <Project Path="Back.End/Shared/Contracts/Cashflow.Back.End.Shared.Contracts.csproj" />
+    <Project Path="Back.End/Shared/Contracts/Cashflow.Shared.Contracts.csproj" />
   </Folder>
   <Folder Name="/Shared/Events/">
-    <Project Path="Back.End/Shared/Events/Cashflow.Back.End.Shared.Events.csproj" />
+    <Project Path="Back.End/Shared/Events/Cashflow.Shared.Events.csproj" />
   </Folder>
   <Folder Name="/Shared/Logging/">
-    <Project Path="Back.End/Shared/Logging/Cashflow.Back.End.Shared.Logging.csproj" />
+    <Project Path="Back.End/Shared/Logging/Cashflow.Shared.Logging.csproj" />
   </Folder>
   <Folder Name="/Shared/Messaging/" />
   <Folder Name="/Shared/Messaging/Abstractions/">
-    <Project Path="Back.End/Shared/Messaging/Abstractions/Cashflow.Back.End.Shared.Messaging.Abstractions.csproj" />
+    <Project Path="Back.End/Shared/Messaging/Abstractions/Cashflow.Shared.Messaging.Abstractions.csproj" />
   </Folder>
   <Folder Name="/Shared/Messaging/Providers/" />
   <Folder Name="/Shared/Messaging/Providers/RabbitMQ/" />
   <Folder Name="/Shared/Messaging/Providers/RabbitMQ/DependecyInjection/">
-    <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/DependecyInjection/Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.DependecyInjection.csproj" />
+    <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/DependecyInjection/Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection.csproj" />
   </Folder>
   <Folder Name="/Shared/Messaging/Providers/RabbitMQ/MessageBus/">
-    <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/MessageBus/Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.MessageBus.csproj" />
+    <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/MessageBus/Cashflow.Shared.Messaging.RabbitMQ.MessageBus.csproj" />
   </Folder>
   <Folder Name="/Shared/NoSql/" />
   <Folder Name="/Shared/NoSql/Abstractions/">
-    <Project Path="Back.End/Shared/NoSql/Abstractions/Cashflow.Back.End.Shared.NoSql.Abstractions.csproj" />
+    <Project Path="Back.End/Shared/NoSql/Abstractions/Cashflow.Shared.NoSql.Abstractions.csproj" />
   </Folder>
   <Folder Name="/Shared/NoSql/Providers/" />
   <Folder Name="/Shared/NoSql/Providers/MongoDB/">
-    <Project Path="Back.End/Shared/NoSql/Providers/MongoDB/Cashflow.Shared.NoSql.Providers.MongoDB.csproj" />
+    <Project Path="Back.End/Shared/NoSql/Providers/MongoDB/Cashflow.Shared.NoSql.MongoDB.csproj" />
   </Folder>
   <Folder Name="/Shared/NoSql/Providers/Redis/">
-    <Project Path="Back.End/Shared/NoSql/Providers/Redis/Cashflow.Shared.NoSql.Providers.Redis.csproj" />
+    <Project Path="Back.End/Shared/NoSql/Providers/Redis/Cashflow.Shared.NoSql.Redis.csproj" />
   </Folder>
   <Folder Name="/tests/" />
   <Folder Name="/tests/ConcurrencyTests/" />
@@ -91,12 +91,12 @@
   </Folder>
   <Folder Name="/Worker/" />
   <Folder Name="/Worker/Audit/">
-    <Project Path="Back.End/Worker/Audit/Cashflow.Back.End.Worker.Audit.csproj" />
+    <Project Path="Back.End/Worker/Audit/Cashflow.Worker.Audit.csproj" />
   </Folder>
   <Folder Name="/Worker/Balance/">
-    <Project Path="Back.End/Worker/Balance/Cashflow.Back.End.Worker.Balance.csproj" />
+    <Project Path="Back.End/Worker/Balance/Cashflow.Worker.Balance.csproj" />
   </Folder>
   <Folder Name="/Worker/Report/">
-    <Project Path="Back.End/Worker/Report/Cashflow.Back.End.Worker.Report.csproj" />
+    <Project Path="Back.End/Worker/Report/Cashflow.Worker.Report.csproj" />
   </Folder>
 </Solution>

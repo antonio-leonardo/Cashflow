@@ -24,10 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Outbox\Worker\Cashflow.Back.End.Outbox.Worker.csproj" />
-    <ProjectReference Include="..\..\..\Service\Transaction\Infrastructure\Cashflow.Back.End.Service.Transaction.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\..\Shared\Messaging\Providers\RabbitMQ\DependecyInjection\Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.DependecyInjection.csproj" />
-    <ProjectReference Include="..\..\..\Worker\Balance\Cashflow.Back.End.Worker.Balance.csproj" />
+    <ProjectReference Include="..\..\..\Outbox\Worker\Cashflow.Outbox.Worker.csproj" />
+    <ProjectReference Include="..\..\..\Service\Transaction\Infrastructure\Cashflow.Service.Transaction.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging\Providers\RabbitMQ\DependecyInjection\Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection.csproj" />
+    <ProjectReference Include="..\..\..\Worker\Balance\Cashflow.Worker.Balance.csproj" />
   </ItemGroup>
 
   <ItemGroup>

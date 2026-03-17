@@ -1,4 +1,4 @@
-namespace Cashflow.Back.End.Service.Transaction.Domain
+namespace Cashflow.Service.Transaction.Domain
 {
     public readonly record struct TransactionId(Guid Value);
 

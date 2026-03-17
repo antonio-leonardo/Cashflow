@@ -1,7 +1,7 @@
-using Cashflow.Back.End.Service.Transaction.Domain;
-using Cashflow.Back.End.Shared.Messaging.Abstractions;
+using Cashflow.Service.Transaction.Domain;
+using Cashflow.Shared.Messaging.Abstractions;
 
-namespace Cashflow.Back.End.Worker.Balance
+namespace Cashflow.Worker.Balance
 {
     /// <summary>
     /// Worker de leitura CQRS:

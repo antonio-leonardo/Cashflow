@@ -7,8 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Shared\Logging\Cashflow.Back.End.Shared.Logging.csproj" />
-    <ProjectReference Include="..\Domain\Cashflow.Back.End.Service.Transaction.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Events\Cashflow.Shared.Events.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,3 +1,4 @@
-namespace Cashflow.Back.End.Service.Transaction.Application.Queries;
-
-public sealed record GetTransactionQuery(Guid TransactionId);
+namespace Cashflow.Service.Transaction.Application.Queries
+{
+    public sealed record GetTransactionQuery(Guid TransactionId);
+}

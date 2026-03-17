@@ -1,6 +1,6 @@
-using Cashflow.Back.End.Shared.Events;
+using Cashflow.Shared.Events;
 
-namespace Cashflow.Back.End.Service.Transaction.Domain
+namespace Cashflow.Service.Transaction.Domain
 {
     public sealed class TransactionCreatedEventV1 : EventBase
     {

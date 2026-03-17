@@ -1,4 +1,4 @@
-﻿namespace Cashflow.Back.End.Service.Transaction.Application.Commands
+﻿namespace Cashflow.Service.Transaction.Application.Commands
 {
     public interface ICreateTransactionHandler
     {

@@ -1,31 +1,32 @@
-using Cashflow.Back.End.Shared.Contracts.Idempotency;
+using Cashflow.Shared.Contracts.Idempotency;
 using Microsoft.EntityFrameworkCore;
 
-namespace Cashflow.Back.End.Service.Transaction.Infrastructure.Persistence;
-
-public sealed class ProcessedEventStore : IProcessedEventStore
+namespace Cashflow.Service.Transaction.Infrastructure.Persistence
 {
-    private readonly IdempotencyDbContext _db;
-
-    public ProcessedEventStore(IdempotencyDbContext db)
+    public sealed class ProcessedEventStore : IProcessedEventStore
     {
-        _db = db;
-    }
+        private readonly IdempotencyDbContext _db;
 
-    public async Task<bool> WasProcessedAsync(Guid eventId, string consumerName, CancellationToken cancellationToken = default)
-    {
-        return await _db.ProcessedEvents
-            .AnyAsync(e => e.EventId == eventId && e.ConsumerName == consumerName, cancellationToken);
-    }
-
-    public async Task MarkProcessedAsync(Guid eventId, string consumerName, CancellationToken cancellationToken = default)
-    {
-        await _db.ProcessedEvents.AddAsync(new ProcessedEventEntity
+        public ProcessedEventStore(IdempotencyDbContext db)
         {
-            EventId = eventId,
-            ConsumerName = consumerName,
-            ProcessedAt = DateTime.UtcNow
-        }, cancellationToken);
-        await _db.SaveChangesAsync(cancellationToken);
+            _db = db;
+        }
+
+        public async Task<bool> WasProcessedAsync(Guid eventId, string consumerName, CancellationToken cancellationToken = default)
+        {
+            return await _db.ProcessedEvents
+                .AnyAsync(e => e.EventId == eventId && e.ConsumerName == consumerName, cancellationToken);
+        }
+
+        public async Task MarkProcessedAsync(Guid eventId, string consumerName, CancellationToken cancellationToken = default)
+        {
+            await _db.ProcessedEvents.AddAsync(new ProcessedEventEntity
+            {
+                EventId = eventId,
+                ConsumerName = consumerName,
+                ProcessedAt = DateTime.UtcNow
+            }, cancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
     }
 }

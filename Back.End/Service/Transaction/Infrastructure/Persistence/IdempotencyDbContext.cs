@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Cashflow.Back.End.Service.Transaction.Infrastructure.Persistence
+namespace Cashflow.Service.Transaction.Infrastructure.Persistence
 {
     public sealed class IdempotencyDbContext : DbContext
     {

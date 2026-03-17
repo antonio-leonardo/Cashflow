@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Service\Transaction\Infrastructure\Cashflow.Back.End.Service.Transaction.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Service\Transaction\Infrastructure\Cashflow.Service.Transaction.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

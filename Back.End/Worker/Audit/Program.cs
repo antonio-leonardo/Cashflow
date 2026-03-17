@@ -1,5 +1,5 @@
-using Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.DependecyInjection;
-using Cashflow.Back.End.Worker.Audit;
+using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
+using Cashflow.Worker.Audit;
 using MongoDB.Driver;
 
 var builder = Host.CreateApplicationBuilder(args);

@@ -1,12 +1,12 @@
-﻿using Cashflow.Back.End.Shared.Events;
-using Cashflow.Back.End.Shared.Messaging.Abstractions;
+﻿using Cashflow.Shared.Events;
+using Cashflow.Shared.Messaging.Abstractions;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
 
-namespace Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.MessageBus
+namespace Cashflow.Shared.Messaging.RabbitMQ.MessageBus
 {
     public class RabbitMqBus : IMessageBus
     {

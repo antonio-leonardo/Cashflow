@@ -16,9 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Shared\Contracts\Cashflow.Back.End.Shared.Contracts.csproj" />
-    <ProjectReference Include="..\..\..\Shared\Logging\Cashflow.Back.End.Shared.Logging.csproj" />
-    <ProjectReference Include="..\Application\Cashflow.Back.End.Service.Transaction.Application.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Contracts\Cashflow.Shared.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Logging\Cashflow.Shared.Logging.csproj" />
+    <ProjectReference Include="..\Application\Cashflow.Service.Transaction.Application.csproj" />
   </ItemGroup>
 
 </Project>

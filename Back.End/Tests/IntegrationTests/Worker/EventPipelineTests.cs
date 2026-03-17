@@ -1,5 +1,5 @@
-﻿using Cashflow.Back.End.Service.Transaction.Domain;
-using Cashflow.Back.End.Shared.Messaging.Abstractions;
+﻿using Cashflow.Service.Transaction.Domain;
+using Cashflow.Shared.Messaging.Abstractions;
 using Infrastructure.Test;
 using RabbitMQ.Client;
 using System.Text;

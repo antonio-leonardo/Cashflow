@@ -1,14 +1,14 @@
-﻿using Cashflow.Back.End.Service.Transaction.Application.Commands;
-using Cashflow.Back.End.Service.Transaction.Application.Queries;
-using Cashflow.Back.End.Service.Transaction.Infrastructure.Logging;
-using Cashflow.Back.End.Service.Transaction.Infrastructure.Persistence;
-using Cashflow.Back.End.Shared.Contracts.Idempotency;
-using Cashflow.Back.End.Shared.Logging;
+﻿using Cashflow.Service.Transaction.Application.Commands;
+using Cashflow.Service.Transaction.Application.Queries;
+using Cashflow.Service.Transaction.Infrastructure.Logging;
+using Cashflow.Service.Transaction.Infrastructure.Persistence;
+using Cashflow.Shared.Contracts.Idempotency;
+using Cashflow.Shared.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Cashflow.Back.End.Service.Transaction.Providers.Postgres.DependencyInjection
+namespace Cashflow.Service.Transaction.Postgres.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {

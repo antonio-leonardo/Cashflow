@@ -1,5 +1,5 @@
-using Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.DependecyInjection;
-using Cashflow.Back.End.Worker.Balance;
+using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
+using Cashflow.Worker.Balance;
 using StackExchange.Redis;
 
 var builder = Host.CreateApplicationBuilder(args);

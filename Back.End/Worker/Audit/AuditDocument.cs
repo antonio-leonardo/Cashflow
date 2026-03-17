@@ -1,4 +1,4 @@
-﻿namespace Cashflow.Back.End.Worker.Audit
+﻿namespace Cashflow.Worker.Audit
 {
     public class AuditDocument
     {

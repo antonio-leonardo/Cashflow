@@ -1,7 +1,7 @@
-﻿using Cashflow.Back.End.Shared.NoSql.Abstractions;
+﻿using Cashflow.Shared.NoSql.Abstractions;
 using MongoDB.Driver;
 
-namespace Cashflow.Shared.NoSql.Providers.MongoDB
+namespace Cashflow.Shared.NoSql.MongoDB
 {
     public class MongoQueryRepository<T> : INoSqlQueryRepository<T>
     {

@@ -1,7 +1,7 @@
-using Cashflow.Back.End.Service.Transaction.Domain;
-using Cashflow.Back.End.Shared.Messaging.Abstractions;
+using Cashflow.Service.Transaction.Domain;
+using Cashflow.Shared.Messaging.Abstractions;
 
-namespace Cashflow.Back.End.Worker.Report
+namespace Cashflow.Worker.Report
 {
     public class Worker : BackgroundService
     {

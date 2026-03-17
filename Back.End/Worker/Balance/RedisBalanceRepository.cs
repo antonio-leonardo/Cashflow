@@ -1,8 +1,8 @@
-﻿using Cashflow.Back.End.Service.Transaction.Domain;
-using Cashflow.Shared.NoSql.Providers.Redis;
+﻿using Cashflow.Service.Transaction.Domain;
+using Cashflow.Shared.NoSql.Redis;
 using StackExchange.Redis;
 
-namespace Cashflow.Back.End.Worker.Balance
+namespace Cashflow.Worker.Balance
 {
     public class RedisBalanceRepository : RedisCommandRepository<TransactionCreatedEventV1>
     {

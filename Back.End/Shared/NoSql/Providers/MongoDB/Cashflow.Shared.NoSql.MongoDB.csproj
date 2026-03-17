@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Abstractions\Cashflow.Back.End.Shared.NoSql.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Abstractions\Cashflow.Shared.NoSql.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

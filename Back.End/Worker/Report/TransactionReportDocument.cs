@@ -1,4 +1,4 @@
-﻿namespace Cashflow.Back.End.Worker.Report
+﻿namespace Cashflow.Worker.Report
 {
     public class TransactionReportDocument
     {

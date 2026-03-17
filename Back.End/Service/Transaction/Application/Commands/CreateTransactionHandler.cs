@@ -1,6 +1,6 @@
-﻿using Cashflow.Back.End.Shared.Logging;
+﻿using Cashflow.Shared.Logging;
 
-namespace Cashflow.Back.End.Service.Transaction.Application.Commands
+namespace Cashflow.Service.Transaction.Application.Commands
 {
     public sealed class CreateTransactionHandler : ICreateTransactionHandler
     {
@@ -18,7 +18,7 @@ namespace Cashflow.Back.End.Service.Transaction.Application.Commands
 
         public async Task HandleAsync(CreateTransactionCommand command, CancellationToken cancellationToken = default)
         {
-            var transaction = Cashflow.Back.End.Service.Transaction.Domain.Transaction.Create(
+            var transaction = Cashflow.Service.Transaction.Domain.Transaction.Create(
                 command.TransactionId,
                 command.AccountId,
                 command.Amount,

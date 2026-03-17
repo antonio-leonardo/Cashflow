@@ -1,9 +1,9 @@
-﻿using Cashflow.Back.End.Shared.Messaging.Abstractions;
-using Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.MessageBus;
+﻿using Cashflow.Shared.Messaging.Abstractions;
+using Cashflow.Shared.Messaging.RabbitMQ.MessageBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.DependecyInjection
+namespace Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection
 {
     public static class RabbitMQServiceCollectionExtensions
     {

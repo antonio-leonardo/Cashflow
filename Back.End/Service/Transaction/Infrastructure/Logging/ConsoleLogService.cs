@@ -1,17 +1,17 @@
-using Cashflow.Back.End.Shared.Logging;
+using Cashflow.Shared.Logging;
 
-namespace Cashflow.Back.End.Service.Transaction.Infrastructure.Logging;
-
-public sealed class ConsoleLogService : ILogService
+namespace Cashflow.Service.Transaction.Infrastructure.Logging
 {
-    public void Log(
-        LogLevel level,
-        string message,
-        LogContext context,
-        Exception? exception = null,
-        IReadOnlyDictionary<string, object>? additionalData = null)
+    public sealed class ConsoleLogService : ILogService
     {
-        var parts = new List<string>
+        public void Log(
+            LogLevel level,
+            string message,
+            LogContext context,
+            Exception? exception = null,
+            IReadOnlyDictionary<string, object>? additionalData = null)
+        {
+            var parts = new List<string>
         {
             $"[{level}]",
             context.ServiceName,
@@ -20,12 +20,13 @@ public sealed class ConsoleLogService : ILogService
             context.UserId ?? "-",
             message
         };
-        if (exception is not null)
-            parts.Add(exception.ToString());
-        if (additionalData is { Count: > 0 })
-            parts.Add(string.Join(", ", additionalData.Select(kv => $"{kv.Key}={kv.Value}")));
+            if (exception is not null)
+                parts.Add(exception.ToString());
+            if (additionalData is { Count: > 0 })
+                parts.Add(string.Join(", ", additionalData.Select(kv => $"{kv.Key}={kv.Value}")));
 
-        var line = string.Join(" | ", parts);
-        Console.WriteLine(line);
+            var line = string.Join(" | ", parts);
+            Console.WriteLine(line);
+        }
     }
 }

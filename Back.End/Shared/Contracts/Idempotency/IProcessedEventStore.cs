@@ -1,4 +1,4 @@
-namespace Cashflow.Back.End.Shared.Contracts.Idempotency
+namespace Cashflow.Shared.Contracts.Idempotency
 {
     /// <summary>
     /// Armazenamento de eventos já processados para consumidores idempotentes

@@ -1,61 +1,62 @@
-using Cashflow.Back.End.Shared.Events;
+using Cashflow.Shared.Events;
 
-namespace Cashflow.Back.End.Service.Transaction.Domain;
-
-public sealed class Transaction
+namespace Cashflow.Service.Transaction.Domain
 {
-    public TransactionId Id { get; }
-    public AccountId AccountId { get; }
-    public Money Amount { get; }
-    public TransactionType Type { get; }
-    public TransactionStatus Status { get; private set; }
-    public DateTime CreatedAtUtc { get; }
-
-    private readonly List<IEvent> _domainEvents = new();
-    public IReadOnlyCollection<IEvent> DomainEvents => _domainEvents.AsReadOnly();
-
-    private Transaction(
-        TransactionId id,
-        AccountId accountId,
-        Money amount,
-        TransactionType type,
-        DateTime createdAtUtc)
+    public sealed class Transaction
     {
-        Id = id;
-        AccountId = accountId;
-        Amount = amount;
-        Type = type;
-        Status = TransactionStatus.Created;
-        CreatedAtUtc = createdAtUtc;
+        public TransactionId Id { get; }
+        public AccountId AccountId { get; }
+        public Money Amount { get; }
+        public TransactionType Type { get; }
+        public TransactionStatus Status { get; private set; }
+        public DateTime CreatedAtUtc { get; }
 
-        AddDomainEvent(new TransactionCreatedEventV1(
-            Id.Value,
-            AccountId.Value,
-            Amount.Value,
-            Amount.Currency));
-    }
+        private readonly List<IEvent> _domainEvents = new();
+        public IReadOnlyCollection<IEvent> DomainEvents => _domainEvents.AsReadOnly();
 
-    public static Transaction Create(
-        Guid transactionId,
-        Guid accountId,
-        decimal amount,
-        string currency,
-        TransactionType type,
-        DateTime? createdAtUtc = null)
-    {
-        if (amount <= 0)
+        private Transaction(
+            TransactionId id,
+            AccountId accountId,
+            Money amount,
+            TransactionType type,
+            DateTime createdAtUtc)
         {
-            throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be greater than zero.");
+            Id = id;
+            AccountId = accountId;
+            Amount = amount;
+            Type = type;
+            Status = TransactionStatus.Created;
+            CreatedAtUtc = createdAtUtc;
+
+            AddDomainEvent(new TransactionCreatedEventV1(
+                Id.Value,
+                AccountId.Value,
+                Amount.Value,
+                Amount.Currency));
         }
 
-        var money = new Money(amount, currency);
-        return new Transaction(
-            new TransactionId(transactionId),
-            new AccountId(accountId),
-            money,
-            type,
-            createdAtUtc ?? DateTime.UtcNow);
-    }
+        public static Transaction Create(
+            Guid transactionId,
+            Guid accountId,
+            decimal amount,
+            string currency,
+            TransactionType type,
+            DateTime? createdAtUtc = null)
+        {
+            if (amount <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be greater than zero.");
+            }
 
-    private void AddDomainEvent(IEvent @event) => _domainEvents.Add(@event);
+            var money = new Money(amount, currency);
+            return new Transaction(
+                new TransactionId(transactionId),
+                new AccountId(accountId),
+                money,
+                type,
+                createdAtUtc ?? DateTime.UtcNow);
+        }
+
+        private void AddDomainEvent(IEvent @event) => _domainEvents.Add(@event);
+    }
 }

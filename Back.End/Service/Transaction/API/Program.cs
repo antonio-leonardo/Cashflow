@@ -1,8 +1,8 @@
-using Cashflow.Back.End.Service.Transaction.Application.Commands;
-using Cashflow.Back.End.Service.Transaction.Application.Queries;
-using Cashflow.Back.End.Service.Transaction.Domain;
-using Cashflow.Back.End.Service.Transaction.Infrastructure.Persistence;
-using Cashflow.Back.End.Service.Transaction.Providers.Postgres.DependencyInjection;
+using Cashflow.Service.Transaction.Application.Commands;
+using Cashflow.Service.Transaction.Application.Queries;
+using Cashflow.Service.Transaction.Domain;
+using Cashflow.Service.Transaction.Infrastructure.Persistence;
+using Cashflow.Service.Transaction.Postgres.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 

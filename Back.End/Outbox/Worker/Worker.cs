@@ -1,12 +1,12 @@
-using Cashflow.Back.End.Service.Transaction.Domain;
-using Cashflow.Back.End.Service.Transaction.Infrastructure.Persistence;
-using Cashflow.Back.End.Shared.Events;
-using Cashflow.Back.End.Shared.Logging;
-using Cashflow.Back.End.Shared.Messaging.Abstractions;
+using Cashflow.Service.Transaction.Domain;
+using Cashflow.Service.Transaction.Infrastructure.Persistence;
+using Cashflow.Shared.Events;
+using Cashflow.Shared.Logging;
+using Cashflow.Shared.Messaging.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
-namespace Cashflow.Back.End.Outbox.Worker
+namespace Cashflow.Outbox.Worker
 {
     public class Worker : BackgroundService
     {
@@ -78,7 +78,7 @@ namespace Cashflow.Back.End.Outbox.Worker
                     catch (Exception ex)
                     {
                         logService.Log(
-                            Cashflow.Back.End.Shared.Logging.LogLevel.Error,
+                            Cashflow.Shared.Logging.LogLevel.Error,
                             "Erro ao processar outbox",
                             new LogContext("OutboxWorker", null, null, null),
                             ex);
@@ -105,7 +105,7 @@ namespace Cashflow.Back.End.Outbox.Worker
         //        null);
 
         //    _logService.Log(
-        //        Cashflow.Back.End.Shared.Logging.LogLevel.Error,
+        //        Cashflow.Shared.Logging.LogLevel.Error,
         //        message,
         //        context,
         //        exception);

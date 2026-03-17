@@ -1,8 +1,8 @@
-using Cashflow.Back.End.Shared.Events;
-using Cashflow.Back.End.Shared.Logging;
-using Cashflow.Back.End.Shared.Messaging.Abstractions;
+using Cashflow.Shared.Events;
+using Cashflow.Shared.Logging;
+using Cashflow.Shared.Messaging.Abstractions;
 
-namespace Cashflow.Back.End.Outbox.Worker
+namespace Cashflow.Outbox.Worker
 {
     public sealed class ConsoleMessageBus : IMessageBus
     {
@@ -23,7 +23,7 @@ namespace Cashflow.Back.End.Outbox.Worker
                 UserId: null);
 
             _logService.Log(
-                Cashflow.Back.End.Shared.Logging.LogLevel.Information,
+                Cashflow.Shared.Logging.LogLevel.Information,
                 $"Publishing event {envelope.Event.GetType().Name}",
                 context);
 

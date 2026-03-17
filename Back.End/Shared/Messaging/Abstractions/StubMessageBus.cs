@@ -1,6 +1,6 @@
-using Cashflow.Back.End.Shared.Events;
+using Cashflow.Shared.Events;
 
-namespace Cashflow.Back.End.Shared.Messaging.Abstractions
+namespace Cashflow.Shared.Messaging.Abstractions
 {
     /// <summary>
     /// Implementação stub de IMessageBus para workers: Publish no-op, Subscribe bloqueia até cancelamento.

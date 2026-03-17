@@ -1,5 +1,5 @@
-﻿using Cashflow.Back.End.Service.Transaction.Providers.Postgres.DependencyInjection;
-using Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.DependecyInjection;
+﻿using Cashflow.Service.Transaction.Postgres.DependencyInjection;
+using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
 using Infrastructure.Test;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -43,11 +43,11 @@ namespace E2E.Tests
                 {
                     return ConnectionMultiplexer.Connect(_infra.RedisContainerFixture.ConnectionString);
                 });
-                services.AddScoped<Cashflow.Back.End.Worker.Balance.RedisBalanceRepository>();
-                services.AddScoped<Cashflow.Back.End.Worker.Balance.TransactionCreatedHandler>();
+                services.AddScoped<Cashflow.Worker.Balance.RedisBalanceRepository>();
+                services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
 
-                services.AddHostedService<Cashflow.Back.End.Outbox.Worker.Worker>();
-                services.AddHostedService<Cashflow.Back.End.Worker.Balance.Worker>();
+                services.AddHostedService<Cashflow.Outbox.Worker.Worker>();
+                services.AddHostedService<Cashflow.Worker.Balance.Worker>();
             });
         }
     }

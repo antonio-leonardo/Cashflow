@@ -1,6 +1,6 @@
-﻿using Cashflow.Back.End.Service.Transaction.Domain;
+﻿using Cashflow.Service.Transaction.Domain;
 
-namespace Cashflow.Back.End.Worker.Balance
+namespace Cashflow.Worker.Balance
 {
     public class TransactionCreatedHandler
     {

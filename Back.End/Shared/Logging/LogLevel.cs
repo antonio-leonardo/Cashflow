@@ -1,4 +1,4 @@
-﻿namespace Cashflow.Back.End.Shared.Logging
+﻿namespace Cashflow.Shared.Logging
 {
     public enum LogLevel
     {

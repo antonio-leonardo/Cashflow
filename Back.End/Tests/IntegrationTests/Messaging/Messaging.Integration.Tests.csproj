@@ -19,8 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Service\Transaction\Domain\Cashflow.Back.End.Service.Transaction.Domain.csproj" />
-    <ProjectReference Include="..\..\..\Shared\Messaging\Abstractions\Cashflow.Back.End.Shared.Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Service\Transaction\Domain\Cashflow.Service.Transaction.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging\Abstractions\Cashflow.Shared.Messaging.Abstractions.csproj" />
     <ProjectReference Include="..\..\Shared\Infrastructure.Test\Infrastructure.Test.csproj" />
   </ItemGroup>
 

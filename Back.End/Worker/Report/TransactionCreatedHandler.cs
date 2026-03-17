@@ -1,8 +1,8 @@
-﻿using Cashflow.Back.End.Service.Transaction.Domain;
-using Cashflow.Shared.NoSql.Providers.MongoDB;
+﻿using Cashflow.Service.Transaction.Domain;
+using Cashflow.Shared.NoSql.MongoDB;
 using MongoDB.Driver;
 
-namespace Cashflow.Back.End.Worker.Report
+namespace Cashflow.Worker.Report
 {
     public class TransactionCreatedHandler : MongoCommandRepository<TransactionReportDocument>
     {
