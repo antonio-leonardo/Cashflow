@@ -22,6 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Service\Transaction\API\Cashflow.Back.End.Service.Transaction.API.csproj" />
+    <ProjectReference Include="..\..\Shared\Infrastructure.Test\Infrastructure.Test.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 

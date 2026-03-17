@@ -1,0 +1,54 @@
+﻿using Cashflow.Back.End.Service.Transaction.Providers.Postgres.DependencyInjection;
+using Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.DependecyInjection;
+using Infrastructure.Test;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
+
+namespace E2E.Tests
+{
+    public class CustomWebApplicationFactory : WebApplicationFactory<Program>
+    {
+        private readonly CompleteInfrastructureFixture _infra;
+
+        public CustomWebApplicationFactory(CompleteInfrastructureFixture infra)
+        {
+            _infra = infra;
+        }
+
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            builder.ConfigureAppConfiguration((context, config) =>
+            {
+                var settings = new Dictionary<string, string>
+                {
+                    ["RabbitMq:Host"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Host,
+                    ["RabbitMq:Port"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Port.ToString(),
+                    ["RabbitMq:Username"] = "guest",
+                    ["RabbitMq:Password"] = "guest",
+
+                    ["Redis:Connection"] = _infra.RedisContainerFixture.ConnectionString,
+                    ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString
+                };
+                config.AddInMemoryCollection(settings!);
+            });
+            builder.ConfigureServices(services =>
+            {
+                services.AddSqlDatabaseDependencyInjection(services.BuildServiceProvider().GetRequiredService<IConfiguration>());
+                services.AddMessagingDependencyInjection(services.BuildServiceProvider().GetRequiredService<IConfiguration>());
+
+                services.AddSingleton<IConnectionMultiplexer>(sp =>
+                {
+                    return ConnectionMultiplexer.Connect(_infra.RedisContainerFixture.ConnectionString);
+                });
+                services.AddScoped<Cashflow.Back.End.Worker.Balance.RedisBalanceRepository>();
+                services.AddScoped<Cashflow.Back.End.Worker.Balance.TransactionCreatedHandler>();
+
+                services.AddHostedService<Cashflow.Back.End.Outbox.Worker.Worker>();
+                services.AddHostedService<Cashflow.Back.End.Worker.Balance.Worker>();
+            });
+        }
+    }
+}

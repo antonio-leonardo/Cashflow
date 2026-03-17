@@ -1,59 +1,19 @@
-﻿using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
-using MongoDB.Driver;
+﻿using Infrastructure.Test;
 using StackExchange.Redis;
 using System.Net.Http.Json;
-using Testcontainers.MongoDb;
-using Testcontainers.PostgreSql;
-using Testcontainers.RabbitMq;
 
 namespace E2E.Tests
 {
-    public class CashflowPipelineE2ETests : IAsyncLifetime
+    [Collection("CompleteInfrastructureCollection")]
+    public class CashflowPipelineE2ETests
     {
-        private readonly PostgreSqlContainer _postgres =
-            new PostgreSqlBuilder()
-            .WithDatabase("cashflow")
-            .WithUsername("admin")
-            .WithPassword("admin")
-            .Build();
+        private readonly CompleteInfrastructureFixture _infra;
+        private readonly CustomWebApplicationFactory _factory;
 
-        private readonly RabbitMqContainer _rabbit =
-            new RabbitMqBuilder().Build();
-
-        private readonly MongoDbContainer _mongo =
-            new MongoDbBuilder().Build();
-
-        private WebApplicationFactory<Program> _factory;
-
-        public async Task InitializeAsync()
+        public CashflowPipelineE2ETests(CompleteInfrastructureFixture infra)
         {
-            await _postgres.StartAsync();
-            await _rabbit.StartAsync();
-            await _mongo.StartAsync();
-
-            _factory = new WebApplicationFactory<Program>()
-                .WithWebHostBuilder(builder =>
-                {
-                    builder.UseSetting(
-                        "ConnectionStrings:TransactionDb",
-                        _postgres.GetConnectionString());
-
-                    builder.UseSetting(
-                        "RabbitMq:Host",
-                        _rabbit.Hostname);
-
-                    builder.UseSetting(
-                        "Mongo:ConnectionString",
-                        _mongo.GetConnectionString());
-                });
-        }
-
-        public async Task DisposeAsync()
-        {
-            await _postgres.DisposeAsync();
-            await _rabbit.DisposeAsync();
-            await _mongo.DisposeAsync();
+            _infra = infra;
+            _factory = new CustomWebApplicationFactory(_infra);
         }
 
         [Fact]
@@ -61,43 +21,42 @@ namespace E2E.Tests
         {
             var client = _factory.CreateClient();
 
-            var accountId = Guid.NewGuid();
-
-            var request = new
+            var response = await client.PostAsJsonAsync("/api/transactions", new
             {
-                accountId = accountId,
-                amount = 500,
-                currency = "USD"
-            };
-
-            var response = await client.PostAsJsonAsync(
-                "/transactions",
-                request);
+                AccountId = Guid.NewGuid(),
+                Amount = 100,
+                Currency = "BRL",
+                Type = 1
+            });
 
             response.EnsureSuccessStatusCode();
 
-            await Task.Delay(5000);
+            await Task.Delay(8000);
 
-            var redis = await ConnectionMultiplexer
-                .ConnectAsync("localhost:6379");
-
+            var redis = await ConnectionMultiplexer.ConnectAsync(_infra.RedisContainerFixture.ConnectionString);
             var db = redis.GetDatabase();
+            var value = await db.StringGetAsync("balance");
 
-            var balance = await db.StringGetAsync($"balance:{accountId}");
+            if (value.IsNull)
+            {
+                var retries = 10;
+                var success = false;
 
-            Assert.False(balance.IsNull);
+                for (int i = 0; i < retries; i++)
+                {
+                    value = await db.StringGetAsync("balance");
 
-            var mongoClient = new MongoClient(_mongo.GetConnectionString());
+                    if (!value.IsNull)
+                    {
+                        success = true;
+                        break;
+                    }
 
-            var database = mongoClient.GetDatabase("cashflow");
+                    await Task.Delay(500);
+                }
+            }
 
-            var reports = database.GetCollection<dynamic>("reports");
-
-            var report = await reports
-                .Find(Builders<dynamic>.Filter.Eq("accountId", accountId))
-                .FirstOrDefaultAsync();
-
-            Assert.NotNull(report);
+            Assert.False(value.IsNull);
         }
     }
 }

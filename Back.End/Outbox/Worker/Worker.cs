@@ -8,17 +8,33 @@ using System.Text.Json;
 
 namespace Cashflow.Back.End.Outbox.Worker
 {
-    public class Worker(
-    TransactionDbContext dbContext,
-    IMessageBus messageBus,
-    ILogService logService) : BackgroundService
+    public class Worker : BackgroundService
     {
+        private readonly IServiceProvider _provider;
+        private readonly IMessageBus _messageBus;
+
         private const int BatchSize = 50;
+
+        public Worker(
+            IServiceProvider provider,
+            IMessageBus messageBus)
+        {
+            _provider = provider;
+            _messageBus = messageBus;
+        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
+                using var scope = _provider.CreateScope();
+
+                var dbContext = scope.ServiceProvider
+                    .GetRequiredService<TransactionDbContext>();
+
+                var logService = scope.ServiceProvider
+                    .GetRequiredService<ILogService>();
+
                 var pending = await dbContext.OutboxEvents
                     .Where(e => e.ProcessedAt == null)
                     .OrderBy(e => e.CreatedAt)
@@ -27,7 +43,7 @@ namespace Cashflow.Back.End.Outbox.Worker
 
                 if (pending.Count == 0)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+                    await Task.Delay(2000, stoppingToken);
                     continue;
                 }
 
@@ -36,45 +52,36 @@ namespace Cashflow.Back.End.Outbox.Worker
                     try
                     {
                         var eventType = ResolveEventType(outboxEvent.EventType);
-                        if (eventType is null)
-                        {
-                            LogError($"Unknown event type '{outboxEvent.EventType}' in outbox.", null);
-                            outboxEvent.ProcessedAt = DateTime.UtcNow;
-                            continue;
-                        }
 
                         var deserialized = (IEvent?)JsonSerializer.Deserialize(
                             outboxEvent.Payload,
-                            eventType);
-
-                        if (deserialized is null)
-                        {
-                            LogError($"Failed to deserialize payload for event '{outboxEvent.EventType}'.", null);
-                            outboxEvent.ProcessedAt = DateTime.UtcNow;
-                            continue;
-                        }
+                            eventType!);
 
                         var metadata = new MessageMetadata(
-                            CorrelationId: outboxEvent.EventId.ToString(),
-                            CausationId: outboxEvent.EventId.ToString(),
-                            Source: "OutboxWorker",
-                            TenantId: null,
-                            CreatedAtUtc: DateTime.UtcNow);
+                            outboxEvent.EventId.ToString(),
+                            outboxEvent.EventId.ToString(),
+                            "OutboxWorker",
+                            null,
+                            DateTime.UtcNow);
 
-                        var envelopeType = typeof(EventEnvelope<>).MakeGenericType(eventType);
-                        var envelope = Activator.CreateInstance(envelopeType, deserialized, metadata)!;
+                        var envelopeType = typeof(EventEnvelope<>).MakeGenericType(eventType!);
+                        var envelope = Activator.CreateInstance(envelopeType, deserialized!, metadata)!;
 
-                        var publishMethod = typeof(IMessagePublisher)
-                            .GetMethod(nameof(IMessagePublisher.PublishAsync))!
-                            .MakeGenericMethod(eventType);
+                        var publishMethod = typeof(IMessageBus)
+                            .GetMethod(nameof(IMessageBus.PublishAsync))!
+                            .MakeGenericMethod(eventType!);
 
-                        await (Task)publishMethod.Invoke(messageBus, new[] { envelope, stoppingToken })!;
+                        await (Task)publishMethod.Invoke(_messageBus, new[] { envelope, stoppingToken })!;
 
                         outboxEvent.ProcessedAt = DateTime.UtcNow;
                     }
                     catch (Exception ex)
                     {
-                        LogError("Error processing outbox event.", ex);
+                        logService.Log(
+                            Cashflow.Back.End.Shared.Logging.LogLevel.Error,
+                            "Erro ao processar outbox",
+                            new LogContext("OutboxWorker", null, null, null),
+                            ex);
                     }
                 }
 
@@ -89,19 +96,19 @@ namespace Cashflow.Back.End.Outbox.Worker
                 $"Cashflow.Transaction.Domain.Events.{eventTypeName}");
         }
 
-        private void LogError(string message, Exception? exception)
-        {
-            var context = new LogContext(
-                ServiceName: "OutboxWorker",
-                CorrelationId: null,
-                TransactionId: null,
-                UserId: null);
+        //private void LogError(string message, Exception? exception)
+        //{
+        //    var context = new LogContext(
+        //        "OutboxWorker",
+        //        null,
+        //        null,
+        //        null);
 
-            logService.Log(
-                Cashflow.Back.End.Shared.Logging.LogLevel.Error,
-                message,
-                context,
-                exception);
-        }
+        //    _logService.Log(
+        //        Cashflow.Back.End.Shared.Logging.LogLevel.Error,
+        //        message,
+        //        context,
+        //        exception);
+        //}
     }
 }

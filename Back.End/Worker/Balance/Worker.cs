@@ -24,6 +24,8 @@ namespace Cashflow.Back.End.Worker.Balance
             await _bus.SubscribeAsync<TransactionCreatedEventV1>(
                 HandleTransactionCreated,
                 stoppingToken);
+
+            await Task.Delay(Timeout.Infinite, stoppingToken);
         }
 
         private async Task HandleTransactionCreated(

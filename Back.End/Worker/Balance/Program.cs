@@ -12,6 +12,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
     return ConnectionMultiplexer.Connect(connection);
 });
+builder.Services.AddScoped<RedisBalanceRepository>();
 builder.Services.AddScoped<TransactionCreatedHandler>();
 builder.Services.AddHostedService<Worker>();
 

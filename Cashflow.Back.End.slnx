@@ -86,6 +86,9 @@
   <Folder Name="/tests/IntegrationTests/Worker/">
     <Project Path="Back.End/Tests/IntegrationTests/Worker/Worker.Integration.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/Shared/">
+    <Project Path="Back.End/Tests/Shared/Infrastructure.Test/Infrastructure.Test.csproj" Id="eab3b4aa-ad65-4e1a-bb5e-a02fd0a06419" />
+  </Folder>
   <Folder Name="/Worker/" />
   <Folder Name="/Worker/Audit/">
     <Project Path="Back.End/Worker/Audit/Cashflow.Back.End.Worker.Audit.csproj" />

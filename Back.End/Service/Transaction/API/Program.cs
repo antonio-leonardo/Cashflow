@@ -28,6 +28,21 @@ if (app.Environment.IsDevelopment())
     }
 }
 
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    using var scope = app.Services.CreateScope();
+
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    var db = scope.ServiceProvider.GetRequiredService<TransactionDbContext>();
+    await db.Database.EnsureCreatedAsync();
+    logger.LogInformation("TransactionDbContext initialized");
+
+    var idempotencyDb = scope.ServiceProvider.GetRequiredService<IdempotencyDbContext>();
+    await idempotencyDb.Database.EnsureCreatedAsync();
+    logger.LogInformation("IdempotencyDbContext initialized");
+}
+
 app.UseHttpsRedirection();
 
 app.MapPost("/api/transactions", async (

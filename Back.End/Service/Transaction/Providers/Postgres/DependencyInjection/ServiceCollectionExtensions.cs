@@ -17,7 +17,7 @@ namespace Cashflow.Back.End.Service.Transaction.Providers.Postgres.DependencyInj
             IConfiguration configuration)
         {
             var connectionString =
-                configuration.GetConnectionString("TransactionDb")
+                configuration.GetConnectionString("Postgres")
                 ?? throw new InvalidOperationException(
                     "Connection string 'TransactionDb' not configured.");
 

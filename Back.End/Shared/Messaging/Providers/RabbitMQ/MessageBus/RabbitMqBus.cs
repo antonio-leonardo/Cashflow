@@ -25,8 +25,8 @@ namespace Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.MessageBus
                 Password = config.Password
             };
 
-            _connection = factory.CreateConnectionAsync().Result;
-            _channel = _connection.CreateChannelAsync().Result;
+            _connection = factory.CreateConnectionAsync().GetAwaiter().GetResult();
+            _channel = _connection.CreateChannelAsync().GetAwaiter().GetResult();
         }
 
         public async Task PublishAsync<TEvent>(
@@ -36,11 +36,7 @@ namespace Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.MessageBus
         {
             var queueName = typeof(TEvent).Name;
 
-            await _channel.QueueDeclareAsync(
-                queueName,
-                durable: true,
-                exclusive: false,
-                autoDelete: false);
+            await _channel.QueueDeclareAsync(queueName, true, false, false);
 
             var json = JsonSerializer.Serialize(envelope);
             var body = Encoding.UTF8.GetBytes(json);
@@ -58,27 +54,25 @@ namespace Cashflow.Back.End.Shared.Messaging.Providers.RabbitMQ.MessageBus
         {
             var queueName = typeof(TEvent).Name;
 
-            await _channel.QueueDeclareAsync(
-                queueName,
-                durable: true,
-                exclusive: false,
-                autoDelete: false);
+            await _channel.QueueDeclareAsync(queueName, true, false, false);
 
             var consumer = new AsyncEventingBasicConsumer(_channel);
 
-            consumer.ReceivedAsync += async (sender, args) =>
+            consumer.ReceivedAsync += async (_, args) =>
             {
                 var json = Encoding.UTF8.GetString(args.Body.ToArray());
-
                 var envelope = JsonSerializer.Deserialize<EventEnvelope<TEvent>>(json);
 
                 if (envelope != null)
+                {
                     await handler(envelope, cancellationToken);
+                    await _channel.BasicAckAsync(args.DeliveryTag, false);
+                }
             };
 
             await _channel.BasicConsumeAsync(
                 queueName,
-                autoAck: true,
+                autoAck: false,
                 consumer: consumer);
         }
     }

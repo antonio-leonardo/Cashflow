@@ -1,31 +1,20 @@
 ﻿using Cashflow.Back.End.Service.Transaction.Domain;
 using Cashflow.Back.End.Shared.Messaging.Abstractions;
+using Infrastructure.Test;
 using RabbitMQ.Client;
 using System.Text;
 using System.Text.Json;
-using Testcontainers.MongoDb;
-using Testcontainers.RabbitMq;
 
 namespace Worker.Integration.Tests
 {
-    public class EventPipelineTests : IAsyncLifetime
+    [Collection("RabbitMqCollection")]
+    public class EventPipelineTests
     {
-        private readonly RabbitMqContainer _rabbit =
-            new RabbitMqBuilder().Build();
+        private readonly RabbitMqContainerFixture _rabbitMqFixture;
 
-        private readonly MongoDbContainer _mongo =
-            new MongoDbBuilder().Build();
-
-        public async Task InitializeAsync()
+        public EventPipelineTests(RabbitMqContainerFixture rabbitMqFixture)
         {
-            await _rabbit.StartAsync();
-            await _mongo.StartAsync();
-        }
-
-        public async Task DisposeAsync()
-        {
-            await _rabbit.DisposeAsync();
-            await _mongo.DisposeAsync();
+            _rabbitMqFixture = rabbitMqFixture;
         }
 
         [Fact]
@@ -33,7 +22,7 @@ namespace Worker.Integration.Tests
         {
             var factory = new ConnectionFactory()
             {
-                Uri = new Uri(_rabbit.GetConnectionString())
+                Uri = new Uri(_rabbitMqFixture.ConnectionString)
             };
 
             await using var connection = await factory.CreateConnectionAsync();
