@@ -175,7 +175,7 @@ IMessageBus  ◄── injetado via DI
 O repositório de domínio é definido como interface, permitindo trocar o SGBD sem tocar no domínio ou na camada de aplicação.
 
 ```csharp
-// Cashflow.Transaction.Domain
+// Cashflow.Service.Transaction.Domain
 public interface ITransactionRepository
 {
     Task<Transaction> GetByIdAsync(Guid id, CancellationToken ct = default);
@@ -516,25 +516,25 @@ Cashflow.sln
 ### Domain
 
 ```
-Cashflow.Transaction.Domain.Entities
-Cashflow.Transaction.Domain.ValueObjects
-Cashflow.Transaction.Domain.Events
+Cashflow.Service.Transaction.Domain.Entities
+Cashflow.Service.Transaction.Domain.ValueObjects
+Cashflow.Service.Transaction.Domain.Events
 ```
 
 ### Application
 
 ```
-Cashflow.Transaction.Application.Commands
-Cashflow.Transaction.Application.Queries
-Cashflow.Transaction.Application.Services
+Cashflow.Service.Transaction.Application.Commands
+Cashflow.Service.Transaction.Application.Queries
+Cashflow.Service.Transaction.Application.Services
 ```
 
 ### Infrastructure
 
 ```
-Cashflow.Transaction.Infrastructure.Persistence
-Cashflow.Transaction.Infrastructure.Messaging
-Cashflow.Transaction.Infrastructure.Logging
+Cashflow.Service.Transaction.Infrastructure.Persistence
+Cashflow.Service.Transaction.Infrastructure.Messaging
+Cashflow.Service.Transaction.Infrastructure.Logging
 ```
 
 ### Shared
@@ -548,9 +548,9 @@ Cashflow.Shared.Logging
 ### Workers
 
 ```
-Cashflow.Balance.Worker
-Cashflow.Report.Worker
-Cashflow.Audit.Worker
+Cashflow.Worker.Balance
+Cashflow.Worker.Report
+Cashflow.Worker.Audit
 ```
 
 ---
