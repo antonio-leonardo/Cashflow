@@ -7,10 +7,7 @@ RUN dotnet restore Back.End/Gateway/Cashflow.Gateway.csproj
 
 COPY . .
 
-RUN dotnet publish Back.End/Gateway/Cashflow.Gateway.csproj \
-    -c Release \
-    -o /app/publish \
-    /p:UseAppHost=false
+RUN dotnet publish Back.End/Gateway/Cashflow.Gateway.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app

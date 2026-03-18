@@ -3,11 +3,16 @@ using Cashflow.Service.Transaction.Application.Queries;
 using Cashflow.Service.Transaction.Domain;
 using Cashflow.Service.Transaction.Infrastructure.Persistence;
 using Cashflow.Service.Transaction.Postgres.DependencyInjection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddSqlDatabaseDependencyInjection(builder.Configuration);
+
+
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -28,8 +33,15 @@ if (app.Environment.IsDevelopment())
     }
 }
 
-if (!app.Environment.IsEnvironment("Testing"))
+if (!app.Environment.IsEnvironment("Testing") && !app.Environment.IsDevelopment())
 {
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = builder.Configuration["Keycloak:Authority"];
+        options.Audience = builder.Configuration["Keycloak:Audience"];
+        options.RequireHttpsMetadata = false;
+    });
     using (var scope = app.Services.CreateScope())
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
@@ -45,8 +57,13 @@ if (!app.Environment.IsEnvironment("Testing"))
 }
 
 app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Testing") && !app.Environment.IsDevelopment())
+{
+    app.UseAuthentication();
+    app.UseAuthorization();
+}
 
-app.MapPost("/api/transactions", async (
+var endpointPostTransactions = app.MapPost("/api/transactions", async (
     CreateTransactionRequest request,
     ICreateTransactionHandler handler,
     HttpContext http,
@@ -67,15 +84,19 @@ app.MapPost("/api/transactions", async (
     await handler.HandleAsync(command, cancellationToken);
 
     return Results.Created($"/api/transactions/{command.TransactionId}", new { command.TransactionId });
-})
-.WithName("CreateTransaction");
+}).WithName("CreateTransaction");
 
-app.MapGet("/api/transactions/{id:guid}", async (Guid id, IGetTransactionQueryHandler handler, CancellationToken cancellationToken) =>
+var endpointGetTransactions = app.MapGet("/api/transactions/{id:guid}", async (Guid id, IGetTransactionQueryHandler handler, CancellationToken cancellationToken) =>
 {
     var model = await handler.HandleAsync(new GetTransactionQuery(id), cancellationToken);
     return model is null ? Results.NotFound() : Results.Ok(model);
-})
-.WithName("GetTransaction");
+}).WithName("GetTransaction").RequireAuthorization();
+
+if (!app.Environment.IsEnvironment("Testing") && !app.Environment.IsDevelopment())
+{
+    endpointPostTransactions.RequireAuthorization();
+    endpointGetTransactions.RequireAuthorization();
+}
 
 app.Run();
 

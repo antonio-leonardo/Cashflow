@@ -7,10 +7,7 @@ RUN dotnet restore Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj
 
 COPY . .
 
-RUN dotnet publish Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj \
-    -c Release \
-    -o /app/publish \
-    /p:UseAppHost=false
+RUN dotnet publish Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/runtime:10.0
 WORKDIR /app
