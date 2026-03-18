@@ -1,7 +1,7 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj Back.End/Outbox/Worker
+COPY Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj Back.End/Outbox/Worker/
 
 RUN dotnet restore Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj
 

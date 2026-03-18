@@ -1,7 +1,7 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY Back.End/Worker/Balance/Cashflow.Worker.Balance.csproj Back.End/Worker/Balance
+COPY Back.End/Worker/Balance/Cashflow.Worker.Balance.csproj Back.End/Worker/Balance/
 
 RUN dotnet restore Back.End/Worker/Balance/Cashflow.Worker.Balance.csproj
 

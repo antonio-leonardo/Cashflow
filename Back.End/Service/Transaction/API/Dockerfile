@@ -1,7 +1,7 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY Back.End/Service/Transaction/API/Cashflow.Service.Transaction.API.csproj Back.End/Service/Transaction/API
+COPY Back.End/Service/Transaction/API/Cashflow.Service.Transaction.API.csproj Back.End/Service/Transaction/API/
 
 RUN dotnet restore Back.End/Service/Transaction/API/Cashflow.Service.Transaction.API.csproj
 
