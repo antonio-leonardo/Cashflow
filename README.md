@@ -471,42 +471,56 @@ Com o `CorrelationId` é possível reconstruir toda a jornada de uma transação
 ```
 Cashflow.sln
 │
-├── src/
-│   ├── Gateway/
-│   │   └── Cashflow.Gateway
+├── Back.End/
+│   ├── Gateway -> Cashflow.Gateway
 │   │
 │   ├── Shared/
-│   │   ├── Cashflow.Shared.Events
-│   │   ├── Cashflow.Shared.Messaging
-│   │   ├── Cashflow.Shared.Logging
-│   │   └── Cashflow.Shared.Contracts
+│   │   ├── Events -> Cashflow.Shared.Events
+│   │   ├── Messaging/
+│   │   │	└── Abstractions -> Cashflow.Shared.Messaging.Abstractions
+│   │   │	└── Providers/
+│   │   │		└── RabbitMQ/
+│   │   │			└── DependecyInjection -> Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection
+│   │   │			└── MessageBus -> Cashflow.Shared.Messaging.RabbitMQ.MessageBus
+│   │   ├── Logging
+│   │   ├── Contracts
+│   │   └── NoSql
 │   │
-│   ├── Services/
-│   │   └── TransactionService/
-│   │       ├── Transaction.API
-│   │       ├── Transaction.Application
-│   │       ├── Transaction.Domain
-│   │       └── Transaction.Infrastructure
+│   ├── Service/
+│   │   └── Transaction/
+│   │       ├── API -> Cashflow.Service.Transaction.API
+│   │       ├── Application -> Cashflow.Service.Transaction.Application
+│   │       ├── Domain -> Cashflow.Service.Transaction.Domain
+│   │       ├── Infrastructure -> Cashflow.Service.Transaction.Infrastructure
+│   │       └── Providers/
+│   │   		└── Postgres/
+│   │   			└── DependencyInjection -> Cashflow.Service.Transaction.Postgres.DependencyInjection
 │   │
-│   ├── Workers/
-│   │   ├── Balance.Worker
-│   │   ├── Report.Worker
-│   │   └── Audit.Worker
+│   ├── Worker/
+│   │   ├── Balance -> Cashflow.Worker.Balance
+│   │   ├── Report -> Cashflow.Worker.Report
+│   │   └── Audit -> Cashflow.Worker.Audit
 │   │
 │   └── Outbox/
-│       └── Outbox.Worker
+│       └── Worker -> Cashflow.Outbox.Worker
 │
-└── tests/
-    ├── UnitTests/
-    │   ├── Transaction.Domain.Tests
-    │   └── Balance.Domain.Tests
+└── Tests/
+    ├── ContractTests/
+    │   ├── Gateway -> Gateway.Transaction.ContractTests
     ├── IntegrationTests/
-    │   ├── Transaction.Integration.Tests
-    │   └── Messaging.Integration.Tests
+    │   ├── Messaging -> Messaging.Integration.Tests
+    │   └── Transaction -> Transaction.Integration.Tests
+    │   └── Worker -> Worker.Integration.Tests
+    ├── DomainTests/
+    │   ├── Balance -> Balance.Domain.Tests
+    │   └── Transaction -> Transaction.Domain.Tests
     ├── ConcurrencyTests/
-    │   └── Transaction.Concurrency.Tests
-    └── LoadTests/
-        └── k6/
+    │   └── Transaction -> Transaction.Concurrency.Tests
+    ├── E2E/
+    │   ├── Audit -> E2E.Audit.Test
+    │   ├── Balance -> E2E.Balance.Tests
+    │   └── Report -> E2E.Report.Test
+    └── Shared -> Infrastructure.Test
 ```
 
 ---
@@ -516,9 +530,7 @@ Cashflow.sln
 ### Domain
 
 ```
-Cashflow.Service.Transaction.Domain.Entities
-Cashflow.Service.Transaction.Domain.ValueObjects
-Cashflow.Service.Transaction.Domain.Events
+Cashflow.Service.Transaction.Domain
 ```
 
 ### Application
@@ -526,22 +538,27 @@ Cashflow.Service.Transaction.Domain.Events
 ```
 Cashflow.Service.Transaction.Application.Commands
 Cashflow.Service.Transaction.Application.Queries
-Cashflow.Service.Transaction.Application.Services
 ```
 
 ### Infrastructure
 
 ```
 Cashflow.Service.Transaction.Infrastructure.Persistence
-Cashflow.Service.Transaction.Infrastructure.Messaging
 Cashflow.Service.Transaction.Infrastructure.Logging
 ```
 
 ### Shared
 
 ```
+Cashflow.Shared.Contracts.Api
+Cashflow.Shared.Contracts.Idempotency
 Cashflow.Shared.Events
-Cashflow.Shared.Messaging
+Cashflow.Shared.Messaging.Abstractions
+Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection
+Cashflow.Shared.Messaging.RabbitMQ.MessageBus
+Cashflow.Shared.NoSql.Abstractions
+Cashflow.Shared.NoSql.MongoDb
+Cashflow.Shared.NoSql.Redis
 Cashflow.Shared.Logging
 ```
 
@@ -589,7 +606,11 @@ Cashflow.Shared.Events/
 | Unitário | `Balance.Domain.Tests` | xUnit |
 | Integração | `Transaction.Integration.Tests` | xUnit + Testcontainers |
 | Integração | `Messaging.Integration.Tests` | xUnit + Testcontainers |
+| Integração | `Worker.Integration.Tests` | xUnit + Testcontainers |
 | Concorrência | `Transaction.Concurrency.Tests` | xUnit |
+| Event-To-Event | `E2E.Audit.Test` | xUnit + Testcontainers |
+| Event-To-Event | `E2E.Balance.Test` | xUnit + Testcontainers |
+| Event-To-Event | `E2E.Report.Test` | xUnit + Testcontainers |
 | Carga | `k6/` | k6 — 50 req/s |
 
 ### Testcontainers — exemplo de setup
@@ -616,33 +637,6 @@ public class TransactionIntegrationTests : IAsyncLifetime
         await _postgres.DisposeAsync();
         await _rabbit.DisposeAsync();
     }
-}
-```
-
-### k6 — script de carga
-
-```javascript
-// tests/LoadTests/k6/transaction-load.js
-import http from 'k6/http';
-import { check } from 'k6';
-
-export const options = {
-  vus: 50,
-  duration: '60s',
-  thresholds: {
-    http_req_duration: ['p(95)<500'],
-    http_req_failed: ['rate<0.01'],
-  },
-};
-
-export default function () {
-  const res = http.post('http://localhost:5000/api/transactions', JSON.stringify({
-    accountId: '550e8400-e29b-41d4-a716-446655440000',
-    amount: 100.00,
-    type: 'credit',
-  }), { headers: { 'Content-Type': 'application/json' } });
-
-  check(res, { 'status 202': (r) => r.status === 202 });
 }
 ```
 
@@ -718,35 +712,185 @@ O `docker-compose.yml` sobe toda a infraestrutura necessária para desenvolvimen
 ```yaml
 # docker-compose.yml
 services:
+
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16
+    container_name: cashflow-postgres
+    restart: always
     environment:
-      POSTGRES_DB: cashflow_write
-      POSTGRES_USER: cashflow
-      POSTGRES_PASSWORD: cashflow_dev
-    ports: ["5432:5432"]
-
-  mongodb:
-    image: mongo:7
-    ports: ["27017:27017"]
-
-  redis:
-    image: redis:7-alpine
-    ports: ["6379:6379"]
+      POSTGRES_DB: cashflow
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - cashflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 5
 
   rabbitmq:
-    image: rabbitmq:3-management-alpine
+    image: rabbitmq:3-management
+    container_name: cashflow-rabbitmq
+    restart: always
     ports:
       - "5672:5672"
-      - "15672:15672"   # management UI
+      - "15672:15672"
+    networks:
+      - cashflow-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: cashflow-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - cashflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+
+  mongo:
+    image: mongo:7
+    container_name: cashflow-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - cashflow-network
 
   keycloak:
-    image: quay.io/keycloak/keycloak:23
+    image: quay.io/keycloak/keycloak:24
+    container_name: cashflow-keycloak
+    restart: always
     command: start-dev
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-    ports: ["8080:8080"]
+    ports:
+      - "8081:8080"
+    networks:
+      - cashflow-network
+      
+    gateway:
+      build:
+        context: .
+        dockerfile: Back.End/Gateway/Dockerfile
+      depends_on:
+        keycloak:
+          condition: service_started
+        transaction-api:
+          condition: service_started
+      environment:
+        ASPNETCORE_ENVIRONMENT: Development
+        Keycloak__Authority: http://keycloak:8080/realms/cashflow
+        Keycloak__Audience: cashflow-api
+      ports:
+        - "5000:8080"
+      networks:
+        - cashflow-network
+      restart: always
+
+  transaction-api:
+    build:
+      context: .
+      dockerfile: Back.End/Services/Transaction/API/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=cashflow;Username=postgres;Password=postgres
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: 5672
+    ports:
+      - "5001:8080"
+    networks:
+      - cashflow-network
+    restart: always
+
+  worker-outbox:
+    build:
+      context: .
+      dockerfile: Back.End/Outbox/Worker/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=cashflow;Username=postgres;Password=postgres
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: 5672
+    networks:
+      - cashflow-network
+    restart: always
+
+  balance-worker:
+    build:
+      context: .
+      dockerfile: Back.End/Worker/Balance/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      Redis__Connection: redis:6379
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: 5672
+    networks:
+      - cashflow-network
+    restart: always
+
+  report-worker:
+    build:
+      context: .
+      dockerfile: Back.End/Worker/Report/Dockerfile
+    depends_on:
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      Mongo__Connection: mongodb://mongo:27017
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: 5672
+    networks:
+      - cashflow-network
+    restart: always
+
+  audit-worker:
+    build:
+      context: .
+      dockerfile: Back.End/Worker/Audit/Dockerfile
+    depends_on:
+      mongo:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      Mongo__Connection: mongodb://mongo:27017
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Port: 5672
+    networks:
+      - cashflow-network
+    restart: always
 ```
 
 ```bash

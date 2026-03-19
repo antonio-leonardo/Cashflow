@@ -24,7 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Service\Transaction\API\Cashflow.Service.Transaction.API.csproj" />
     <ProjectReference Include="..\..\..\Worker\Audit\Cashflow.Worker.Audit.csproj" />
-    <ProjectReference Include="..\..\Shared\Infrastructure.Test\Infrastructure.Test.csproj" />
+    <ProjectReference Include="..\..\Shared\Infrastructure.Test.csproj" />
   </ItemGroup>
 
   <ItemGroup>
