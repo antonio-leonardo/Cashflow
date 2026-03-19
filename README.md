@@ -612,10 +612,9 @@ Cashflow.Shared.Events/
 | Integração | `Messaging.Integration.Tests` | xUnit + Testcontainers |
 | Integração | `Worker.Integration.Tests` | xUnit + Testcontainers |
 | Concorrência | `Transaction.Concurrency.Tests` | xUnit |
-| Event-To-Event | `E2E.Audit.Test` | xUnit + Testcontainers |
-| Event-To-Event | `E2E.Balance.Test` | xUnit + Testcontainers |
-| Event-To-Event | `E2E.Report.Test` | xUnit + Testcontainers |
-| Carga | `k6/` | k6 — 50 req/s |
+| Event-To-Event | `E2E.Audit.Test` | xUnit + Testcontainers + Kerstrel |
+| Event-To-Event | `E2E.Balance.Test` | xUnit + Testcontainers + Kerstrel |
+| Event-To-Event | `E2E.Report.Test` | xUnit + Testcontainers + Kerstrel |
 
 ### Testcontainers — exemplo de setup
 
