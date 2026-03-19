@@ -5,6 +5,7 @@
 **Estilo arquitetural:** Microsserviços orientados a eventos  
 **Estratégia:** Multicloud portável (AWS · Azure · GCP)
 **Execução/debug em ambiente local:** (Visual Studio 2026 ou VS Code) + Docker
+
 ---
 
 ## Índice
