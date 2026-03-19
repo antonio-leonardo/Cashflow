@@ -4,7 +4,7 @@ using MongoDB.Driver;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddMessagingDependencyInjection(builder.Configuration);
+builder.Services.AddRabbitMQDependencyInjection(builder.Configuration);
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();

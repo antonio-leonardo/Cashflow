@@ -8,10 +8,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
-builder.Services.AddSqlDatabaseDependencyInjection(builder.Configuration);
-
-
-
+builder.Services.AddPostgresProviderDependencyInjection(builder.Configuration);
+builder.Services.AddDatabaseInfrastructureDependencyInjection(builder.Configuration);
 builder.Services.AddAuthorization();
 
 var app = builder.Build();

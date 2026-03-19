@@ -40,8 +40,9 @@ namespace E2E.Balance.Tests
             {
                 var configuration = context.Configuration;
 
-                services.AddSqlDatabaseDependencyInjection(configuration);
-                services.AddMessagingDependencyInjection(configuration);
+                services.AddPostgresProviderDependencyInjection(configuration);
+                services.AddDatabaseInfrastructureDependencyInjection(configuration);
+                services.AddRabbitMQDependencyInjection(configuration);
 
                 services.AddSingleton<IConnectionMultiplexer>(sp =>
                 {

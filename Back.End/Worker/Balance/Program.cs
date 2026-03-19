@@ -4,7 +4,7 @@ using StackExchange.Redis;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-builder.Services.AddMessagingDependencyInjection(builder.Configuration);
+builder.Services.AddRabbitMQDependencyInjection(builder.Configuration);
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();

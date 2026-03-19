@@ -51,8 +51,9 @@ namespace E2E.Audit.Test
             {
                 var configuration = context.Configuration;
 
-                services.AddSqlDatabaseDependencyInjection(configuration);
-                services.AddMessagingDependencyInjection(context.Configuration);
+                services.AddPostgresProviderDependencyInjection(configuration);
+                services.AddDatabaseInfrastructureDependencyInjection(configuration);
+                services.AddRabbitMQDependencyInjection(configuration);
                 services.AddSingleton<IMongoClient>(sp =>
                 {
                     return new MongoClient(_infra.MongoDbContainerFixture.ConnectionString);

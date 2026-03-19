@@ -28,7 +28,7 @@ namespace Infrastructure.Test
             _host = new HostBuilder()
             .ConfigureServices((context, services) =>
             {
-                services.AddMessagingDependencyInjection(new ConfigurationBuilder()
+                services.AddRabbitMQDependencyInjection(new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string>
                 {
                     ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString,

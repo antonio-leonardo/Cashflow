@@ -57,45 +57,6 @@
   <Folder Name="/Shared/NoSql/Providers/Redis/">
     <Project Path="Back.End/Shared/NoSql/Providers/Redis/Cashflow.Shared.NoSql.Redis.csproj" />
   </Folder>
-  <Folder Name="/tests/" />
-  <Folder Name="/tests/ConcurrencyTests/" />
-  <Folder Name="/tests/ConcurrencyTests/Transaction/">
-    <Project Path="Back.End/Tests/ConcurrencyTests/Transaction/Transaction.Concurrency.Tests.csproj" />
-  </Folder>
-  <Folder Name="/tests/ContractTests/" />
-  <Folder Name="/tests/ContractTests/Gateway/">
-    <Project Path="Back.End/Tests/ContractTests/Gateway/Gateway.Transaction.ContractTests.csproj" />
-  </Folder>
-  <Folder Name="/tests/DomainTests/" />
-  <Folder Name="/tests/DomainTests/Balance/">
-    <Project Path="Back.End/Tests/DomainTests/Balance/Balance.Domain.Tests.csproj" />
-  </Folder>
-  <Folder Name="/tests/DomainTests/Transaction/">
-    <Project Path="Back.End/Tests/DomainTests/Transaction/Transaction.Domain.Tests.csproj" />
-  </Folder>
-  <Folder Name="/tests/E2E/" />
-  <Folder Name="/tests/E2E/Audit/">
-    <Project Path="Back.End/Tests/E2E/Audit/E2E.Audit.Test.csproj" />
-  </Folder>
-  <Folder Name="/tests/E2E/Balance/">
-    <Project Path="Back.End/Tests/E2E/Balance/E2E.Balance.Tests.csproj" />
-  </Folder>
-  <Folder Name="/tests/E2E/Report/">
-    <Project Path="Back.End/Tests/E2E/Report/E2E.Report.Test.csproj" />
-  </Folder>
-  <Folder Name="/tests/IntegrationTests/" />
-  <Folder Name="/tests/IntegrationTests/Messaging/">
-    <Project Path="Back.End/Tests/IntegrationTests/Messaging/Messaging.Integration.Tests.csproj" />
-  </Folder>
-  <Folder Name="/tests/IntegrationTests/Transaction/">
-    <Project Path="Back.End/Tests/IntegrationTests/Transaction/Transaction.Integration.Tests.csproj" />
-  </Folder>
-  <Folder Name="/tests/IntegrationTests/Worker/">
-    <Project Path="Back.End/Tests/IntegrationTests/Worker/Worker.Integration.Tests.csproj" />
-  </Folder>
-  <Folder Name="/tests/Shared/">
-    <Project Path="Back.End/Tests/Shared/Infrastructure.Test.csproj" />
-  </Folder>
   <Folder Name="/Worker/" />
   <Folder Name="/Worker/Audit/">
     <Project Path="Back.End/Worker/Audit/Cashflow.Worker.Audit.csproj" />
@@ -105,5 +66,44 @@
   </Folder>
   <Folder Name="/Worker/Report/">
     <Project Path="Back.End/Worker/Report/Cashflow.Worker.Report.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/" />
+  <Folder Name="/_Tests/ConcurrencyTests/" />
+  <Folder Name="/_Tests/ConcurrencyTests/Transaction/">
+    <Project Path="Back.End/Tests/ConcurrencyTests/Transaction/Transaction.Concurrency.Tests.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/ContractTests/" />
+  <Folder Name="/_Tests/ContractTests/Gateway/">
+    <Project Path="Back.End/Tests/ContractTests/Gateway/Gateway.Transaction.ContractTests.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/DomainTests/" />
+  <Folder Name="/_Tests/DomainTests/Balance/">
+    <Project Path="Back.End/Tests/DomainTests/Balance/Balance.Domain.Tests.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/DomainTests/Transaction/">
+    <Project Path="Back.End/Tests/DomainTests/Transaction/Transaction.Domain.Tests.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/E2E/" />
+  <Folder Name="/_Tests/E2E/Audit/">
+    <Project Path="Back.End/Tests/E2E/Audit/E2E.Audit.Test.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/E2E/Balance/">
+    <Project Path="Back.End/Tests/E2E/Balance/E2E.Balance.Tests.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/E2E/Report/">
+    <Project Path="Back.End/Tests/E2E/Report/E2E.Report.Test.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/IntegrationTests/" />
+  <Folder Name="/_Tests/IntegrationTests/Messaging/">
+    <Project Path="Back.End/Tests/IntegrationTests/Messaging/Messaging.Integration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/IntegrationTests/Transaction/">
+    <Project Path="Back.End/Tests/IntegrationTests/Transaction/Transaction.Integration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/IntegrationTests/Worker/">
+    <Project Path="Back.End/Tests/IntegrationTests/Worker/Worker.Integration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/Shared/">
+    <Project Path="Back.End/Tests/Shared/Infrastructure.Test.csproj" />
   </Folder>
 </Solution>

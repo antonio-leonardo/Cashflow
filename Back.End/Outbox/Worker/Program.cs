@@ -4,8 +4,9 @@ using Cashflow.Shared.Messaging.Abstractions;
 using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddSqlDatabaseDependencyInjection(builder.Configuration);
-builder.Services.AddMessagingDependencyInjection(builder.Configuration);
+builder.Services.AddPostgresProviderDependencyInjection(builder.Configuration);
+builder.Services.AddDatabaseInfrastructureDependencyInjection(builder.Configuration);
+builder.Services.AddRabbitMQDependencyInjection(builder.Configuration);
 builder.Services.AddSingleton<IMessageBus, ConsoleMessageBus>();
 builder.Services.AddHostedService<Worker>();
 

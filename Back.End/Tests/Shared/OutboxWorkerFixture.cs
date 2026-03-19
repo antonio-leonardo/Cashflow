@@ -35,8 +35,9 @@ namespace Infrastructure.Test
 
             builder.Configuration.AddInMemoryCollection(config);
 
-            builder.Services.AddSqlDatabaseDependencyInjection(builder.Configuration);
-            builder.Services.AddMessagingDependencyInjection(builder.Configuration);
+            builder.Services.AddPostgresProviderDependencyInjection(builder.Configuration);
+            builder.Services.AddDatabaseInfrastructureDependencyInjection(builder.Configuration);
+            builder.Services.AddRabbitMQDependencyInjection(builder.Configuration);
             builder.Services.AddSingleton<IMessageBus, Cashflow.Outbox.Worker.ConsoleMessageBus>();
             builder.Services.AddHostedService<Cashflow.Outbox.Worker.Worker>();
 

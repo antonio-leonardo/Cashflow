@@ -28,7 +28,7 @@ namespace Infrastructure.Test
                     services.AddScoped<Cashflow.Worker.Balance.RedisBalanceRepository>();
                     services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
 
-                    services.AddMessagingDependencyInjection(new ConfigurationBuilder()
+                    services.AddRabbitMQDependencyInjection(new ConfigurationBuilder()
                         .AddInMemoryCollection(new Dictionary<string, string>
                         {
                             ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString,

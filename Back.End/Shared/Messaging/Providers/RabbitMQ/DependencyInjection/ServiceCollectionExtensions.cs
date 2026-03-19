@@ -5,9 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection
 {
-    public static class RabbitMQServiceCollectionExtensions
+    public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddMessagingDependencyInjection(
+        public static IServiceCollection AddRabbitMQDependencyInjection(
             this IServiceCollection services,
             IConfiguration configuration)
         {
