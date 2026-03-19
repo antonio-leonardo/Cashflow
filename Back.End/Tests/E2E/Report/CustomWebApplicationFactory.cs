@@ -1,5 +1,5 @@
 ﻿using Cashflow.Service.Transaction.Postgres.DependencyInjection;
-using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
+using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 using Infrastructure.Test;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -55,11 +55,7 @@ namespace E2E.Report.Test
                 services.AddMessagingDependencyInjection(context.Configuration);
                 services.AddSingleton<IMongoClient>(sp =>
                 {
-                    var config = sp.GetRequiredService<IConfiguration>();
-
-                    var connection = config["Mongo:Connection"];
-
-                    return new MongoClient(connection);
+                    return new MongoClient(_infra.MongoDbContainerFixture.ConnectionString);
                 });
 
                 services.AddScoped(sp =>

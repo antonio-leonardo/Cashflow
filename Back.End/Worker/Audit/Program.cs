@@ -1,4 +1,4 @@
-using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
+using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 using Cashflow.Worker.Audit;
 using MongoDB.Driver;
 

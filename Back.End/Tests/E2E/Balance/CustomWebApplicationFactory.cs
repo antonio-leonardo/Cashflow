@@ -1,5 +1,5 @@
 ﻿using Cashflow.Service.Transaction.Postgres.DependencyInjection;
-using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
+using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 using Infrastructure.Test;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

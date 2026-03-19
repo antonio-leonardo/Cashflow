@@ -40,8 +40,8 @@
   </Folder>
   <Folder Name="/Shared/Messaging/Providers/" />
   <Folder Name="/Shared/Messaging/Providers/RabbitMQ/" />
-  <Folder Name="/Shared/Messaging/Providers/RabbitMQ/DependecyInjection/">
-    <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/DependecyInjection/Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection.csproj" />
+  <Folder Name="/Shared/Messaging/Providers/RabbitMQ/DependencyInjection/">
+    <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/DependencyInjection/Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection.csproj" />
   </Folder>
   <Folder Name="/Shared/Messaging/Providers/RabbitMQ/MessageBus/">
     <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/MessageBus/Cashflow.Shared.Messaging.RabbitMQ.MessageBus.csproj" />

@@ -1,6 +1,6 @@
 ﻿using Cashflow.Service.Transaction.Postgres.DependencyInjection;
 using Cashflow.Shared.Messaging.Abstractions;
-using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
+using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

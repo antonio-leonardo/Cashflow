@@ -37,7 +37,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Outbox\Worker\Cashflow.Outbox.Worker.csproj" />
     <ProjectReference Include="..\..\Service\Transaction\Infrastructure\Cashflow.Service.Transaction.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\Shared\Messaging\Providers\RabbitMQ\DependecyInjection\Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection.csproj" />
     <ProjectReference Include="..\..\Worker\Audit\Cashflow.Worker.Audit.csproj" />
     <ProjectReference Include="..\..\Worker\Balance\Cashflow.Worker.Balance.csproj" />
     <ProjectReference Include="..\..\Worker\Report\Cashflow.Worker.Report.csproj" />

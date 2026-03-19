@@ -1,7 +1,7 @@
 using Cashflow.Outbox.Worker;
 using Cashflow.Service.Transaction.Postgres.DependencyInjection;
 using Cashflow.Shared.Messaging.Abstractions;
-using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
+using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddSqlDatabaseDependencyInjection(builder.Configuration);

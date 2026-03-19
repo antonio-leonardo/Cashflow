@@ -19,7 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Service\Transaction\Domain\Cashflow.Service.Transaction.Domain.csproj" />
     <ProjectReference Include="..\..\Shared\Messaging\Abstractions\Cashflow.Shared.Messaging.Abstractions.csproj" />
-    <ProjectReference Include="..\..\Shared\Messaging\Providers\RabbitMQ\DependecyInjection\Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection.csproj" />
+    <ProjectReference Include="..\..\Shared\Messaging\Providers\RabbitMQ\DependencyInjection\Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection.csproj" />
     <ProjectReference Include="..\..\Shared\NoSql\Providers\Redis\Cashflow.Shared.NoSql.Redis.csproj" />
   </ItemGroup>
 </Project>

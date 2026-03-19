@@ -3,7 +3,7 @@ using Cashflow.Shared.Messaging.RabbitMQ.MessageBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection
+namespace Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection
 {
     public static class RabbitMQServiceCollectionExtensions
     {
