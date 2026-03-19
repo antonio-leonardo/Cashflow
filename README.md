@@ -480,11 +480,15 @@ Cashflow.sln
 │   │   │	└── Abstractions -> Cashflow.Shared.Messaging.Abstractions
 │   │   │	└── Providers/
 │   │   │		└── RabbitMQ/
-│   │   │			└── DependecyInjection -> Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection
+│   │   │			├── DependecyInjection -> Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection
 │   │   │			└── MessageBus -> Cashflow.Shared.Messaging.RabbitMQ.MessageBus
-│   │   ├── Logging
-│   │   ├── Contracts
-│   │   └── NoSql
+│   │   ├── Logging -> Cashflow.Shared.Logging
+│   │   ├── Contracts -> Cashflow.Shared.Contracts
+│   │   └── NoSql/
+│   │   	├── Abstractions -> Cashflow.Shared.NoSql.Abstractions
+│   │   	└── Providers/
+│   │   		├── MongoDB -> Cashflow.Shared.NoSql.MongoDB
+│   │   		└── Redis -> Cashflow.Shared.NoSql.Redis
 │   │
 │   ├── Service/
 │   │   └── Transaction/
@@ -509,7 +513,7 @@ Cashflow.sln
     │   ├── Gateway -> Gateway.Transaction.ContractTests
     ├── IntegrationTests/
     │   ├── Messaging -> Messaging.Integration.Tests
-    │   └── Transaction -> Transaction.Integration.Tests
+    │   ├── Transaction -> Transaction.Integration.Tests
     │   └── Worker -> Worker.Integration.Tests
     ├── DomainTests/
     │   ├── Balance -> Balance.Domain.Tests
