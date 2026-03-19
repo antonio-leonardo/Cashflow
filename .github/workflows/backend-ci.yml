@@ -35,24 +35,36 @@ jobs:
       run: |
         echo "Building Gateway..."
         docker build \
-          -t cashflow-api \
+          -t gateway \
           -f ./Back.End/Gateway/Dockerfile \
           .
           
         echo "Building API..."
         docker build \
-          -t cashflow-api \
+          -t transaction-api \
           -f ./Back.End/Service/Transaction/API/Dockerfile \
+          .
+          
+        echo "Building Worker Audit..."
+        docker build \
+          -t audit-worker \
+          -f ./Back.End/Worker/Audit/Dockerfile \
           .
 
         echo "Building Worker Balance..."
         docker build \
-          -t cashflow-worker-balance \
+          -t balance-worker \
           -f ./Back.End/Worker/Balance/Dockerfile \
+          .
+          
+        echo "Building Worker Report..."
+        docker build \
+          -t report-worker \
+          -f ./Back.End/Worker/Report/Dockerfile \
           .
 
         echo "Building Worker Outbox..."
         docker build \
-          -t cashflow-worker-outbox \
+          -t worker-outbox \
           -f ./Back.End/Outbox/Worker/Dockerfile \
           .

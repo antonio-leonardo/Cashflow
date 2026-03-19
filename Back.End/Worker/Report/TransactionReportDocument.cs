@@ -1,7 +1,11 @@
-﻿namespace Cashflow.Worker.Report
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace Cashflow.Worker.Report
 {
     public class TransactionReportDocument
     {
+        [BsonRepresentation(BsonType.String)]
         public Guid Id { get; set; }
 
         public Guid AccountId { get; set; }

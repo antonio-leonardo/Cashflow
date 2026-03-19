@@ -1,5 +1,4 @@
 ﻿using Cashflow.Shared.Messaging.RabbitMQ.DependecyInjection;
-using Cashflow.Worker.Balance;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,11 +8,11 @@ namespace Infrastructure.Test
 {
     public class BalanceWorkerFixture : IAsyncLifetime
     {
-        private readonly CompleteInfrastructureFixture _infra;
+        private readonly BalanceCompleteInfrastructureFixture _infra;
 
         private IHost _host;
 
-        public BalanceWorkerFixture(CompleteInfrastructureFixture infra)
+        public BalanceWorkerFixture(BalanceCompleteInfrastructureFixture infra)
         {
             _infra = infra;
         }
@@ -26,12 +25,13 @@ namespace Infrastructure.Test
                     services.AddSingleton<IConnectionMultiplexer>(sp =>
                         ConnectionMultiplexer.Connect(_infra.RedisContainerFixture.ConnectionString));
 
-                    services.AddScoped<RedisBalanceRepository>();
-                    services.AddScoped<TransactionCreatedHandler>();
+                    services.AddScoped<Cashflow.Worker.Balance.RedisBalanceRepository>();
+                    services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
 
                     services.AddMessagingDependencyInjection(new ConfigurationBuilder()
                         .AddInMemoryCollection(new Dictionary<string, string>
                         {
+                            ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString,
                             ["RabbitMq:Host"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Host,
                             ["RabbitMq:Port"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Port.ToString(),
                             ["RabbitMq:Username"] = "guest",
@@ -39,7 +39,7 @@ namespace Infrastructure.Test
                         })
                         .Build());
 
-                    services.AddHostedService<Worker>();
+                    services.AddHostedService<Cashflow.Worker.Balance.Worker>();
                 })
                 .Build();
 

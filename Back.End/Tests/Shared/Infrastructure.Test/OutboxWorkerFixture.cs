@@ -9,11 +9,11 @@ namespace Infrastructure.Test
 {
     public class OutboxWorkerFixture : IAsyncLifetime
     {
-        private readonly CompleteInfrastructureFixture _infra;
+        private readonly BaseCompleteInfrastructureFixture _infra;
 
         private IHost _host;
 
-        public OutboxWorkerFixture(CompleteInfrastructureFixture infra)
+        public OutboxWorkerFixture(BaseCompleteInfrastructureFixture infra)
         {
             _infra = infra;
         }
@@ -29,7 +29,8 @@ namespace Infrastructure.Test
                 ["RabbitMq:Port"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Port.ToString(),
                 ["RabbitMq:Username"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Username,
                 ["RabbitMq:Password"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Password,
-                ["Redis:Connection"] = _infra.RedisContainerFixture.ConnectionString
+                ["Redis:Connection"] = _infra.RedisContainerFixture.ConnectionString,
+                ["Mongo:Connection"] = _infra.MongoDbContainerFixture.ConnectionString
             };
 
             builder.Configuration.AddInMemoryCollection(config);

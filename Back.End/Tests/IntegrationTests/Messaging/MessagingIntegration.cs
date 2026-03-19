@@ -3,7 +3,7 @@ using Cashflow.Shared.Messaging.Abstractions;
 
 namespace Messaging.Integration.Tests;
 
-public class UnitTest1
+public class MessagingIntegration
 {
     [Fact]
     public void Should_Create_EventEnvelope()

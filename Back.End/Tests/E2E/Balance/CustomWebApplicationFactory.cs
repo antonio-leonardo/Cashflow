@@ -7,13 +7,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 
-namespace E2E.Tests
+namespace E2E.Balance.Tests
 {
     public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     {
-        private readonly CompleteInfrastructureFixture _infra;
+        private readonly BalanceCompleteInfrastructureFixture _infra;
 
-        public CustomWebApplicationFactory(CompleteInfrastructureFixture infra)
+        public CustomWebApplicationFactory(BalanceCompleteInfrastructureFixture infra)
         {
             _infra = infra;
         }

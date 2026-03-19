@@ -73,8 +73,15 @@
   <Folder Name="/tests/DomainTests/Transaction/">
     <Project Path="Back.End/Tests/DomainTests/Transaction/Transaction.Domain.Tests.csproj" />
   </Folder>
-  <Folder Name="/tests/E2E/">
-    <Project Path="Back.End/Tests/E2E/E2E.Tests/E2E.Tests.csproj" Id="f30f097c-0196-4ada-ae12-392b686eb649" />
+  <Folder Name="/tests/E2E/" />
+  <Folder Name="/tests/E2E/Audit/">
+    <Project Path="Back.End/Tests/E2E/Audit/E2E.Audit.Test.csproj" />
+  </Folder>
+  <Folder Name="/tests/E2E/Balance/">
+    <Project Path="Back.End/Tests/E2E/Balance/E2E.Balance.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/E2E/Report/">
+    <Project Path="Back.End/Tests/E2E/Report/E2E.Report.Test.csproj" />
   </Folder>
   <Folder Name="/tests/IntegrationTests/" />
   <Folder Name="/tests/IntegrationTests/Messaging/">

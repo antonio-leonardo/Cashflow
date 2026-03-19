@@ -1,5 +1,6 @@
 ﻿using Cashflow.Service.Transaction.Domain;
 using Cashflow.Shared.NoSql.MongoDB;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Cashflow.Worker.Audit
@@ -17,7 +18,7 @@ namespace Cashflow.Worker.Audit
                 EventId = evt.EventId,
                 EventType = evt.EventType,
                 OccurredAt = evt.OccurredAt,
-                Payload = evt
+                Payload = @evt.ToBsonDocument()
             });
         }
     }

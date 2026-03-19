@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Transaction.Integration.Tests;
 
-public class UnitTest1
+public class Transaction
 {
     [Fact]
     public async Task Should_Insert_Transaction_Into_Database()

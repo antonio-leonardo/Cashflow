@@ -2,7 +2,7 @@
 
 namespace Balance.Domain.Tests;
 
-public class UnitTest1
+public class BalanceDomain
 {
     [Fact]
     public void Should_Add_Transaction_Value_To_Balance()

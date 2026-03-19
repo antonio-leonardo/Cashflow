@@ -2,7 +2,7 @@
 
 namespace Transaction.Concurrency.Tests;
 
-public class UnitTest1
+public class TransactionConcurrency
 {
     [Fact]
     public async Task Should_Handle_Multiple_Transactions_Concurrently()

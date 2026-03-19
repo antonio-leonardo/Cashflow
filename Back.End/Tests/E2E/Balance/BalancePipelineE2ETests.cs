@@ -2,15 +2,15 @@
 using StackExchange.Redis;
 using System.Net.Http.Json;
 
-namespace E2E.Tests
+namespace E2E.Balance.Tests
 {
     [Collection("CompleteInfrastructureCollection")]
-    public class CashflowPipelineE2ETests
+    public class BalancePipelineE2ETests
     {
-        private readonly CompleteInfrastructureFixture _infra;
+        private readonly BalanceCompleteInfrastructureFixture _infra;
         private readonly CustomWebApplicationFactory _factory;
 
-        public CashflowPipelineE2ETests(CompleteInfrastructureFixture infra)
+        public BalancePipelineE2ETests(BalanceCompleteInfrastructureFixture infra)
         {
             _infra = infra;
             _factory = new CustomWebApplicationFactory(_infra);
