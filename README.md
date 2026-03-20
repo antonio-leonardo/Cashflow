@@ -4,7 +4,7 @@
 **Plataforma:** .NET 10  
 **Estilo arquitetural:** Microsserviços orientados a eventos  
 **Estratégia:** Multicloud portável (AWS · Azure · GCP)  
-**Execução/debug em ambiente local:** (Visual Studio 2026 ou VS Code) + Docker
+**Execução em ambiente local (TDD):** Visual Studio 2026 Community + Docker
 
 ---
 
@@ -965,6 +965,15 @@ Cashflow
   ├── Azure  ──── AKS · Azure DB · Service Bus · Monitor · CosmosDB
   └── GCP    ──── GKE · Cloud SQL · Pub/Sub · Cloud Logging · Firestore
 ```
+
+---
+
+## 22. O que pode melhorar  
+
+### Exposição dos dados via API  
+### Front-End mínimo para exibir os dados 
+### Integração com Kubernetes  
+### Utilização de políticas de resiliência (com Polly, por exemplo)  
 
 ---
 
