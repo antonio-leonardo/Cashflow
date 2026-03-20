@@ -974,7 +974,6 @@ Cashflow
 #### Integração do Gateway de autenticação  
 #### Front-End mínimo para exibir os dados 
 #### Migraçãoo do docker compose para Kubernetes  
-#### Utilização de políticas de resiliência (com Polly, por exemplo)  
 
 ---
 
