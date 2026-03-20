@@ -970,10 +970,11 @@ Cashflow
 
 ## 22. O que pode melhorar  
 
-### Exposição dos dados via API  
-### Front-End mínimo para exibir os dados 
-### Integração com Kubernetes  
-### Utilização de políticas de resiliência (com Polly, por exemplo)  
+#### Exposição dos dados via API  
+#### Integração do Gateway de autenticação  
+#### Front-End mínimo para exibir os dados 
+#### Migraçãoo do docker compose para Kubernetes  
+#### Utilização de políticas de resiliência (com Polly, por exemplo)  
 
 ---
 
