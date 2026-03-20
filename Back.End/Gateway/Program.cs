@@ -14,7 +14,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     options.RequireHttpsMetadata = false;
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AuthenticatedUser", policy =>
+        policy.RequireAuthenticatedUser());
+});
 
 var app = builder.Build();
 
@@ -22,5 +26,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapReverseProxy();
+
+app.Use(async (context, next) =>
+{
+    var authHeader = context.Request.Headers["Authorization"];
+    await next();
+});
 
 app.Run();

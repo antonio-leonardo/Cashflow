@@ -84,8 +84,9 @@ var endpointPostTransactions = app.MapPost("/api/transactions", async (
     return Results.Created($"/api/transactions/{command.TransactionId}", new { command.TransactionId });
 }).WithName("CreateTransaction");
 
-var endpointGetTransactions = app.MapGet("/api/transactions/{id:guid}", async (Guid id, IGetTransactionQueryHandler handler, CancellationToken cancellationToken) =>
+var endpointGetTransactions = app.MapGet("/api/transactions/{id:guid}", async (HttpContext ctx, Guid id, IGetTransactionQueryHandler handler, CancellationToken cancellationToken) =>
 {
+    var user = ctx.Request.Headers["X-User-Id"];
     var model = await handler.HandleAsync(new GetTransactionQuery(id), cancellationToken);
     return model is null ? Results.NotFound() : Results.Ok(model);
 }).WithName("GetTransaction").RequireAuthorization();

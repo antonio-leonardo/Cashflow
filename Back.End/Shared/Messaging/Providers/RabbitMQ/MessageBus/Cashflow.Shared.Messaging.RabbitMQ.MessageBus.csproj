@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Events\Cashflow.Shared.Events.csproj" />
+    <ProjectReference Include="..\..\..\..\Resilience\Cashflow.Shared.Resilience.csproj" />
     <ProjectReference Include="..\..\..\Abstractions\Cashflow.Shared.Messaging.Abstractions.csproj" />
   </ItemGroup>
 

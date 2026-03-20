@@ -7,10 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MongoDB.Driver" Version="3.7.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.5" />
+    <PackageReference Include="MongoDB.Driver" Version="3.7.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Resilience\Cashflow.Shared.Resilience.csproj" />
     <ProjectReference Include="..\..\Abstractions\Cashflow.Shared.NoSql.Abstractions.csproj" />
   </ItemGroup>
 

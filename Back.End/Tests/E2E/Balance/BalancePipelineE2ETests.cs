@@ -1,4 +1,5 @@
-﻿using Infrastructure.Test;
+﻿using Cashflow.Shared.Resilience;
+using Infrastructure.Test;
 using StackExchange.Redis;
 using System.Net.Http.Json;
 
@@ -29,13 +30,15 @@ namespace E2E.Balance.Tests
                 Type = 1
             };
 
-            var response = await client.PostAsJsonAsync("/api/transactions", objectToRequest);
+            var response = await ResiliencePolicies
+                .GetHttpResiliencePolicy()
+                .ExecuteAsync(() => client.PostAsJsonAsync("/api/transactions", objectToRequest));
 
             response.EnsureSuccessStatusCode();
 
-            await Task.Delay(8000);
+            await Task.Delay(10000);
 
-            var redis = await ConnectionMultiplexer.ConnectAsync(_infra.RedisContainerFixture.ConnectionString);
+            var redis = CreateConnection(_infra.RedisContainerFixture.ConnectionString);
             var db = redis.GetDatabase();
             var value = await db.StringGetAsync($"balance:{objectToRequest.AccountId}");
 
@@ -54,11 +57,20 @@ namespace E2E.Balance.Tests
                         break;
                     }
 
-                    await Task.Delay(500);
+                    await Task.Delay(5000);
                 }
             }
 
             Assert.False(value.IsNull);
+        }
+
+        private ConnectionMultiplexer CreateConnection(string connection)
+        {
+            var policy = ResiliencePolicies.GetResiliencePolicy();
+            return (ConnectionMultiplexer)policy.ExecuteAsync(() =>
+            {
+                return Task.FromResult<object>(ConnectionMultiplexer.Connect(connection));
+            }).GetAwaiter().GetResult();
         }
     }
 }

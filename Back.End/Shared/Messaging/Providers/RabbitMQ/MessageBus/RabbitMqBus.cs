@@ -1,5 +1,6 @@
 ﻿using Cashflow.Shared.Events;
 using Cashflow.Shared.Messaging.Abstractions;
+using Cashflow.Shared.Resilience;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -25,8 +26,19 @@ namespace Cashflow.Shared.Messaging.RabbitMQ.MessageBus
                 Password = config.Password
             };
 
-            _connection = factory.CreateConnectionAsync().GetAwaiter().GetResult();
+            _connection = this.CreateConnection(factory);
             _channel = _connection.CreateChannelAsync().GetAwaiter().GetResult();
+        }
+
+        private IConnection CreateConnection(ConnectionFactory factory)
+        {
+            var policy = ResiliencePolicies.GetResiliencePolicy();
+
+            return (IConnection)policy.ExecuteAsync(() =>
+            {
+                IConnection connection = factory.CreateConnectionAsync().GetAwaiter().GetResult();
+                return Task.FromResult<object>(connection);
+            }).GetAwaiter().GetResult();
         }
 
         public async Task PublishAsync<TEvent>(

@@ -1,4 +1,5 @@
-﻿using Infrastructure.Test;
+﻿using Cashflow.Shared.Resilience;
+using Infrastructure.Test;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Net.Http.Json;
@@ -31,10 +32,15 @@ namespace E2E.Audit.Test
                 Type = 1
             };
 
-            var response = await client.PostAsJsonAsync("/api/transactions", request);
+            var response = await ResiliencePolicies
+                .GetHttpResiliencePolicy()
+                .ExecuteAsync(() => client.PostAsJsonAsync("/api/transactions", request));
+
             response.EnsureSuccessStatusCode();
 
-            var mongoClient = new MongoClient(_infra.MongoDbContainerFixture.ConnectionString);
+            await Task.Delay(10000);
+
+            var mongoClient = CreateConnection(_infra.MongoDbContainerFixture.ConnectionString);
             var database = mongoClient.GetDatabase("cashflow-audit");
 
             var collection = database.GetCollection<BsonDocument>("events");
@@ -58,7 +64,7 @@ namespace E2E.Audit.Test
                 if (result != null)
                     break;
 
-                await Task.Delay(500);
+                await Task.Delay(5000);
             }
 
             Assert.NotNull(result);
@@ -66,6 +72,15 @@ namespace E2E.Audit.Test
             var payload = result["Payload"].AsBsonDocument;
 
             Assert.Equal(accountId, payload["AccountId"].AsGuid);
+        }
+
+        private MongoClient CreateConnection(string connection)
+        {
+            var policy = ResiliencePolicies.GetResiliencePolicy();
+            return (MongoClient)policy.ExecuteAsync(() =>
+            {
+                return Task.FromResult<object>(new MongoClient(connection));
+            }).GetAwaiter().GetResult();
         }
     }
 }

@@ -71,7 +71,7 @@ services:
       - cashflow-network
 
   keycloak:
-    image: quay.io/keycloak/keycloak:24
+    image: quay.io/keycloak/keycloak:latest
     container_name: cashflow-keycloak
     restart: always
     command: start-dev
@@ -82,30 +82,30 @@ services:
       - "8081:8080"
     networks:
       - cashflow-network
-      
-    gateway:
-      build:
-        context: .
-        dockerfile: Back.End/Gateway/Dockerfile
-      depends_on:
-        keycloak:
-          condition: service_started
-        transaction-api:
-          condition: service_started
-      environment:
-        ASPNETCORE_ENVIRONMENT: Development
-        Keycloak__Authority: http://keycloak:8080/realms/cashflow
-        Keycloak__Audience: cashflow-api
-      ports:
-        - "5000:8080"
-      networks:
-        - cashflow-network
-      restart: always
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Back.End/Gateway/Dockerfile
+    depends_on:
+      keycloak:
+        condition: service_started
+      transaction-api:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Keycloak__Authority: http://keycloak:8080/realms/cashflow
+      Keycloak__Audience: cashflow-api
+    ports:
+      - "5000:8080"
+    networks:
+      - cashflow-network
+    restart: always
 
   transaction-api:
     build:
       context: .
-      dockerfile: Back.End/Services/Transaction/API/Dockerfile
+      dockerfile: Back.End/Service/Transaction/API/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy

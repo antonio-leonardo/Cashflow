@@ -17,10 +17,26 @@ namespace Cashflow.Service.Transaction.Postgres.DependencyInjection
                     "Connection string not configured.");
 
             services.AddDbContext<TransactionDbContext>(options =>
-                options.UseNpgsql(connectionString));
+                options.UseNpgsql(connectionString, npgsqlOptions =>
+                {
+                    npgsqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorCodesToAdd: null);
+
+                    npgsqlOptions.CommandTimeout(10);
+                }));
 
             services.AddDbContext<IdempotencyDbContext>(options =>
-                options.UseNpgsql(connectionString));
+                options.UseNpgsql(connectionString, npgsqlOptions =>
+                {
+                    npgsqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorCodesToAdd: null);
+
+                    npgsqlOptions.CommandTimeout(10);
+                }));
 
             return services;
         }

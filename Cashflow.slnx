@@ -57,6 +57,9 @@
   <Folder Name="/Shared/NoSql/Providers/Redis/">
     <Project Path="Back.End/Shared/NoSql/Providers/Redis/Cashflow.Shared.NoSql.Redis.csproj" />
   </Folder>
+  <Folder Name="/Shared/Resilience/">
+    <Project Path="Back.End/Shared/Resilience/Cashflow.Shared.Resilience.csproj" />
+  </Folder>
   <Folder Name="/Worker/" />
   <Folder Name="/Worker/Audit/">
     <Project Path="Back.End/Worker/Audit/Cashflow.Worker.Audit.csproj" />

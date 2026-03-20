@@ -1,4 +1,5 @@
-﻿using Cashflow.Worker.Report;
+﻿using Cashflow.Shared.Resilience;
+using Cashflow.Worker.Report;
 using Infrastructure.Test;
 using MongoDB.Driver;
 using System.Net.Http.Json;
@@ -31,10 +32,14 @@ namespace E2E.Report.Test
                 Type = 1
             };
 
-            var response = await client.PostAsJsonAsync("/api/transactions", request);
+            var response = await ResiliencePolicies
+                .GetHttpResiliencePolicy()
+                .ExecuteAsync(() => client.PostAsJsonAsync("/api/transactions", request));
             response.EnsureSuccessStatusCode();
 
-            var mongoClient = new MongoClient(_infra.MongoDbContainerFixture.ConnectionString);
+            await Task.Delay(10000);
+
+            var mongoClient = CreateConnection(_infra.MongoDbContainerFixture.ConnectionString);
             var database = mongoClient.GetDatabase("cashflow-report");
 
             var collection = database.GetCollection<TransactionReportDocument>("transactions");
@@ -53,12 +58,21 @@ namespace E2E.Report.Test
                 if (result != null)
                     break;
 
-                await Task.Delay(500);
+                await Task.Delay(5000);
             }
 
             Assert.NotNull(result);
             Assert.Equal(accountId, result.AccountId);
             Assert.Equal(200, result.Amount);
+        }
+
+        private MongoClient CreateConnection(string connection)
+        {
+            var policy = ResiliencePolicies.GetResiliencePolicy();
+            return (MongoClient)policy.ExecuteAsync(() =>
+            {
+                return Task.FromResult<object>(new MongoClient(connection));
+            }).GetAwaiter().GetResult();
         }
     }
 }

@@ -1,17 +1,11 @@
 using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 using Cashflow.Worker.Balance;
-using StackExchange.Redis;
+using Cashflow.Shared.NoSql.Redis;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddRabbitMQDependencyInjection(builder.Configuration);
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-{
-    var config = sp.GetRequiredService<IConfiguration>();
-    var connection = config["Redis:Connection"];
-
-    return ConnectionMultiplexer.Connect(connection);
-});
+builder.Services.AddRedisProviderDependencyInjection(builder.Configuration);
 builder.Services.AddScoped<RedisBalanceRepository>();
 builder.Services.AddScoped<TransactionCreatedHandler>();
 builder.Services.AddHostedService<Worker>();
