@@ -970,10 +970,10 @@ Cashflow
 
 ## 22. O que pode melhorar  
 
-#### Exposição dos dados via API  
+#### Exposição dos dados via novas APIs  
 #### Integração do Gateway de autenticação  
 #### Front-End mínimo para exibir os dados 
-#### Migraçãoo do docker compose para Kubernetes  
+#### Migração do docker compose para Kubernetes  
 
 ---
 
