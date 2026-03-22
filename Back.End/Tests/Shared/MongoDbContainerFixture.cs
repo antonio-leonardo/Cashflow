@@ -1,4 +1,4 @@
-﻿using DotNet.Testcontainers.Networks;
+using DotNet.Testcontainers.Networks;
 using Testcontainers.MongoDb;
 
 namespace Infrastructure.Test

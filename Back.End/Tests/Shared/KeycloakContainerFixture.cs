@@ -1,4 +1,4 @@
-﻿using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -30,8 +30,6 @@ namespace Infrastructure.Test
                 .WithEnvironment("KC_LOG_LEVEL", "DEBUG")
                 .WithBindMount(realmImportPath, "/opt/keycloak/data/import/realm-cashflow.json")
                 .WithCommand("start-dev", "--import-realm", "--http-enabled=true")
-                .WithWaitStrategy(Wait.ForUnixContainer()
-                    .UntilHttpRequestIsSucceeded(r => r.ForPort(8080).ForPath($"/realms/{RealmName}")))
                 .WithOutputConsumer(Consume.RedirectStdoutAndStderrToConsole())
                 .Build();
         }
@@ -44,6 +42,7 @@ namespace Infrastructure.Test
         public async Task InitializeAsync()
         {
             await _container.StartAsync();
+            await WaitUntilReadyAsync();
         }
 
         public async Task DisposeAsync()
@@ -88,7 +87,34 @@ namespace Infrastructure.Test
             return Path.GetFullPath(path);
         }
 
+        private async Task WaitUntilReadyAsync()
+        {
+            using var client = new HttpClient { BaseAddress = BaseAddress };
+            var deadline = DateTime.UtcNow.AddMinutes(2);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    var response = await client.GetAsync($"/realms/{RealmName}");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return;
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    // The container might still be booting.
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(2));
+            }
+
+            throw new TimeoutException("Keycloak nao ficou pronto dentro do tempo esperado.");
+        }
+
         private sealed record TokenResponse(
             [property: JsonPropertyName("access_token")] string AccessToken);
     }
 }
+

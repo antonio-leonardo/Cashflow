@@ -1,4 +1,4 @@
-﻿using Cashflow.Service.Transaction.Infrastructure.Persistence;
+using Cashflow.Service.Transaction.Infrastructure.Persistence;
 using DotNet.Testcontainers.Networks;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
