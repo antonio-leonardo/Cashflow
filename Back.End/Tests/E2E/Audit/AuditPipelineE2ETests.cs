@@ -7,19 +7,22 @@ using System.Net.Http.Json;
 namespace E2E.Audit.Test
 {
     [Collection("CompleteInfrastructureCollection")]
-    public class AuditPipelineE2ETests
+    public class AuditPipelineE2ETests : IDisposable
     {
         private readonly AuditCompleteInfrastructureFixture _infra;
         private readonly TransactionWebApplicationFactory _factory;
         public AuditPipelineE2ETests(AuditCompleteInfrastructureFixture infra)
         {
             _infra = infra;
-            _factory = new TransactionWebApplicationFactory(_infra);
+            _factory = new TransactionWebApplicationFactory(_infra, enableAuditWorker: true);
         }
 
         [Fact]
         public async Task Transaction_Should_Create_Audit_Log()
         {
+            await _infra.AuditWorkerFixture.StartAsync();
+            await Task.Delay(1000);
+
             var client = _factory.CreateClient();
 
             var accountId = Guid.NewGuid();
@@ -81,6 +84,11 @@ namespace E2E.Audit.Test
             {
                 return Task.FromResult<object>(new MongoClient(connection));
             }).GetAwaiter().GetResult();
+        }
+
+        public void Dispose()
+        {
+            _factory.Dispose();
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Infrastructure.Test
     {
         private readonly BaseCompleteInfrastructureFixture _infra;
 
-        private IHost _host;
+        private IHost? _host;
 
         public BalanceWorkerFixture(BalanceCompleteInfrastructureFixture infra)
         {
@@ -23,7 +23,15 @@ namespace Infrastructure.Test
         }
 
         public async Task InitializeAsync()
+            => await StartAsync();
+
+        public async Task StartAsync()
         {
+            if (_host is not null)
+            {
+                return;
+            }
+
             _host = new HostBuilder()
                 .ConfigureAppConfiguration((context, config) =>
                 {
@@ -52,10 +60,21 @@ namespace Infrastructure.Test
             await _host.StartAsync();
         }
 
-        public async Task DisposeAsync()
+        public async Task StopAsync()
         {
+            if (_host is null)
+            {
+                return;
+            }
+
             await _host.StopAsync();
             _host.Dispose();
+            _host = null;
+        }
+
+        public async Task DisposeAsync()
+        {
+            await StopAsync();
         }
     }
 }

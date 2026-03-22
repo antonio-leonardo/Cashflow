@@ -16,10 +16,14 @@ namespace E2E.Report.Test
     public class TransactionWebApplicationFactory : WebApplicationFactory<Cashflow.Service.Transaction.API.Program>
     {
         private readonly ReportCompleteInfrastructureFixture _infra;
+        private readonly bool _enableReportWorker;
 
-        public TransactionWebApplicationFactory(ReportCompleteInfrastructureFixture infra)
+        public TransactionWebApplicationFactory(
+            ReportCompleteInfrastructureFixture infra,
+            bool enableReportWorker = false)
         {
             _infra = infra;
+            _enableReportWorker = enableReportWorker;
             try
             {
                 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
@@ -61,10 +65,11 @@ namespace E2E.Report.Test
                 services.AddRabbitMQDependencyInjection(configuration);
                 services.AddMongoDBProviderDependencyInjection(configuration, "cashflow-report");
 
-                services.AddScoped<Cashflow.Worker.Report.TransactionCreatedHandler>();
-
-                services.AddHostedService<Cashflow.Outbox.Worker.Worker>();
-                services.AddHostedService<Cashflow.Worker.Report.Worker>();
+                if (_enableReportWorker)
+                {
+                    services.AddScoped<Cashflow.Worker.Report.TransactionCreatedHandler>();
+                    services.AddHostedService<Cashflow.Worker.Report.Worker>();
+                }
             });
         }
     }

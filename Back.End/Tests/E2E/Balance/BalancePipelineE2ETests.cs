@@ -6,7 +6,7 @@ using System.Net.Http.Json;
 namespace E2E.Balance.Tests
 {
     [Collection("CompleteInfrastructureCollection")]
-    public class BalancePipelineE2ETests
+    public class BalancePipelineE2ETests : IDisposable
     {
         private readonly BalanceCompleteInfrastructureFixture _infra;
         private readonly TransactionWebApplicationFactory _factory;
@@ -20,6 +20,9 @@ namespace E2E.Balance.Tests
         [Fact]
         public async Task Transaction_Should_Update_ReadModels()
         {
+            await _infra.WorkerBalanceFixture.StartAsync();
+            await Task.Delay(1000);
+
             var client = _factory.CreateClient();
 
             var objectToRequest = new
@@ -71,6 +74,11 @@ namespace E2E.Balance.Tests
             {
                 return Task.FromResult<object>(ConnectionMultiplexer.Connect(connection));
             }).GetAwaiter().GetResult();
+        }
+
+        public void Dispose()
+        {
+            _factory.Dispose();
         }
     }
 }
