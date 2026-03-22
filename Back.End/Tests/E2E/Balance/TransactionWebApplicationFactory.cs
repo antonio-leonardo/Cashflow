@@ -12,10 +12,14 @@ namespace E2E.Balance.Tests
     public class TransactionWebApplicationFactory : WebApplicationFactory<Cashflow.Service.Transaction.API.Program>
     {
         private readonly BalanceCompleteInfrastructureFixture _infra;
+        private readonly bool _enableBalanceWorker;
 
-        public TransactionWebApplicationFactory(BalanceCompleteInfrastructureFixture infra)
+        public TransactionWebApplicationFactory(
+            BalanceCompleteInfrastructureFixture infra,
+            bool enableBalanceWorker = false)
         {
             _infra = infra;
+            _enableBalanceWorker = enableBalanceWorker;
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -45,11 +49,12 @@ namespace E2E.Balance.Tests
                 services.AddRabbitMQDependencyInjection(configuration);
                 services.AddRedisProviderDependencyInjection(configuration);
 
-                services.AddScoped<Cashflow.Worker.Balance.RedisBalanceRepository>();
-                services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
-
-                services.AddHostedService<Cashflow.Outbox.Worker.Worker>();
-                services.AddHostedService<Cashflow.Worker.Balance.Worker>();
+                if (_enableBalanceWorker)
+                {
+                    services.AddScoped<Cashflow.Worker.Balance.RedisBalanceRepository>();
+                    services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
+                    services.AddHostedService<Cashflow.Worker.Balance.Worker>();
+                }
             });
         }
     }

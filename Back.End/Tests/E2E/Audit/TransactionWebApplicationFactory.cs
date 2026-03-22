@@ -16,10 +16,14 @@ namespace E2E.Audit.Test
     public class TransactionWebApplicationFactory : WebApplicationFactory<Cashflow.Service.Transaction.API.Program>
     {
         private readonly AuditCompleteInfrastructureFixture _infra;
+        private readonly bool _enableAuditWorker;
 
-        public TransactionWebApplicationFactory(AuditCompleteInfrastructureFixture infra)
+        public TransactionWebApplicationFactory(
+            AuditCompleteInfrastructureFixture infra,
+            bool enableAuditWorker = false)
         {
             _infra = infra;
+            _enableAuditWorker = enableAuditWorker;
             try
             {
                 BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
@@ -61,10 +65,11 @@ namespace E2E.Audit.Test
                 services.AddRabbitMQDependencyInjection(configuration);
                 services.AddMongoDBProviderDependencyInjection(configuration, "cashflow-audit");
 
-                services.AddScoped<Cashflow.Worker.Audit.TransactionCreatedHandler>();
-
-                services.AddHostedService<Cashflow.Outbox.Worker.Worker>();
-                services.AddHostedService<Cashflow.Worker.Audit.Worker>();
+                if (_enableAuditWorker)
+                {
+                    services.AddScoped<Cashflow.Worker.Audit.TransactionCreatedHandler>();
+                    services.AddHostedService<Cashflow.Worker.Audit.Worker>();
+                }
             });
         }
     }

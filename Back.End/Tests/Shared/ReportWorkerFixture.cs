@@ -13,7 +13,7 @@ namespace Infrastructure.Test
     {
         private readonly BaseCompleteInfrastructureFixture _infra;
 
-        private IHost _host;
+        private IHost? _host;
 
         public ReportWorkerFixture(ReportCompleteInfrastructureFixture infra)
         {
@@ -26,12 +26,36 @@ namespace Infrastructure.Test
         }
 
         public async Task DisposeAsync()
+            => await StopAsync();
+
+        public async Task StartAsync()
         {
-            await _host.StopAsync();
-            _host.Dispose();
+            if (_host is not null)
+            {
+                return;
+            }
+
+            InitializeHost();
+            var host = _host ?? throw new InvalidOperationException("Report worker host nao foi inicializado.");
+            await host.StartAsync();
         }
 
         public async Task InitializeAsync()
+            => await StartAsync();
+
+        public async Task StopAsync()
+        {
+            if (_host is null)
+            {
+                return;
+            }
+
+            await _host.StopAsync();
+            _host.Dispose();
+            _host = null;
+        }
+
+        private void InitializeHost()
         {
             try
             {
@@ -64,8 +88,6 @@ namespace Infrastructure.Test
                     services.AddHostedService<Cashflow.Worker.Report.Worker>();
                 })
                 .Build();
-
-            await _host.StartAsync();
         }
     }
 }

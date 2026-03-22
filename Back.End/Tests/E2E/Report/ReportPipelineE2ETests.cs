@@ -7,7 +7,7 @@ using System.Net.Http.Json;
 namespace E2E.Report.Test
 {
     [Collection("CompleteInfrastructureCollection")]
-    public class ReportPipelineE2ETests
+    public class ReportPipelineE2ETests : IDisposable
     {
         private readonly ReportCompleteInfrastructureFixture _infra;
         private readonly TransactionWebApplicationFactory _factory;
@@ -20,6 +20,9 @@ namespace E2E.Report.Test
         [Fact]
         public async Task Transaction_Should_Update_Report()
         {
+            await _infra.ReportWorkerFixture.StartAsync();
+            await Task.Delay(1000);
+
             var client = _factory.CreateClient();
 
             var accountId = Guid.NewGuid();
@@ -73,6 +76,11 @@ namespace E2E.Report.Test
             {
                 return Task.FromResult<object>(new MongoClient(connection));
             }).GetAwaiter().GetResult();
+        }
+
+        public void Dispose()
+        {
+            _factory.Dispose();
         }
     }
 }
