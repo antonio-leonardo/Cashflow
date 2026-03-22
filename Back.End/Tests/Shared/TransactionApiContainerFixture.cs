@@ -1,5 +1,6 @@
-﻿using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
+using System.Net;
 
 namespace Infrastructure.Test
 {
@@ -46,18 +47,13 @@ namespace Infrastructure.Test
                 _infra.MongoDbContainerFixture.NetworkConnectionString)
             .WithEnvironment("Redis__Connection",
                 _infra.RedisContainerFixture.NetworkConnectionString)
-            .WithWaitStrategy(Wait.ForUnixContainer()
-                    .UntilInternalTcpPortIsAvailable(8080)
-                    .UntilHttpRequestIsSucceeded(r => r
-                        .ForPath("/api/transactions")
-                        .ForPort(8080)
-                        .ForStatusCode(System.Net.HttpStatusCode.MethodNotAllowed)))
             .Build();
 
             await _container.StartAsync();
 
             var port = _container.GetMappedPublicPort(8080);
             BaseAddress = new Uri($"http://127.0.0.1:{port}");
+            await WaitUntilReadyAsync();
         }
 
         public async Task DisposeAsync()
@@ -65,5 +61,34 @@ namespace Infrastructure.Test
             if (_container is not null)
                 await _container.DisposeAsync();
         }
+
+        private async Task WaitUntilReadyAsync()
+        {
+            using var client = new HttpClient { BaseAddress = BaseAddress };
+            var deadline = DateTime.UtcNow.AddMinutes(2);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    // /api/transactions without method payload usually returns 405 when endpoint is up.
+                    var response = await client.GetAsync("/api/transactions");
+                    if (response.StatusCode == HttpStatusCode.MethodNotAllowed ||
+                        response.IsSuccessStatusCode)
+                    {
+                        return;
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    // The API container is still starting.
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(2));
+            }
+
+            throw new TimeoutException("Transaction API nao ficou pronta dentro do tempo esperado.");
+        }
     }
 }
+

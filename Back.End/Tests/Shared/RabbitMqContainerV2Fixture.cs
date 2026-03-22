@@ -1,4 +1,4 @@
-﻿using Cashflow.Shared.Messaging.RabbitMQ.MessageBus;
+using Cashflow.Shared.Messaging.RabbitMQ.MessageBus;
 using DotNet.Testcontainers.Networks;
 using Testcontainers.RabbitMq;
 
