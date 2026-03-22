@@ -15,7 +15,7 @@ public class TransactionConcurrency
                     Guid.NewGuid(),
                     accountId,
                     10,
-                    "USD")))
+                    "BRL")))
             .ToList();
 
         var events = await Task.WhenAll(tasks);

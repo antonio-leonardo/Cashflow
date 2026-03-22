@@ -10,9 +10,9 @@ namespace Worker.Integration.Tests
     [Collection("RabbitMqCollection")]
     public class EventPipelineTests
     {
-        private readonly RabbitMqContainerFixture _rabbitMqFixture;
+        private readonly RabbitMqContainerV1Fixture _rabbitMqFixture;
 
-        public EventPipelineTests(RabbitMqContainerFixture rabbitMqFixture)
+        public EventPipelineTests(RabbitMqContainerV1Fixture rabbitMqFixture)
         {
             _rabbitMqFixture = rabbitMqFixture;
         }
@@ -40,7 +40,7 @@ namespace Worker.Integration.Tests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 500,
-                "USD");
+                "BRL");
 
             var metadata = new MessageMetadata(
                 Guid.NewGuid().ToString(),
@@ -62,7 +62,7 @@ namespace Worker.Integration.Tests
 
             await Task.Delay(3000);
 
-            Assert.True(true);
+            Xunit.Assert.True(true);
         }
     }
 }

@@ -1,25 +1,41 @@
 ﻿using Cashflow.Service.Transaction.Postgres.DependencyInjection;
 using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
+using Cashflow.Shared.NoSql.MongoDB;
 using Infrastructure.Test;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using StackExchange.Redis;
+using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 
-namespace E2E.Balance.Tests
+namespace E2E.Audit.Test
 {
-    public class CustomWebApplicationFactory : WebApplicationFactory<Program>
+    public class TransactionWebApplicationFactory : WebApplicationFactory<Cashflow.Service.Transaction.API.Program>
     {
-        private readonly BalanceCompleteInfrastructureFixture _infra;
+        private readonly AuditCompleteInfrastructureFixture _infra;
 
-        public CustomWebApplicationFactory(BalanceCompleteInfrastructureFixture infra)
+        public TransactionWebApplicationFactory(AuditCompleteInfrastructureFixture infra)
         {
             _infra = infra;
+            try
+            {
+                BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
+            }
+            catch (BsonSerializationException)
+            {
+                // já registrado por outro fixture, ignorar
+            }
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            builder.ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+            });
             builder.UseEnvironment("Testing");
             builder.ConfigureAppConfiguration((context, config) =>
             {
@@ -30,7 +46,7 @@ namespace E2E.Balance.Tests
                     ["RabbitMq:Username"] = "guest",
                     ["RabbitMq:Password"] = "guest",
 
-                    ["Redis:Connection"] = _infra.RedisContainerFixture.ConnectionString,
+                    ["Mongo:Connection"] = _infra.MongoDbContainerFixture.ConnectionString,
                     ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString
                 };
                 config.AddInMemoryCollection(settings!);
@@ -43,17 +59,12 @@ namespace E2E.Balance.Tests
                 services.AddPostgresProviderDependencyInjection(configuration);
                 services.AddDatabaseInfrastructureDependencyInjection(configuration);
                 services.AddRabbitMQDependencyInjection(configuration);
+                services.AddMongoDBProviderDependencyInjection(configuration, "cashflow-audit");
 
-                services.AddSingleton<IConnectionMultiplexer>(sp =>
-                {
-                    return ConnectionMultiplexer.Connect(_infra.RedisContainerFixture.ConnectionString);
-                });
-
-                services.AddScoped<Cashflow.Worker.Balance.RedisBalanceRepository>();
-                services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
+                services.AddScoped<Cashflow.Worker.Audit.TransactionCreatedHandler>();
 
                 services.AddHostedService<Cashflow.Outbox.Worker.Worker>();
-                services.AddHostedService<Cashflow.Worker.Balance.Worker>();
+                services.AddHostedService<Cashflow.Worker.Audit.Worker>();
             });
         }
     }

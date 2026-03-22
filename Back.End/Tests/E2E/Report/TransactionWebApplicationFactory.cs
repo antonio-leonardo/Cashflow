@@ -1,5 +1,6 @@
 ﻿using Cashflow.Service.Transaction.Postgres.DependencyInjection;
 using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
+using Cashflow.Shared.NoSql.MongoDB;
 using Infrastructure.Test;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -9,27 +10,31 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-using MongoDB.Driver;
 
-namespace E2E.Audit.Test
+namespace E2E.Report.Test
 {
-    public class CustomWebApplicationFactory : WebApplicationFactory<Program>
+    public class TransactionWebApplicationFactory : WebApplicationFactory<Cashflow.Service.Transaction.API.Program>
     {
-        private readonly AuditCompleteInfrastructureFixture _infra;
+        private readonly ReportCompleteInfrastructureFixture _infra;
 
-        public CustomWebApplicationFactory(AuditCompleteInfrastructureFixture infra)
+        public TransactionWebApplicationFactory(ReportCompleteInfrastructureFixture infra)
         {
             _infra = infra;
-            BsonSerializer.RegisterSerializer(
-                new GuidSerializer(GuidRepresentation.Standard)
-            );
+            try
+            {
+                BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
+            }
+            catch (BsonSerializationException)
+            {
+                // já registrado por outro fixture, ignorar
+            }
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureLogging(logging =>
             {
-                logging.ClearProviders(); // remove EventLog, Console, etc.
+                logging.ClearProviders();
             });
             builder.UseEnvironment("Testing");
             builder.ConfigureAppConfiguration((context, config) =>
@@ -54,20 +59,12 @@ namespace E2E.Audit.Test
                 services.AddPostgresProviderDependencyInjection(configuration);
                 services.AddDatabaseInfrastructureDependencyInjection(configuration);
                 services.AddRabbitMQDependencyInjection(configuration);
-                services.AddSingleton<IMongoClient>(sp =>
-                {
-                    return new MongoClient(_infra.MongoDbContainerFixture.ConnectionString);
-                });
+                services.AddMongoDBProviderDependencyInjection(configuration, "cashflow-report");
 
-                services.AddScoped(sp =>
-                {
-                    var client = sp.GetRequiredService<IMongoClient>();
-                    return client.GetDatabase("cashflow-audit");
-                });
-                services.AddScoped<Cashflow.Worker.Audit.TransactionCreatedHandler>();
+                services.AddScoped<Cashflow.Worker.Report.TransactionCreatedHandler>();
 
                 services.AddHostedService<Cashflow.Outbox.Worker.Worker>();
-                services.AddHostedService<Cashflow.Worker.Audit.Worker>();
+                services.AddHostedService<Cashflow.Worker.Report.Worker>();
             });
         }
     }

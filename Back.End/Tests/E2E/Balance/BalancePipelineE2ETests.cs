@@ -9,12 +9,12 @@ namespace E2E.Balance.Tests
     public class BalancePipelineE2ETests
     {
         private readonly BalanceCompleteInfrastructureFixture _infra;
-        private readonly CustomWebApplicationFactory _factory;
+        private readonly TransactionWebApplicationFactory _factory;
 
         public BalancePipelineE2ETests(BalanceCompleteInfrastructureFixture infra)
         {
             _infra = infra;
-            _factory = new CustomWebApplicationFactory(_infra);
+            _factory = new TransactionWebApplicationFactory(_infra);
         }
 
         [Fact]
@@ -61,7 +61,7 @@ namespace E2E.Balance.Tests
                 }
             }
 
-            Assert.False(value.IsNull);
+            Xunit.Assert.False(value.IsNull);
         }
 
         private ConnectionMultiplexer CreateConnection(string connection)

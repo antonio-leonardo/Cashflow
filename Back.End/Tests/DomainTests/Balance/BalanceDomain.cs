@@ -13,7 +13,7 @@ public class BalanceDomain
             Guid.NewGuid(),
             Guid.NewGuid(),
             50m,
-            "USD");
+            "BRL");
 
         balance += evt.Amount;
 

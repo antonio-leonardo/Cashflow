@@ -10,7 +10,7 @@ public class UnitTest1
         var transactionId = Guid.NewGuid();
         var accountId = Guid.NewGuid();
         var amount = 100;
-        var currency = "USD";
+        var currency = "BRL";
 
         var evt = new TransactionCreatedEventV1(
             transactionId,

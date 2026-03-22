@@ -3,7 +3,7 @@
 namespace Messaging.Integration.Tests
 {
     [CollectionDefinition("RabbitMqCollection")]
-    public class RabbitMqCollectionDefinition : ICollectionFixture<RabbitMqContainerFixture>
+    public class RabbitMqCollectionDefinition : ICollectionFixture<RabbitMqContainerV1Fixture>
     {
     }
 }

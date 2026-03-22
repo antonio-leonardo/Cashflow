@@ -10,11 +10,11 @@ namespace E2E.Report.Test
     public class ReportPipelineE2ETests
     {
         private readonly ReportCompleteInfrastructureFixture _infra;
-        private readonly CustomWebApplicationFactory _factory;
+        private readonly TransactionWebApplicationFactory _factory;
         public ReportPipelineE2ETests(ReportCompleteInfrastructureFixture infra)
         {
             _infra = infra;
-            _factory = new CustomWebApplicationFactory(_infra);
+            _factory = new TransactionWebApplicationFactory(_infra);
         }
 
         [Fact]
@@ -61,9 +61,9 @@ namespace E2E.Report.Test
                 await Task.Delay(5000);
             }
 
-            Assert.NotNull(result);
-            Assert.Equal(accountId, result.AccountId);
-            Assert.Equal(200, result.Amount);
+            Xunit.Assert.NotNull(result);
+            Xunit.Assert.Equal(accountId, result.AccountId);
+            Xunit.Assert.Equal(200, result.Amount);
         }
 
         private MongoClient CreateConnection(string connection)

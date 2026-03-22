@@ -19,7 +19,7 @@ public class Transaction
             Id = Guid.NewGuid(),
             AccountId = Guid.NewGuid(),
             Amount = 100,
-            Currency = "USD"
+            Currency = "BRL"
         };
 
         db.Transactions.Add(entity);

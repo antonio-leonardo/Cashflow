@@ -1,36 +1,45 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services
-    .AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-.AddJwtBearer(options =>
+namespace Cashflow.Gateway
 {
-    options.Authority = builder.Configuration["Keycloak:Authority"];
-    options.Audience = builder.Configuration["Keycloak:Audience"];
-    options.RequireHttpsMetadata = false;
-});
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AuthenticatedUser", policy =>
-        policy.RequireAuthenticatedUser());
-});
+            builder.Services
+                .AddReverseProxy()
+                .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-var app = builder.Build();
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.Authority = builder.Configuration["Keycloak:Authority"];
+                options.Audience = builder.Configuration["Keycloak:Audience"];
+                options.RequireHttpsMetadata = false;
+            });
 
-app.UseAuthentication();
-app.UseAuthorization();
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AuthenticatedUser", policy =>
+                    policy.RequireAuthenticatedUser());
+            });
 
-app.MapReverseProxy();
+            var app = builder.Build();
 
-app.Use(async (context, next) =>
-{
-    var authHeader = context.Request.Headers["Authorization"];
-    await next();
-});
+            app.UseAuthentication();
+            app.UseAuthorization();
 
-app.Run();
+            app.MapReverseProxy();
+
+            app.Use(async (context, next) =>
+            {
+                var authHeader = context.Request.Headers["Authorization"];
+                await next();
+            });
+
+            app.Run();
+        }
+    }
+}

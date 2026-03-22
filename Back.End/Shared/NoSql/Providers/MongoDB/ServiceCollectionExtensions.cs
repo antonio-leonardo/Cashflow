@@ -2,11 +2,14 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
+using System.Collections.Concurrent;
 
 namespace Cashflow.Shared.NoSql.MongoDB
 {
     public static class ServiceCollectionExtensions
     {
+        private static readonly ConcurrentDictionary<string, IMongoClient> _clients = new();
+
         public static IServiceCollection AddMongoDBProviderDependencyInjection(
             this IServiceCollection services,
             IConfiguration configuration, string databaseName)
@@ -14,8 +17,9 @@ namespace Cashflow.Shared.NoSql.MongoDB
             services.AddSingleton<IMongoClient>(sp =>
             {
                 var config = sp.GetRequiredService<IConfiguration>();
-                var connection = config["Mongo:Connection"];
-                return CreateConnection(connection);
+                var connection = config["Mongo:Connection"]!;
+
+                return _clients.GetOrAdd(connection, conn => CreateConnection(conn));
             });
 
             services.AddScoped(sp =>

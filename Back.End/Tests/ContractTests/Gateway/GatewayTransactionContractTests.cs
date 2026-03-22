@@ -16,12 +16,12 @@ namespace Gateway.Transaction.ContractTests
 
             builder
                 .UponReceiving("Create Transaction Request")
-                .WithRequest(HttpMethod.Post, "/transactions")
+                .WithRequest(HttpMethod.Post, "/api/transactions")
                 .WithJsonBody(new
                 {
                     accountId = Match.Type(Guid.NewGuid()),
                     amount = Match.Type(100m),
-                    currency = Match.Type("USD")
+                    currency = Match.Type("BRL")
                 })
                 .WillRespond()
                 .WithStatus((int)HttpStatusCode.Created);
@@ -33,11 +33,11 @@ namespace Gateway.Transaction.ContractTests
                     BaseAddress = ctx.MockServerUri
                 };
 
-                var response = await client.PostAsJsonAsync("/transactions", new
+                var response = await client.PostAsJsonAsync("/api/transactions", new
                 {
                     accountId = Guid.NewGuid(),
                     amount = 100m,
-                    currency = "USD"
+                    currency = "BRL"
                 });
 
                 Assert.Equal(HttpStatusCode.Created, response.StatusCode);

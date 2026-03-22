@@ -12,7 +12,7 @@ public class MessagingIntegration
             Guid.NewGuid(),
             Guid.NewGuid(),
             10m,
-            "USD");
+            "BRL");
 
         var metadata = new MessageMetadata(
             CorrelationId: Guid.NewGuid().ToString(),
@@ -25,9 +25,9 @@ public class MessagingIntegration
             evt,
             metadata);
 
-        Assert.NotNull(envelope);
-        Assert.Equal(evt, envelope.Event);
-        Assert.Equal("MessagingTests", envelope.Metadata.Source);
-        Assert.Equal(evt.EventId.ToString(), envelope.Metadata.CausationId);
+        Xunit.Assert.NotNull(envelope);
+        Xunit.Assert.Equal(evt, envelope.Event);
+        Xunit.Assert.Equal("MessagingTests", envelope.Metadata.Source);
+        Xunit.Assert.Equal(evt.EventId.ToString(), envelope.Metadata.CausationId);
     }
 }

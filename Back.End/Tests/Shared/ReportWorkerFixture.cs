@@ -1,18 +1,26 @@
 ﻿using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
+using Cashflow.Shared.NoSql.MongoDB;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MongoDB.Driver;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 
 namespace Infrastructure.Test
 {
     public class ReportWorkerFixture : IAsyncLifetime
     {
-        private readonly ReportCompleteInfrastructureFixture _infra;
+        private readonly BaseCompleteInfrastructureFixture _infra;
 
         private IHost _host;
 
         public ReportWorkerFixture(ReportCompleteInfrastructureFixture infra)
+        {
+            _infra = infra;
+        }
+
+        public ReportWorkerFixture(HolisticCompleteInfrastructureFixture infra)
         {
             _infra = infra;
         }
@@ -25,36 +33,37 @@ namespace Infrastructure.Test
 
         public async Task InitializeAsync()
         {
-            _host = new HostBuilder()
-            .ConfigureServices((context, services) =>
+            try
             {
-                services.AddRabbitMQDependencyInjection(new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string>
+                BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
+            }
+            catch (BsonSerializationException)
+            {
+                // já registrado por outro fixture, ignorar
+            }
+            _host = new HostBuilder()
+                .ConfigureAppConfiguration((context, config) =>
                 {
-                    ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString,
-                    ["RabbitMq:Host"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Host,
-                    ["RabbitMq:Port"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Port.ToString(),
-                    ["RabbitMq:Username"] = "guest",
-                    ["RabbitMq:Password"] = "guest",
-                    ["Mongo:Connection"] = _infra.MongoDbContainerFixture.ConnectionString
+                    config.AddInMemoryCollection(new Dictionary<string, string>
+                    {
+                        ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString,
+                        ["RabbitMq:ConsumerName"] = "report",
+                        ["RabbitMq:Host"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Host,
+                        ["RabbitMq:Port"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Port.ToString(),
+                        ["RabbitMq:Username"] = "guest",
+                        ["RabbitMq:Password"] = "guest",
+                        ["Mongo:Connection"] = _infra.MongoDbContainerFixture.ConnectionString
+                    }!);
                 })
-                .Build());
-
-                services.AddSingleton<IMongoClient>(sp =>
+                .ConfigureServices((context, services) =>
                 {
-                    return new MongoClient(_infra.MongoDbContainerFixture.ConnectionString);
-                });
-
-                services.AddScoped(sp =>
-                {
-                    var client = sp.GetRequiredService<IMongoClient>();
-                    return client.GetDatabase("cashflow-report");
-                });
-
-                services.AddScoped<Cashflow.Worker.Report.TransactionCreatedHandler>();
-                services.AddHostedService<Cashflow.Worker.Report.Worker>();
-            })
-            .Build();
+                    var configuration = context.Configuration;
+                    services.AddRabbitMQDependencyInjection(configuration);
+                    services.AddMongoDBProviderDependencyInjection(configuration, "cashflow-report");
+                    services.AddScoped<Cashflow.Worker.Report.TransactionCreatedHandler>();
+                    services.AddHostedService<Cashflow.Worker.Report.Worker>();
+                })
+                .Build();
 
             await _host.StartAsync();
         }

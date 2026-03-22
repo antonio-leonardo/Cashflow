@@ -1,5 +1,4 @@
 ﻿using Cashflow.Service.Transaction.Postgres.DependencyInjection;
-using Cashflow.Shared.Messaging.Abstractions;
 using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,7 +37,6 @@ namespace Infrastructure.Test
             builder.Services.AddPostgresProviderDependencyInjection(builder.Configuration);
             builder.Services.AddDatabaseInfrastructureDependencyInjection(builder.Configuration);
             builder.Services.AddRabbitMQDependencyInjection(builder.Configuration);
-            builder.Services.AddSingleton<IMessageBus, Cashflow.Outbox.Worker.ConsoleMessageBus>();
             builder.Services.AddHostedService<Cashflow.Outbox.Worker.Worker>();
 
             _host = builder.Build();

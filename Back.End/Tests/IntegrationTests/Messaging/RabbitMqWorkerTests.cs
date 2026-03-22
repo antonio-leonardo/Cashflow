@@ -6,8 +6,8 @@ namespace Messaging.Integration.Tests
     [Collection("RabbitMqCollection")]
     public class RabbitMqWorkerTests
     {
-        private readonly RabbitMqContainerFixture _rabbitMqFixture;
-        public RabbitMqWorkerTests(RabbitMqContainerFixture rabbitMqFixture)
+        private readonly RabbitMqContainerV1Fixture _rabbitMqFixture;
+        public RabbitMqWorkerTests(RabbitMqContainerV1Fixture rabbitMqFixture)
         {
             _rabbitMqFixture = rabbitMqFixture;
         }
@@ -22,7 +22,7 @@ namespace Messaging.Integration.Tests
 
             await using (var connection = await factory.CreateConnectionAsync())
             {
-                Assert.NotNull(connection);
+                Xunit.Assert.NotNull(connection);
             }
         }
     }

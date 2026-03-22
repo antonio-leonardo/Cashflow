@@ -16,13 +16,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="DotNet.Testcontainers" Version="1.6.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
-    <PackageReference Include="MongoDB.Driver" Version="3.7.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.1.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
-    <PackageReference Include="StackExchange.Redis" Version="2.12.4" />
     <PackageReference Include="Testcontainers" Version="4.11.0" />
     <PackageReference Include="Testcontainers.MongoDb" Version="4.11.0" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.11.0" />
@@ -37,6 +35,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Outbox\Worker\Cashflow.Outbox.Worker.csproj" />
     <ProjectReference Include="..\..\Service\Transaction\Infrastructure\Cashflow.Service.Transaction.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Shared\NoSql\Providers\MongoDB\Cashflow.Shared.NoSql.MongoDB.csproj" />
+    <ProjectReference Include="..\..\Shared\NoSql\Providers\Redis\Cashflow.Shared.NoSql.Redis.csproj" />
     <ProjectReference Include="..\..\Worker\Audit\Cashflow.Worker.Audit.csproj" />
     <ProjectReference Include="..\..\Worker\Balance\Cashflow.Worker.Balance.csproj" />
     <ProjectReference Include="..\..\Worker\Report\Cashflow.Worker.Report.csproj" />

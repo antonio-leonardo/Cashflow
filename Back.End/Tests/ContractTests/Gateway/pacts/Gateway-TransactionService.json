@@ -7,9 +7,9 @@
       "description": "Create Transaction Request",
       "request": {
         "body": {
-          "accountId": "43d5b9d1-43b0-4557-bcb1-75bed0b208f9",
+          "accountId": "7ded560f-81cb-4525-8945-a9fba2a11c34",
           "amount": 100,
-          "currency": "USD"
+          "currency": "BRL"
         },
         "headers": {
           "Content-Type": "application/json"
@@ -43,7 +43,7 @@
           }
         },
         "method": "POST",
-        "path": "/transactions"
+        "path": "/api/transactions"
       },
       "response": {
         "status": 201

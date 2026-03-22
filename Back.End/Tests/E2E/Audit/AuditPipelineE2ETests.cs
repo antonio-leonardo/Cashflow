@@ -10,11 +10,11 @@ namespace E2E.Audit.Test
     public class AuditPipelineE2ETests
     {
         private readonly AuditCompleteInfrastructureFixture _infra;
-        private readonly CustomWebApplicationFactory _factory;
+        private readonly TransactionWebApplicationFactory _factory;
         public AuditPipelineE2ETests(AuditCompleteInfrastructureFixture infra)
         {
             _infra = infra;
-            _factory = new CustomWebApplicationFactory(_infra);
+            _factory = new TransactionWebApplicationFactory(_infra);
         }
 
         [Fact]
@@ -67,11 +67,11 @@ namespace E2E.Audit.Test
                 await Task.Delay(5000);
             }
 
-            Assert.NotNull(result);
+            Xunit.Assert.NotNull(result);
 
             var payload = result["Payload"].AsBsonDocument;
 
-            Assert.Equal(accountId, payload["AccountId"].AsGuid);
+            Xunit.Assert.Equal(accountId, payload["AccountId"].AsGuid);
         }
 
         private MongoClient CreateConnection(string connection)

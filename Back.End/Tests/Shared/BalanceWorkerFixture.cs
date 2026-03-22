@@ -1,14 +1,14 @@
 ﻿using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
+using Cashflow.Shared.NoSql.Redis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using StackExchange.Redis;
 
 namespace Infrastructure.Test
 {
     public class BalanceWorkerFixture : IAsyncLifetime
     {
-        private readonly BalanceCompleteInfrastructureFixture _infra;
+        private readonly BaseCompleteInfrastructureFixture _infra;
 
         private IHost _host;
 
@@ -17,28 +17,34 @@ namespace Infrastructure.Test
             _infra = infra;
         }
 
+        public BalanceWorkerFixture(HolisticCompleteInfrastructureFixture infra)
+        {
+            _infra = infra;
+        }
+
         public async Task InitializeAsync()
         {
             _host = new HostBuilder()
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    config.AddInMemoryCollection(new Dictionary<string, string>
+                    {
+                        ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString,
+                        ["RabbitMq:ConsumerName"] = "balance",
+                        ["RabbitMq:Host"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Host,
+                        ["RabbitMq:Port"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Port.ToString(),
+                        ["RabbitMq:Username"] = "guest",
+                        ["RabbitMq:Password"] = "guest",
+                        ["Redis:Connection"] = _infra.RedisContainerFixture.ConnectionString
+                    }!);
+                })
                 .ConfigureServices((context, services) =>
                 {
-                    services.AddSingleton<IConnectionMultiplexer>(sp =>
-                        ConnectionMultiplexer.Connect(_infra.RedisContainerFixture.ConnectionString));
-
+                    var configuration = context.Configuration;
+                    services.AddRabbitMQDependencyInjection(configuration);
+                    services.AddRedisProviderDependencyInjection(configuration);
                     services.AddScoped<Cashflow.Worker.Balance.RedisBalanceRepository>();
                     services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
-
-                    services.AddRabbitMQDependencyInjection(new ConfigurationBuilder()
-                        .AddInMemoryCollection(new Dictionary<string, string>
-                        {
-                            ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString,
-                            ["RabbitMq:Host"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Host,
-                            ["RabbitMq:Port"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Port.ToString(),
-                            ["RabbitMq:Username"] = "guest",
-                            ["RabbitMq:Password"] = "guest",
-                        })
-                        .Build());
-
                     services.AddHostedService<Cashflow.Worker.Balance.Worker>();
                 })
                 .Build();

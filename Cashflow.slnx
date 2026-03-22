@@ -97,6 +97,9 @@
     <Project Path="Back.End/Tests/E2E/Report/E2E.Report.Test.csproj" />
   </Folder>
   <Folder Name="/_Tests/IntegrationTests/" />
+  <Folder Name="/_Tests/IntegrationTests/Holistic/">
+    <Project Path="Back.End/Tests/IntegrationTests/Holistic/Holistic.Integration.Tests.csproj" />
+  </Folder>
   <Folder Name="/_Tests/IntegrationTests/Messaging/">
     <Project Path="Back.End/Tests/IntegrationTests/Messaging/Messaging.Integration.Tests.csproj" />
   </Folder>
