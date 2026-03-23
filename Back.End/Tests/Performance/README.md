@@ -39,6 +39,12 @@ The wrapper test project is versioned and portable:
 - Test: `TransactionApi_Should_Handle_50Rps_With_Max_5Percent_Loss`
 
 This test invokes docker compose + k6 and appears like any other xUnit test in Test Explorer.
+After test execution it automatically runs `docker compose --profile perf down --remove-orphans` to release CPU/RAM.
+
+Optional behavior flags:
+
+- `KEEP_CASHFLOW_STACK=true` -> skip automatic cleanup.
+- `CLEANUP_CASHFLOW_VOLUMES=true` -> cleanup with `-v` (also removes volumes/data).
 
 ## Optional overrides
 
