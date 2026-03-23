@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace K6.Performance.Tests
 {
@@ -10,6 +11,8 @@ namespace K6.Performance.Tests
         private const string SummaryRelativePath = "Back.End/Tests/Performance/results/transactions-throughput-summary.json";
         private const string KeepStackEnvVar = "KEEP_CASHFLOW_STACK";
         private const string CleanupVolumesEnvVar = "CLEANUP_CASHFLOW_VOLUMES";
+        private const double MaxLossRate = 0.05;
+        private const double LatencyP95ThresholdMs = 1500;
 
         private readonly ITestOutputHelper _output;
 
@@ -33,34 +36,58 @@ namespace K6.Performance.Tests
             var summaryFilePath = Path.Combine(repositoryRoot, SummaryRelativePath.Replace('/', Path.DirectorySeparatorChar));
 
             EnsureSummaryDirectoryExists(summaryFilePath);
-            DeleteExistingSummaryFile(summaryFilePath);
-
-            CommandResult result;
 
             try
             {
-                result = await RunDockerComposeCommandAsync(
+                await RunK6AndAssertTargetsAsync(repositoryRoot, summaryFilePath);
+            }
+            finally
+            {
+                await CleanupDockerComposeAsync(repositoryRoot);
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "Performance")]
+        [Trait("Suite", "NfrAprofundado")]
+        public async Task TransactionApi_Should_Stay_Available_Under_Load_When_BalanceWorker_Is_Down()
+        {
+            if (string.Equals(Environment.GetEnvironmentVariable("CI"), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                _output.WriteLine("Performance tests are skipped in CI. Run them explicitly in a performance stage.");
+                return;
+            }
+
+            var repositoryRoot = ResolveRepositoryRoot();
+            var summaryFilePath = Path.Combine(repositoryRoot, SummaryRelativePath.Replace('/', Path.DirectorySeparatorChar));
+
+            EnsureSummaryDirectoryExists(summaryFilePath);
+
+            try
+            {
+                var upResult = await RunDockerComposeCommandAsync(
                     repositoryRoot,
-                    "compose --profile perf run --rm -e TARGET_RPS=50 -e DURATION=10s -e PRE_ALLOCATED_VUS=120 -e MAX_VUS=400 k6 run k6/transactions-throughput.js",
-                    TimeSpan.FromMinutes(8));
+                    "compose up -d transaction-api worker-outbox balance-worker report-worker audit-worker",
+                    TimeSpan.FromMinutes(6));
 
-                _output.WriteLine(result.Output);
-
-                Assert.True(
-                    result.ExitCode == 0,
-                    $"k6 execution failed with exit code {result.ExitCode}.{Environment.NewLine}{result.Output}");
+                _output.WriteLine(upResult.Output);
 
                 Assert.True(
-                    File.Exists(summaryFilePath),
-                    $"Summary file was not generated at '{summaryFilePath}'.");
+                    upResult.ExitCode == 0,
+                    $"Unable to start infrastructure for degraded scenario.{Environment.NewLine}{upResult.Output}");
 
-                var summary = await ReadSummaryAsync(summaryFilePath);
+                var stopBalanceResult = await RunDockerComposeCommandAsync(
+                    repositoryRoot,
+                    "compose stop balance-worker",
+                    TimeSpan.FromMinutes(2));
 
-                Assert.NotNull(summary);
-                Assert.Equal("PASS", summary!.Result);
+                _output.WriteLine(stopBalanceResult.Output);
+
                 Assert.True(
-                    summary.FailedRate <= 0.05,
-                    $"Expected loss <= 5%, got {(summary.FailedRate * 100):F2}%.");
+                    stopBalanceResult.ExitCode == 0,
+                    $"Unable to stop balance-worker for degraded scenario.{Environment.NewLine}{stopBalanceResult.Output}");
+
+                await RunK6AndAssertTargetsAsync(repositoryRoot, summaryFilePath);
             }
             finally
             {
@@ -99,6 +126,83 @@ namespace K6.Performance.Tests
                     PropertyNameCaseInsensitive = true
                 });
         }
+
+        private async Task RunK6AndAssertTargetsAsync(string repositoryRoot, string summaryFilePath)
+        {
+            await EnsureTransactionApiReadyAsync(repositoryRoot);
+            DeleteExistingSummaryFile(summaryFilePath);
+
+            var result = await RunDockerComposeCommandAsync(
+                repositoryRoot,
+                BuildK6RunArguments(targetRps: 50, durationSeconds: 10),
+                TimeSpan.FromMinutes(8));
+
+            _output.WriteLine(result.Output);
+
+            Assert.True(
+                result.ExitCode == 0,
+                $"k6 execution failed with exit code {result.ExitCode}.{Environment.NewLine}{result.Output}");
+
+            Assert.True(
+                File.Exists(summaryFilePath),
+                $"Summary file was not generated at '{summaryFilePath}'.");
+
+            var summary = await ReadSummaryAsync(summaryFilePath);
+
+            Assert.NotNull(summary);
+            Assert.Equal("PASS", summary!.Result);
+            Assert.True(
+                summary.FailedRate <= MaxLossRate,
+                $"Expected loss <= {MaxLossRate * 100:F0}%, got {(summary.FailedRate * 100):F2}%.");
+            Assert.True(
+                summary.P95DurationMs <= LatencyP95ThresholdMs,
+                $"Expected p95 latency <= {LatencyP95ThresholdMs:F0} ms, got {summary.P95DurationMs:F2} ms.");
+        }
+
+        private async Task EnsureTransactionApiReadyAsync(string repositoryRoot)
+        {
+            var upResult = await RunDockerComposeCommandAsync(
+                repositoryRoot,
+                "compose up -d transaction-api",
+                TimeSpan.FromMinutes(4));
+
+            _output.WriteLine(upResult.Output);
+
+            Assert.True(
+                upResult.ExitCode == 0,
+                $"Unable to ensure transaction-api startup.{Environment.NewLine}{upResult.Output}");
+
+            using var client = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(2)
+            };
+
+            var deadline = DateTime.UtcNow.AddMinutes(2);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    using var response = await client.GetAsync("http://localhost:5001/api/transactions");
+
+                    if ((int)response.StatusCode >= 100)
+                    {
+                        return;
+                    }
+                }
+                catch
+                {
+                    // retry until timeout
+                }
+
+                await Task.Delay(1000);
+            }
+
+            throw new XunitException("Transaction API did not become reachable on http://localhost:5001 within timeout.");
+        }
+
+        private static string BuildK6RunArguments(int targetRps, int durationSeconds)
+            => $"compose --profile perf run --rm -e TARGET_RPS={targetRps} -e DURATION={durationSeconds}s -e PRE_ALLOCATED_VUS=120 -e MAX_VUS=400 -e LATENCY_P95_MS={LatencyP95ThresholdMs:F0} k6 run k6/transactions-throughput.js";
 
         private async Task CleanupDockerComposeAsync(string repositoryRoot)
         {
@@ -216,6 +320,7 @@ namespace K6.Performance.Tests
         private sealed class K6Summary
         {
             public double FailedRate { get; set; }
+            public double P95DurationMs { get; set; }
             public string Result { get; set; } = string.Empty;
         }
     }

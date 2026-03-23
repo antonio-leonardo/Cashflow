@@ -12,6 +12,7 @@ This folder contains the load test harness for the NFR target:
 - Load profile: constant arrival rate (`constant-arrival-rate`)
 - Default execution: `50 req/s` for `60s`
 - Acceptance threshold: `http_req_failed <= 0.05`
+- Latency guardrail: `http_req_duration p(95) <= 1500 ms`
 
 ## How to run (Docker + k6)
 
@@ -37,6 +38,7 @@ The wrapper test project is versioned and portable:
 
 - Project: `Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj`
 - Test: `TransactionApi_Should_Handle_50Rps_With_Max_5Percent_Loss`
+- Test: `TransactionApi_Should_Stay_Available_Under_Load_When_BalanceWorker_Is_Down`
 
 This test invokes docker compose + k6 and appears like any other xUnit test in Test Explorer.
 After test execution it automatically runs `docker compose --profile perf down --remove-orphans` to release CPU/RAM.
