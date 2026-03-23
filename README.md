@@ -168,7 +168,7 @@ Escalabilidade:
 - Filas por evento e processamento assincrono para backpressure.
 - Read models otimizados (Redis, MongoDB, DynamoDB) para consultas rapidas.
 - Politicas de resiliencia (retry, circuit breaker, bulkhead, timeout) via `Cashflow.Shared.Resilience`.
-- Meta operacional validada por carga: `50 req/s` com ate `5%` de perda na entrada (`http_req_failed <= 0.05`).
+- Meta operacional validada por carga: `50 req/s` com ate `5%` de perda (`http_req_failed <= 0.05`) e latencia `p95 <= 1500 ms`.
 
 Resiliencia:
 
@@ -358,6 +358,7 @@ Evidencia gerada:
 
 - `Back.End/Tests/Performance/results/transactions-throughput-summary.json`
 - Wrapper para Test Explorer (Visual Studio): `Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj`
+- Cenario NFR aprofundado: indisponibilidade do `balance-worker` sob carga com disponibilidade do write path.
 
 ---
 

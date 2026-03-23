@@ -9,6 +9,7 @@ const targetRps = Number(__ENV.TARGET_RPS || 50);
 const duration = __ENV.DURATION || "60s";
 const preAllocatedVUs = Number(__ENV.PRE_ALLOCATED_VUS || 100);
 const maxVUs = Number(__ENV.MAX_VUS || 300);
+const latencyP95Ms = Number(__ENV.LATENCY_P95_MS || 1500);
 
 export const options = {
   discardResponseBodies: true,
@@ -25,6 +26,7 @@ export const options = {
   thresholds: {
     http_req_failed: ["rate<=0.05"],
     checks: ["rate>=0.95"],
+    http_req_duration: [`p(95)<=${latencyP95Ms}`],
   },
 };
 
@@ -59,6 +61,12 @@ export function handleSummary(data) {
   const failedRate = data.metrics.http_req_failed?.values?.rate ?? 1;
   const checksRate = data.metrics.checks?.values?.rate ?? 0;
   const totalRequests = data.metrics.http_reqs?.values?.count ?? 0;
+  const p95DurationMs = data.metrics.http_req_duration?.values?.["p(95)"] ?? Number.POSITIVE_INFINITY;
+  const avgDurationMs = data.metrics.http_req_duration?.values?.avg ?? Number.POSITIVE_INFINITY;
+  const passed =
+    failedRate <= 0.05 &&
+    checksRate >= 0.95 &&
+    p95DurationMs <= latencyP95Ms;
 
   const summary = {
     targetRps,
@@ -66,7 +74,10 @@ export function handleSummary(data) {
     totalRequests,
     failedRate,
     passedRate: checksRate,
-    result: failedRate <= 0.05 ? "PASS" : "FAIL",
+    p95DurationMs,
+    avgDurationMs,
+    latencyP95ThresholdMs: latencyP95Ms,
+    result: passed ? "PASS" : "FAIL",
   };
 
   return {
@@ -76,6 +87,8 @@ export function handleSummary(data) {
       `[k6] Target: ${targetRps} req/s for ${duration}\n` +
       `[k6] Requests: ${totalRequests}\n` +
       `[k6] Failed rate: ${(failedRate * 100).toFixed(2)}% (threshold <= 5%)\n` +
+      `[k6] Latency p95: ${p95DurationMs.toFixed(2)} ms (threshold <= ${latencyP95Ms} ms)\n` +
+      `[k6] Latency avg: ${avgDurationMs.toFixed(2)} ms\n` +
       `[k6] Check pass rate: ${(checksRate * 100).toFixed(2)}%\n` +
       `[k6] Result: ${summary.result}\n`,
   };
