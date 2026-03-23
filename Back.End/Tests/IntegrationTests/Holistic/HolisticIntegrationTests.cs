@@ -62,6 +62,50 @@ namespace Holistic.Integration.Tests
         }
 
         [Fact]
+        public async Task Should_Return_Unauthorized_When_Token_Is_Invalid()
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/transactions")
+            {
+                Content = JsonContent.Create(new
+                {
+                    AccountId = Guid.NewGuid(),
+                    Amount = 100m,
+                    Currency = "BRL",
+                    Type = 1
+                })
+            };
+
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "invalid-token");
+
+            var response = await _client.SendAsync(request);
+
+            Xunit.Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Should_Return_Forbidden_When_Token_Misses_TransactionsWrite_Scope()
+        {
+            var readOnlyToken = await _fixture.KeycloakFixture.GetReadOnlyAccessTokenClientIdSecretAsync();
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/transactions")
+            {
+                Content = JsonContent.Create(new
+                {
+                    AccountId = Guid.NewGuid(),
+                    Amount = 150m,
+                    Currency = "BRL",
+                    Type = 1
+                })
+            };
+
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", readOnlyToken);
+
+            var response = await _client.SendAsync(request);
+
+            Xunit.Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
         public async Task Should_Allow_Authenticated_Requests()
         {
             var token = await _fixture.KeycloakFixture.GetAccessTokenClientIdSecretAsync();
