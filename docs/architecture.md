@@ -122,6 +122,8 @@ Disponibilidade:
 Seguranca e observabilidade:
 
 - Autenticacao centralizada via Keycloak (OIDC/OAuth2).
+- Autorizacao por politica de escopo/role no write path (`transactions.write` / `transactions.writer`).
+- Rate limiting no Gateway e na Transaction API para protecao de borda.
 - CorrelationId propagado em toda a cadeia de eventos.
 - Logs estruturados e rastreio distribuido com OpenTelemetry.
 
@@ -246,6 +248,7 @@ Evidencia gerada:
 - Wrapper para Test Explorer (Visual Studio): `Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj`
 - Cenario NFR aprofundado: indisponibilidade do `balance-worker` sob carga com disponibilidade do write path.
 - Integracao de mensageria aprofundada: `Back.End/Tests/IntegrationTests/Messaging/RabbitMqDecouplingIntegrationTests.cs`
+- Seguranca de borda validada em integracao (401/403/201): `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
 - Gates de qualidade (Acao 7): `docs/tests-quality-gates.md`
 - Matriz holistica 1-8 (Acao 8): `docs/holistic-execution-matrix.md`
 - Runner unico de validacao holistica: `Back.End/Tests/run-holistic-validation.ps1`

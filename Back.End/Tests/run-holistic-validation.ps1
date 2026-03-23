@@ -135,9 +135,9 @@ $suites = @(
         Filter = "FullyQualifiedName~ServiceIndependenceE2ETests"
     },
     @{
-        Name = "Holistic Authenticated Flow"
+        Name = "Holistic Security + Authenticated Flow"
         Project = "Back.End/Tests/IntegrationTests/Holistic/Holistic.Integration.Tests.csproj"
-        Filter = "FullyQualifiedName~Should_Allow_Authenticated_Requests"
+        Filter = "FullyQualifiedName~HolisticIntegrationTests"
     }
 )
 
@@ -145,7 +145,7 @@ if ($Quick) {
     $suites = @(
         $suites[1], # Messaging Robustness
         $suites[2], # Performance NFR Deep
-        $suites[6]  # Holistic Authenticated Flow
+        $suites[6]  # Holistic Security + Authenticated Flow
     )
 }
 

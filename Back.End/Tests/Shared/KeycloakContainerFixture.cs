@@ -2,17 +2,16 @@ using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Infrastructure.Test
 {
     public sealed class KeycloakContainerFixture : IAsyncLifetime
     {
         private const string RealmName = "cashflow";
-        private const string ClientId = "cashflow-api";
-        private const string Username = "integration-user";
-        private const string Password = "P@ssw0rd!";
-        private const string ClientSecret = "Teste";
+        private const string WriterClientId = "cashflow-api";
+        private const string WriterClientSecret = "Teste";
+        private const string ReadOnlyClientId = "cashflow-readonly";
+        private const string ReadOnlyClientSecret = "ReadOnlySecret";
 
         private readonly IContainer _container;
 
@@ -50,17 +49,28 @@ namespace Infrastructure.Test
             await _container.DisposeAsync();
         }
 
-        public async Task<string> GetAccessTokenClientIdSecretAsync(string scope = null)
+        public Task<string> GetAccessTokenClientIdSecretAsync(string? scope = null)
+            => GetAccessTokenAsync(WriterClientId, WriterClientSecret, scope);
+
+        public Task<string> GetReadOnlyAccessTokenClientIdSecretAsync(string? scope = null)
+            => GetAccessTokenAsync(ReadOnlyClientId, ReadOnlyClientSecret, scope);
+
+        public async Task<string> GetAccessTokenAsync(string clientId, string clientSecret, string? scope = null)
         {
             using var client = new HttpClient();
             var tokenEndpoint = $"{Authority}/protocol/openid-connect/token";
             var form = new Dictionary<string, string>
             {
-                ["client_id"] = ClientId,
-                ["client_secret"] = ClientSecret,
+                ["client_id"] = clientId,
+                ["client_secret"] = clientSecret,
                 ["grant_type"] = "client_credentials"
             };
-            if(!string.IsNullOrWhiteSpace(scope)) form["scope"] = scope;
+
+            if (!string.IsNullOrWhiteSpace(scope))
+            {
+                form["scope"] = scope;
+            }
+
             var request = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint)
             {
                 Content = new FormUrlEncodedContent(form)
@@ -112,9 +122,6 @@ namespace Infrastructure.Test
 
             throw new TimeoutException("Keycloak nao ficou pronto dentro do tempo esperado.");
         }
-
-        private sealed record TokenResponse(
-            [property: JsonPropertyName("access_token")] string AccessToken);
     }
 }
 
