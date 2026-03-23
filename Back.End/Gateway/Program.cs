@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
 
@@ -45,6 +47,10 @@ namespace Cashflow.Gateway
                             HasRole(context.User, "transactions.writer")));
             });
 
+            builder.Services.AddHealthChecks()
+                .AddCheck("self", () => HealthCheckResult.Healthy("gateway alive"), tags: new[] { "live" })
+                .AddCheck<GatewayConfigurationHealthCheck>("config", tags: new[] { "ready" });
+
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -67,6 +73,17 @@ namespace Cashflow.Gateway
             app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.MapHealthChecks("/health/live", new HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("live")
+            });
+
+            app.MapHealthChecks("/health/ready", new HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("ready") || check.Tags.Contains("live")
+            });
+
             app.MapReverseProxy();
 
             app.Run();

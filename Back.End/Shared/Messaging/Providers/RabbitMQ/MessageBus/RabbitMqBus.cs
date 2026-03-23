@@ -30,7 +30,10 @@ namespace Cashflow.Shared.Messaging.RabbitMQ.MessageBus
                 HostName = _options.Host,
                 Port = _options.Port,
                 UserName = _options.Username,
-                Password = _options.Password
+                Password = _options.Password,
+                AutomaticRecoveryEnabled = true,
+                TopologyRecoveryEnabled = true,
+                NetworkRecoveryInterval = TimeSpan.FromSeconds(5)
             };
 
             _connection = CreateConnection(factory);
