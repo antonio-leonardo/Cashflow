@@ -8,6 +8,8 @@ namespace K6.Performance.Tests
     public class K6ThroughputE2ETests
     {
         private const string SummaryRelativePath = "Back.End/Tests/Performance/results/transactions-throughput-summary.json";
+        private const string KeepStackEnvVar = "KEEP_CASHFLOW_STACK";
+        private const string CleanupVolumesEnvVar = "CLEANUP_CASHFLOW_VOLUMES";
 
         private readonly ITestOutputHelper _output;
 
@@ -33,25 +35,37 @@ namespace K6.Performance.Tests
             EnsureSummaryDirectoryExists(summaryFilePath);
             DeleteExistingSummaryFile(summaryFilePath);
 
-            var result = await RunDockerComposeK6Async(repositoryRoot, TimeSpan.FromMinutes(8));
+            CommandResult result;
 
-            _output.WriteLine(result.Output);
+            try
+            {
+                result = await RunDockerComposeCommandAsync(
+                    repositoryRoot,
+                    "compose --profile perf run --rm -e TARGET_RPS=50 -e DURATION=10s -e PRE_ALLOCATED_VUS=120 -e MAX_VUS=400 k6 run k6/transactions-throughput.js",
+                    TimeSpan.FromMinutes(8));
 
-            Assert.True(
-                result.ExitCode == 0,
-                $"k6 execution failed with exit code {result.ExitCode}.{Environment.NewLine}{result.Output}");
+                _output.WriteLine(result.Output);
 
-            Assert.True(
-                File.Exists(summaryFilePath),
-                $"Summary file was not generated at '{summaryFilePath}'.");
+                Assert.True(
+                    result.ExitCode == 0,
+                    $"k6 execution failed with exit code {result.ExitCode}.{Environment.NewLine}{result.Output}");
 
-            var summary = await ReadSummaryAsync(summaryFilePath);
+                Assert.True(
+                    File.Exists(summaryFilePath),
+                    $"Summary file was not generated at '{summaryFilePath}'.");
 
-            Assert.NotNull(summary);
-            Assert.Equal("PASS", summary!.Result);
-            Assert.True(
-                summary.FailedRate <= 0.05,
-                $"Expected loss <= 5%, got {(summary.FailedRate * 100):F2}%.");
+                var summary = await ReadSummaryAsync(summaryFilePath);
+
+                Assert.NotNull(summary);
+                Assert.Equal("PASS", summary!.Result);
+                Assert.True(
+                    summary.FailedRate <= 0.05,
+                    $"Expected loss <= 5%, got {(summary.FailedRate * 100):F2}%.");
+            }
+            finally
+            {
+                await CleanupDockerComposeAsync(repositoryRoot);
+            }
         }
 
         private static void EnsureSummaryDirectoryExists(string summaryFilePath)
@@ -86,11 +100,37 @@ namespace K6.Performance.Tests
                 });
         }
 
-        private static async Task<CommandResult> RunDockerComposeK6Async(string workingDirectory, TimeSpan timeout)
+        private async Task CleanupDockerComposeAsync(string repositoryRoot)
         {
-            const string commandArguments =
-                "compose --profile perf run --rm -e TARGET_RPS=50 -e DURATION=10s -e PRE_ALLOCATED_VUS=120 -e MAX_VUS=400 k6 run k6/transactions-throughput.js";
+            if (string.Equals(Environment.GetEnvironmentVariable(KeepStackEnvVar), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                _output.WriteLine($"Skipping docker compose cleanup because {KeepStackEnvVar}=true.");
+                return;
+            }
 
+            var removeVolumes = string.Equals(
+                Environment.GetEnvironmentVariable(CleanupVolumesEnvVar),
+                "true",
+                StringComparison.OrdinalIgnoreCase);
+
+            var downArgs = removeVolumes
+                ? "compose --profile perf down -v --remove-orphans"
+                : "compose --profile perf down --remove-orphans";
+
+            var cleanupResult = await RunDockerComposeCommandAsync(repositoryRoot, downArgs, TimeSpan.FromMinutes(3));
+
+            _output.WriteLine(cleanupResult.Output);
+
+            Assert.True(
+                cleanupResult.ExitCode == 0,
+                $"docker compose cleanup failed with exit code {cleanupResult.ExitCode}.{Environment.NewLine}{cleanupResult.Output}");
+        }
+
+        private static async Task<CommandResult> RunDockerComposeCommandAsync(
+            string workingDirectory,
+            string commandArguments,
+            TimeSpan timeout)
+        {
             using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
