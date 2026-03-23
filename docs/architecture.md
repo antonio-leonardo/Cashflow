@@ -70,19 +70,29 @@ flowchart LR
 
 ## 2. Decisoes arquiteturais e trade-offs
 
-Decisoes sao registradas em ADRs para deixar claras as justificativas tecnicas e as consequencias.
+### Fontes oficiais de decisao
 
 - `docs/decisions/adr-001-microservices-vs-monolith.md`
 - `docs/decisions/adr-002-event-driven-vs-sync.md`
 - `docs/decisions/adr-003-db-per-service-cqrs.md`
 - `docs/decisions/adr-004-gateway-auth-keycloak.md`
+- `docs/decisions/decision-matrix.md`
 
-Resumo:
+### Consolidado de trade-offs
 
-- Microsservicos foram escolhidos para isolar falhas e permitir evolucao independente. Trade-off: maior complexidade operacional e observabilidade mais exigente.
-- Integracao por eventos reduz acoplamento e melhora a disponibilidade. Trade-off: consistencia eventual e necessidade de idempotencia.
-- Database-per-service protege autonomia de cada contexto. Trade-off: consultas cross-service exigem materializacao ou pipelines de eventos.
-- Gateway com Keycloak centraliza autenticacao e politicas de acesso. Trade-off: dependencia adicional e necessidade de testes de integracao com OIDC.
+- ADR-001: microsservicos para isolamento de falhas e escala por servico; trade-off operacional.
+- ADR-002: eventos + outbox para desacoplamento e resiliencia; trade-off de consistencia eventual.
+- ADR-003: CQRS + database-per-service para performance no read side; trade-off de materializacao cross-service.
+- ADR-004: gateway + OIDC para politica de acesso unica; trade-off de dependencia adicional do IdP.
+
+### Encadeamento das decisoes
+
+```mermaid
+flowchart LR
+  A["ADR-001: Microsservicos"] --> B["ADR-002: Event-Driven + Outbox"]
+  B --> C["ADR-003: CQRS + Database per Service"]
+  C --> D["ADR-004: Gateway + Keycloak"]
+```
 
 ---
 

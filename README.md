@@ -70,19 +70,93 @@ flowchart LR
 
 ## 2. Decisoes arquiteturais e trade-offs
 
-Decisoes sao registradas em ADRs para deixar claras as justificativas tecnicas e as consequencias.
+As decisoes principais estao registradas em ADRs e, para facilitar avaliacao tecnica, estao consolidadas abaixo no README principal.
+Matriz consolidada de decisao/riscos/mitigacoes: `docs/decisions/decision-matrix.md`.
 
-- `docs/decisions/adr-001-microservices-vs-monolith.md`
-- `docs/decisions/adr-002-event-driven-vs-sync.md`
-- `docs/decisions/adr-003-db-per-service-cqrs.md`
-- `docs/decisions/adr-004-gateway-auth-keycloak.md`
+### 2.1 ADR-001 - Microservices vs Monolith
 
-Resumo:
+Referencia: `docs/decisions/adr-001-microservices-vs-monolith.md`
 
-- Microsservicos foram escolhidos para isolar falhas e permitir evolucao independente. Trade-off: maior complexidade operacional e observabilidade mais exigente.
-- Integracao por eventos reduz acoplamento e melhora a disponibilidade. Trade-off: consistencia eventual e necessidade de idempotencia.
-- Database-per-service protege autonomia de cada contexto. Trade-off: consultas cross-service exigem materializacao ou pipelines de eventos.
-- Gateway com Keycloak centraliza autenticacao e politicas de acesso. Trade-off: dependencia adicional e necessidade de testes de integracao com OIDC.
+Contexto:
+- O dominio exige evolucao independente entre escrita (transacao) e leitura (saldo, relatorio e auditoria).
+- Isolamento de falhas foi tratado como requisito de arquitetura.
+
+Decisao:
+- Adotar microsservicos: `transaction-api`, `outbox-worker`, `balance-worker`, `report-worker`, `audit-worker`.
+
+Alternativas consideradas:
+- Monolito modular com filas internas.
+- Monolito modular com banco unico.
+
+Trade-offs:
+- Positivos: isolamento de falhas, deploy independente, escala horizontal por servico.
+- Negativos: maior complexidade operacional e maior exigencia de observabilidade.
+
+### 2.2 ADR-002 - Integracao Event-Driven vs Sincrona
+
+Referencia: `docs/decisions/adr-002-event-driven-vs-sync.md`
+
+Contexto:
+- Evitar chamada sincronas em cascata no fluxo de consolidacao.
+- Garantir desacoplamento real entre servicos de leitura e escrita.
+
+Decisao:
+- Integracao assincrona por eventos com `Outbox Pattern` + broker.
+
+Alternativas consideradas:
+- HTTP sincronico entre servicos.
+- Filas internas sem broker e sem envelope de contrato.
+
+Trade-offs:
+- Positivos: desacoplamento, backpressure, maior tolerancia a falhas.
+- Negativos: consistencia eventual, necessidade de idempotencia e versionamento de eventos.
+
+### 2.3 ADR-003 - Database per Service + CQRS
+
+Referencia: `docs/decisions/adr-003-db-per-service-cqrs.md`
+
+Contexto:
+- Escrita exige consistencia transacional.
+- Leitura exige modelos especializados de alta performance.
+
+Decisao:
+- Separar write/read (CQRS) e manter banco por servico.
+
+Alternativas consideradas:
+- Banco unico compartilhado.
+- Read models dentro do mesmo banco transacional.
+
+Trade-offs:
+- Positivos: autonomia de contexto, escalabilidade do read side e menor acoplamento.
+- Negativos: consultas cross-service exigem materializacao por eventos.
+
+### 2.4 ADR-004 - Gateway com Keycloak (OIDC)
+
+Referencia: `docs/decisions/adr-004-gateway-auth-keycloak.md`
+
+Contexto:
+- Autenticacao deve ser centralizada e desacoplada do dominio.
+- Necessidade de politica de acesso unificada na borda.
+
+Decisao:
+- Gateway (YARP) com autenticacao OIDC/OAuth2 via Keycloak.
+
+Alternativas consideradas:
+- Autenticacao distribuida em cada servico.
+- Gateway com provedor proprietario.
+
+Trade-offs:
+- Positivos: governanca de acesso, isolamento do dominio e padrao unico de autenticacao.
+- Negativos: dependencia adicional e necessidade de testes de integracao de autenticacao.
+
+### 2.5 Encadeamento das decisoes
+
+```mermaid
+flowchart LR
+  A["ADR-001: Microsservicos"] --> B["ADR-002: Event-Driven + Outbox"]
+  B --> C["ADR-003: CQRS + Database per Service"]
+  C --> D["ADR-004: Gateway + Keycloak"]
+```
 
 ---
 
@@ -143,8 +217,59 @@ CI/CD          GitHub Actions
 
 ## 6. Arquitetura e diagramas
 
-A documentacao completa de arquitetura, fluxos de dados e diagramas esta em `docs/architecture.md`.
-O runbook de carga do Passo 3 esta em `Back.End/Tests/Performance/README.md`.
+### 6.1 Diagrama de containers (runtime)
+
+```mermaid
+flowchart TB
+  subgraph Edge
+    C["Client"]
+    G["Gateway (YARP)"]
+    K["Keycloak (OIDC)"]
+    C --> G
+    G <--> K
+  end
+
+  subgraph WriteSide
+    T["Transaction API"]
+    P[("Postgres")]
+    O["Outbox Worker"]
+    R["RabbitMQ"]
+    G --> T
+    T --> P
+    O --> P
+    O --> R
+  end
+
+  subgraph ReadSide
+    BW["Balance Worker"]
+    RW["Report Worker"]
+    AW["Audit Worker"]
+    Redis[("Redis")]
+    MongoR[("Mongo Report")]
+    MongoA[("Mongo Audit")]
+
+    R --> BW --> Redis
+    R --> RW --> MongoR
+    R --> AW --> MongoA
+  end
+```
+
+### 6.2 Diagrama de isolamento de falhas (servico independente)
+
+```mermaid
+flowchart LR
+  TX["Transaction API (online)"] --> OB["Outbox"]
+  OB --> MQ["RabbitMQ"]
+  MQ --> REP["Report Worker (online)"]
+  MQ --> AUD["Audit Worker (online)"]
+  MQ -. atraso localizado .-> BAL["Balance Worker (down)"]
+```
+
+### 6.3 Referencias complementares
+
+- Arquitetura detalhada: `docs/architecture.md`
+- Runbook de carga (k6): `Back.End/Tests/Performance/README.md`
+- Configuracao de ambiente/compose: `docs/docker-compose-config.md`
 
 ---
 
