@@ -361,6 +361,9 @@ Evidencia gerada:
 - Wrapper para Test Explorer (Visual Studio): `Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj`
 - Cenario NFR aprofundado: indisponibilidade do `balance-worker` sob carga com disponibilidade do write path.
 - Integracao de mensageria aprofundada: `Back.End/Tests/IntegrationTests/Messaging/RabbitMqDecouplingIntegrationTests.cs`
+- Gates de qualidade (Acao 7): `docs/tests-quality-gates.md`
+- Matriz holistica 1-8 (Acao 8): `docs/holistic-execution-matrix.md`
+- Runner unico de validacao holistica: `Back.End/Tests/run-holistic-validation.ps1`
 
 ---
 
