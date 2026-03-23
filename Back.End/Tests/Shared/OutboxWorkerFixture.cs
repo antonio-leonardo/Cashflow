@@ -29,7 +29,7 @@ namespace Infrastructure.Test
 
             var builder = Host.CreateApplicationBuilder();
 
-            var config = new Dictionary<string, string>
+            var config = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Postgres"] = _infra.PostgresContainerFixture.ConnectionString,
                 ["RabbitMq:Host"] = _infra.RabbitMqContainerFixture.RabbitMqOptions.Host,

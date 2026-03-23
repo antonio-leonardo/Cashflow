@@ -15,6 +15,7 @@ namespace Cashflow.Shared.NoSql.Redis
             {
                 var config = sp.GetRequiredService<IConfiguration>();
                 var connection = config["Redis:Connection"];
+                ArgumentException.ThrowIfNullOrWhiteSpace(connection);
                 return CreateConnection(connection);
             });
             return services;

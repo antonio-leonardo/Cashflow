@@ -373,3 +373,8 @@ FodyWeavers.xsd
 # k6 performance artifacts
 Back.End/Tests/Performance/results/*.json
 !Back.End/Tests/Performance/results/.gitkeep
+
+# SonarQube scanner artifacts
+.sonarqube/
+.scannerwork/
+.sonar/

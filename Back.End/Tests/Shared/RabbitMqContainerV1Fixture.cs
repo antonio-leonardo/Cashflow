@@ -5,8 +5,6 @@ namespace Infrastructure.Test
 {
     public class RabbitMqContainerV1Fixture : IAsyncLifetime
     {
-        private readonly string _alias;
-
         public RabbitMqOptions RabbitMqOptions = new()
         {
             Username = "guest",
@@ -35,7 +33,7 @@ namespace Infrastructure.Test
         public string ConnectionString =>
             $"amqp://{RabbitMqOptions.Username}:{RabbitMqOptions.Password}@{RabbitMq.Hostname}:{RabbitMq.GetMappedPublicPort(5672)}";
 
-        public string NetworkHost => _alias;
+        public string NetworkHost => RabbitMq.Hostname;
         public int NetworkPort => 5672;
     }
 }

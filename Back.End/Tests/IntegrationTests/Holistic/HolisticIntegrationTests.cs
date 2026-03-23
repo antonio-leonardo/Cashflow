@@ -185,13 +185,6 @@ namespace Holistic.Integration.Tests
                 Type = 1
             };
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "/api/transactions")
-            {
-                Content = JsonContent.Create(objectToRequest)
-            };
-
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
             var response = await ResiliencePolicies
             .GetHttpResiliencePolicy()
             .ExecuteAsync(() =>
@@ -222,7 +215,7 @@ namespace Holistic.Integration.Tests
             const int RETRIES = 10;
 
             //----------------------BEGIN: AUDIT----------------------//
-            BsonDocument auditResult = null;
+            BsonDocument? auditResult = null;
 
             for (int i = 0; i < RETRIES; i++)
             {
@@ -242,15 +235,14 @@ namespace Holistic.Integration.Tests
                 await Task.Delay(5000);
             }
 
-            Xunit.Assert.NotNull(auditResult);
-
-            var payload = auditResult["Payload"].AsBsonDocument;
+            var validatedAudit = Xunit.Assert.IsType<BsonDocument>(auditResult);
+            var payload = validatedAudit["Payload"].AsBsonDocument;
 
             Xunit.Assert.Equal(objectToRequest.AccountId, payload["AccountId"].AsGuid);
             //----------------------END: AUDIT----------------------//
 
             //----------------------BEGIN: REPORT----------------------//
-            TransactionReportDocument reportResult = null;
+            TransactionReportDocument? reportResult = null;
 
             for (int i = 0; i < RETRIES; i++)
             {
@@ -265,16 +257,15 @@ namespace Holistic.Integration.Tests
                 await Task.Delay(5000);
             }
 
-            Xunit.Assert.NotNull(reportResult);
-            Xunit.Assert.Equal(objectToRequest.AccountId, reportResult.AccountId);
-            Xunit.Assert.Equal(200, reportResult.Amount);
+            var validatedReport = Xunit.Assert.IsType<TransactionReportDocument>(reportResult);
+            Xunit.Assert.Equal(objectToRequest.AccountId, validatedReport.AccountId);
+            Xunit.Assert.Equal(200, validatedReport.Amount);
             //----------------------END: REPORT----------------------//
 
             //----------------------BEGIN: BALANCE----------------------//
             if (balanceValue.IsNull)
             {
                 var retries = 10;
-                var success = false;
 
                 for (int i = 0; i < retries; i++)
                 {
@@ -282,7 +273,6 @@ namespace Holistic.Integration.Tests
 
                     if (!balanceValue.IsNull)
                     {
-                        success = true;
                         break;
                     }
 

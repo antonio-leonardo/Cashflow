@@ -1,0 +1,82 @@
+name: SonarQube Analysis
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: sonarqube-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sonarqube:
+    name: Code Smells And Quality Gate
+    if: ${{ vars.SONAR_HOST_URL != '' && secrets.SONAR_TOKEN != '' && secrets.SONAR_ORGANIZATION != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install SonarScanner for .NET
+      run: |
+        dotnet tool install dotnet-sonarscanner --tool-path ./.dotnet/tools \
+        || dotnet tool update dotnet-sonarscanner --tool-path ./.dotnet/tools
+
+    - name: Sonar Begin
+      env:
+        SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+        SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+        SONAR_PROJECT_NAME: ${{ vars.SONAR_PROJECT_NAME }}
+      run: |
+        ./.dotnet/tools/dotnet-sonarscanner begin \
+          /k:"${SONAR_PROJECT_KEY:-cashflow}" \
+          /o:"${SONAR_ORGANIZATION}" \
+          /n:"${SONAR_PROJECT_NAME:-Cashflow}" \
+          /d:sonar.projectBaseDir="." \
+          /d:sonar.host.url="${SONAR_HOST_URL}" \
+          /d:sonar.token="${SONAR_TOKEN}" \
+          /d:sonar.qualitygate.wait=true \
+          /d:sonar.exclusions="**/bin/**,**/obj/**,**/*.g.cs,**/*.designer.cs" \
+          /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx"
+
+    - name: Restore
+      run: dotnet restore Cashflow.slnx
+
+    - name: Build
+      run: dotnet build Cashflow.slnx --configuration Release --no-restore --no-incremental
+
+    - name: Test (TRX)
+      run: dotnet test Cashflow.slnx --configuration Release --no-build -m:1 --logger "trx;LogFileName=sonar-tests.trx"
+
+    - name: Sonar End
+      if: ${{ always() }}
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: ./.dotnet/tools/dotnet-sonarscanner end /d:sonar.token="${SONAR_TOKEN}"

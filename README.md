@@ -22,7 +22,8 @@
 10. [Execucao local](#10-execucao-local)
 11. [Estrutura da solution](#11-estrutura-da-solution)
 12. [CI/CD](#12-cicd)
-13. [Roadmap](#13-roadmap)
+13. [SonarQube (Code Smells)](#13-sonarqube-code-smells)
+14. [Roadmap](#14-roadmap)
 
 ---
 
@@ -371,6 +372,8 @@ Evidencia gerada:
 - Gates de qualidade (Acao 7): `docs/tests-quality-gates.md`
 - Matriz holistica 1-8 (Acao 8): `docs/holistic-execution-matrix.md`
 - Runner unico de validacao holistica: `Back.End/Tests/run-holistic-validation.ps1`
+- SonarQube local + script de analise: `scripts/sonarqube-local.ps1`
+- Guia de qualidade com SonarQube: `docs/sonarqube-code-smells.md`
 
 ---
 
@@ -425,10 +428,32 @@ Pipeline atual:
 - Restore e build
 - Testes unitarios, integracao e contract
 - Build de imagens Docker
+- Workflow de qualidade estatica SonarQube: `.github/workflows/sonarqube-analysis.yml`
 
 ---
 
-## 13. Roadmap
+## 13. SonarQube (Code Smells)
+
+Subir SonarQube local:
+
+```bash
+docker compose -f docker-compose.sonarqube.yml up -d
+```
+
+Executar analise:
+
+```powershell
+$env:SONAR_TOKEN = "SEU_TOKEN"
+powershell -ExecutionPolicy Bypass -File .\scripts\sonarqube-local.ps1 -ProjectKey "cashflow" -ProjectName "Cashflow"
+```
+
+Detalhes completos:
+- `docs/sonarqube-code-smells.md`
+- Workflow cloud: `.github/workflows/sonarqube-analysis.yml` (usa secrets `SONAR_HOST_URL` + `SONAR_TOKEN`)
+
+---
+
+## 14. Roadmap
 
 - Exposicao de dados via API (queries otimizadas)
 - Front-end minimo para exibicao
