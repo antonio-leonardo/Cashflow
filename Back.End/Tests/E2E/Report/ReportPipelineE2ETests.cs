@@ -47,7 +47,7 @@ namespace E2E.Report.Test
 
             var collection = database.GetCollection<TransactionReportDocument>("transactions");
 
-            TransactionReportDocument result = null;
+            TransactionReportDocument? result = null;
 
             var retries = 10;
 
@@ -64,9 +64,9 @@ namespace E2E.Report.Test
                 await Task.Delay(5000);
             }
 
-            Xunit.Assert.NotNull(result);
-            Xunit.Assert.Equal(accountId, result.AccountId);
-            Xunit.Assert.Equal(200, result.Amount);
+            var validatedResult = Xunit.Assert.IsType<TransactionReportDocument>(result);
+            Xunit.Assert.Equal(accountId, validatedResult.AccountId);
+            Xunit.Assert.Equal(200, validatedResult.Amount);
         }
 
         private MongoClient CreateConnection(string connection)

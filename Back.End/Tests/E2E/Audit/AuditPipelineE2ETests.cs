@@ -48,7 +48,7 @@ namespace E2E.Audit.Test
 
             var collection = database.GetCollection<BsonDocument>("events");
 
-            BsonDocument result = null;
+            BsonDocument? result = null;
 
             var retries = 10;
 
@@ -70,9 +70,8 @@ namespace E2E.Audit.Test
                 await Task.Delay(5000);
             }
 
-            Xunit.Assert.NotNull(result);
-
-            var payload = result["Payload"].AsBsonDocument;
+            var validatedResult = Xunit.Assert.IsType<BsonDocument>(result);
+            var payload = validatedResult["Payload"].AsBsonDocument;
 
             Xunit.Assert.Equal(accountId, payload["AccountId"].AsGuid);
         }

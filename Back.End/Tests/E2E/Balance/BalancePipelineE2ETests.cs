@@ -48,7 +48,6 @@ namespace E2E.Balance.Tests
             if (value.IsNull)
             {
                 var retries = 10;
-                var success = false;
 
                 for (int i = 0; i < retries; i++)
                 {
@@ -56,7 +55,6 @@ namespace E2E.Balance.Tests
 
                     if (!value.IsNull)
                     {
-                        success = true;
                         break;
                     }
 

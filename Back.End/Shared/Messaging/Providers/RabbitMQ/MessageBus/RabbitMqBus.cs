@@ -139,13 +139,13 @@ namespace Cashflow.Shared.Messaging.RabbitMQ.MessageBus
             var retryQueueName = $"{queueName}.retry";
             var dlqQueueName = $"{queueName}.dlq";
 
-            var mainArgs = new Dictionary<string, object>
+            var mainArgs = new Dictionary<string, object?>
             {
                 ["x-dead-letter-exchange"] = RetryExchange,
                 ["x-dead-letter-routing-key"] = retryQueueName
             };
 
-            var retryArgs = new Dictionary<string, object>
+            var retryArgs = new Dictionary<string, object?>
             {
                 ["x-dead-letter-exchange"] = MainExchange,
                 ["x-dead-letter-routing-key"] = routingKey,
@@ -192,7 +192,7 @@ namespace Cashflow.Shared.Messaging.RabbitMQ.MessageBus
                 return 0;
             }
 
-            if (death is not IList<object> deathList)
+            if (death is not IList<object?> deathList)
             {
                 return 0;
             }
@@ -201,12 +201,12 @@ namespace Cashflow.Shared.Messaging.RabbitMQ.MessageBus
 
             foreach (var entry in deathList)
             {
-                if (entry is not IDictionary<string, object> deathEntry)
+                if (entry is not IDictionary<string, object?> deathEntry)
                 {
                     continue;
                 }
 
-                if (deathEntry.TryGetValue("count", out var countValue))
+                if (deathEntry.TryGetValue("count", out var countValue) && countValue is not null)
                 {
                     total += ConvertToLong(countValue);
                 }

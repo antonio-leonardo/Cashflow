@@ -26,7 +26,6 @@ namespace Infrastructure.Test
                 .WithEnvironment("KC_HTTP_ENABLED", "true")
                 .WithEnvironment("KC_HOSTNAME_STRICT", "false")
                 .WithEnvironment("KC_HOSTNAME_STRICT_HTTPS", "false")
-                .WithEnvironment("KC_LOG_LEVEL", "DEBUG")
                 .WithBindMount(realmImportPath, "/opt/keycloak/data/import/realm-cashflow.json")
                 .WithCommand("start-dev", "--import-realm", "--http-enabled=true")
                 .WithOutputConsumer(Consume.RedirectStdoutAndStderrToConsole())

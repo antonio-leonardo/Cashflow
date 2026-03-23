@@ -126,3 +126,40 @@ jobs:
           -t worker-outbox \
           -f ./Back.End/Outbox/Worker/Dockerfile \
           .
+
+    - name: Collect Docker/Testcontainers Diagnostics (on failure)
+      if: ${{ failure() }}
+      shell: bash
+      run: |
+        set +e
+        mkdir -p .ci-diagnostics
+
+        echo "=== Docker version ===" > .ci-diagnostics/docker-version.txt
+        docker version >> .ci-diagnostics/docker-version.txt 2>&1
+
+        echo "=== Docker ps -a ===" > .ci-diagnostics/docker-ps.txt
+        docker ps -a >> .ci-diagnostics/docker-ps.txt 2>&1
+
+        echo "=== Docker networks ===" > .ci-diagnostics/docker-networks.txt
+        docker network ls >> .ci-diagnostics/docker-networks.txt 2>&1
+
+        echo "=== Docker volumes ===" > .ci-diagnostics/docker-volumes.txt
+        docker volume ls >> .ci-diagnostics/docker-volumes.txt 2>&1
+
+        echo "=== Resources ===" > .ci-diagnostics/runner-resources.txt
+        df -h >> .ci-diagnostics/runner-resources.txt 2>&1
+        free -h >> .ci-diagnostics/runner-resources.txt 2>&1
+
+        testcontainers_ids=$(docker ps -aq --filter "label=org.testcontainers")
+        for id in $testcontainers_ids; do
+          docker inspect "$id" > ".ci-diagnostics/${id}-inspect.json" 2>&1 || true
+          docker logs "$id" > ".ci-diagnostics/${id}-logs.txt" 2>&1 || true
+        done
+
+    - name: Upload Diagnostics Artifact (on failure)
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-diagnostics-${{ github.run_id }}
+        path: .ci-diagnostics
+        retention-days: 7
