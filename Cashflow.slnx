@@ -109,6 +109,10 @@
   <Folder Name="/_Tests/IntegrationTests/Worker/">
     <Project Path="Back.End/Tests/IntegrationTests/Worker/Worker.Integration.Tests.csproj" />
   </Folder>
+  <Folder Name="/_Tests/Performance/" />
+  <Folder Name="/_Tests/Performance/k6/">
+    <Project Path="Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj" />
+  </Folder>
   <Folder Name="/_Tests/Shared/">
     <Project Path="Back.End/Tests/Shared/Infrastructure.Test.csproj" />
   </Folder>

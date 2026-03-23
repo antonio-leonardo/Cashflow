@@ -189,3 +189,23 @@ services:
     networks:
       - cashflow-network
     restart: always
+
+  k6:
+    image: grafana/k6:0.53.0
+    profiles:
+      - perf
+    depends_on:
+      transaction-api:
+        condition: service_started
+    environment:
+      BASE_URL: http://transaction-api:8080
+      TARGET_RPS: 50
+      DURATION: 60s
+      PRE_ALLOCATED_VUS: 100
+      MAX_VUS: 300
+    working_dir: /performance
+    command: run k6/transactions-throughput.js
+    volumes:
+      - ./Back.End/Tests/Performance:/performance
+    networks:
+      - cashflow-network
