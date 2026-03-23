@@ -94,6 +94,7 @@ Escalabilidade:
 - Filas por evento e processamento assincrono para backpressure.
 - Read models otimizados (Redis, MongoDB, DynamoDB) para consultas rapidas.
 - Politicas de resiliencia (retry, circuit breaker, bulkhead, timeout) via `Cashflow.Shared.Resilience`.
+- Meta operacional validada por carga: `50 req/s` com ate `5%` de perda na entrada (`http_req_failed <= 0.05`).
 
 Resiliencia:
 
@@ -143,6 +144,7 @@ CI/CD          GitHub Actions
 ## 6. Arquitetura e diagramas
 
 A documentacao completa de arquitetura, fluxos de dados e diagramas esta em `docs/architecture.md`.
+O runbook de carga do Passo 3 esta em `Back.End/Tests/Performance/README.md`.
 
 ---
 
@@ -217,6 +219,21 @@ Como rodar testes (exemplos):
  dotnet test Back.End/Tests/E2E
 ```
 
+Teste de carga NFR (Passo 3):
+
+```bash
+# sobe stack principal
+docker compose up -d
+
+# executa perfil de carga (k6)
+docker compose --profile perf run --rm k6
+```
+
+Evidencia gerada:
+
+- `Back.End/Tests/Performance/results/transactions-throughput-summary.json`
+- Wrapper para Test Explorer (Visual Studio): `Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj`
+
 ---
 
 ## 10. Execucao local
@@ -232,6 +249,10 @@ Servicos principais:
 - Gateway: `http://localhost:5000`
 - Transaction API: `http://localhost:5001`
 - Keycloak: `http://localhost:8081`
+
+Execucao de carga com perfil dedicado:
+
+- `docker compose --profile perf run --rm k6`
 
 ---
 

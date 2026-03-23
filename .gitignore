@@ -364,3 +364,7 @@ FodyWeavers.xsd
 
 #TRN???
 *.trn
+
+# k6 performance artifacts
+Back.End/Tests/Performance/results/*.json
+!Back.End/Tests/Performance/results/.gitkeep
