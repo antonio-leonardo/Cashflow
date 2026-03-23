@@ -197,6 +197,7 @@ Seguranca e observabilidade:
 - Outbox Worker publica eventos de dominio de forma confiavel.
 - Saga Pattern coordena etapas com compensacoes em caso de falha.
 - Versionamento de eventos protege contratos sem breaking changes.
+- Validacao de integracao robusta por teste: fan-out entre consumidores independentes e envio para DLQ apos retries.
 
 A integracao real ocorre exclusivamente por mensageria. Chamadas sincronas ficam restritas ao Gateway -> Transaction API, preservando desacoplamento entre workers.
 
@@ -359,6 +360,7 @@ Evidencia gerada:
 - `Back.End/Tests/Performance/results/transactions-throughput-summary.json`
 - Wrapper para Test Explorer (Visual Studio): `Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj`
 - Cenario NFR aprofundado: indisponibilidade do `balance-worker` sob carga com disponibilidade do write path.
+- Integracao de mensageria aprofundada: `Back.End/Tests/IntegrationTests/Messaging/RabbitMqDecouplingIntegrationTests.cs`
 
 ---
 

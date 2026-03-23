@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Service\Transaction\Domain\Cashflow.Service.Transaction.Domain.csproj" />
     <ProjectReference Include="..\..\..\Shared\Messaging\Abstractions\Cashflow.Shared.Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging\Providers\RabbitMQ\MessageBus\Cashflow.Shared.Messaging.RabbitMQ.MessageBus.csproj" />
     <ProjectReference Include="..\..\Shared\Infrastructure.Test.csproj" />
   </ItemGroup>
 
