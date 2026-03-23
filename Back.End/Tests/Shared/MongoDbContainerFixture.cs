@@ -5,13 +5,14 @@ namespace Infrastructure.Test
 {
     public class MongoDbContainerFixture : IAsyncLifetime
     {
+        private const string MongoImage = "mongo:7.0.31";
         private readonly string _alias;
         public MongoDbContainer Mongo { get; }
 
         public MongoDbContainerFixture(INetwork network, string alias)
         {
             _alias = alias;
-            Mongo = new MongoDbBuilder("mongo:7")
+            Mongo = new MongoDbBuilder(MongoImage)
                 .WithNetwork(network)
                 .WithNetworkAliases(alias)
                 .Build();

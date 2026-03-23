@@ -106,6 +106,73 @@ namespace Holistic.Integration.Tests
         }
 
         [Fact]
+        public async Task Should_Expose_Live_And_Ready_Health_Endpoints()
+        {
+            var gatewayLive = await _client.GetAsync("/health/live");
+            var gatewayReady = await _client.GetAsync("/health/ready");
+
+            Xunit.Assert.Equal(HttpStatusCode.OK, gatewayLive.StatusCode);
+            Xunit.Assert.Equal(HttpStatusCode.OK, gatewayReady.StatusCode);
+
+            using var transactionApiClient = new HttpClient
+            {
+                BaseAddress = _fixture.TransactionApiFixture.BaseAddress,
+                Timeout = TimeSpan.FromSeconds(5)
+            };
+
+            var apiLive = await transactionApiClient.GetAsync("/health/live");
+            var apiReady = await transactionApiClient.GetAsync("/health/ready");
+
+            Xunit.Assert.Equal(HttpStatusCode.OK, apiLive.StatusCode);
+            Xunit.Assert.Equal(HttpStatusCode.OK, apiReady.StatusCode);
+        }
+
+        [Fact]
+        public async Task Should_Recover_Event_Pipeline_After_Outbox_Worker_Restart()
+        {
+            var token = await _fixture.KeycloakFixture.GetAccessTokenClientIdSecretAsync();
+            var accountId = Guid.NewGuid();
+            var balanceKey = $"balance:{accountId}";
+
+            await _fixture.OutboxWorkerFixture.StopAsync();
+            await Task.Delay(1000);
+
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/transactions")
+                {
+                    Content = JsonContent.Create(new
+                    {
+                        AccountId = accountId,
+                        Amount = 310m,
+                        Currency = "BRL",
+                        Type = 1
+                    })
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var createResponse = await _client.SendAsync(request);
+                Xunit.Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+                var redis = CreateRedisConnection(_fixture.RedisContainerFixture.ConnectionString);
+                var redisDb = redis.GetDatabase();
+
+                var beforeRecovery = await redisDb.StringGetAsync(balanceKey);
+                Xunit.Assert.True(beforeRecovery.IsNull);
+
+                await _fixture.OutboxWorkerFixture.StartAsync();
+                await Task.Delay(1000);
+
+                var afterRecovery = await WaitForBalanceAsync(redisDb, balanceKey);
+                Xunit.Assert.False(afterRecovery.IsNull);
+            }
+            finally
+            {
+                await _fixture.OutboxWorkerFixture.StartAsync();
+            }
+        }
+
+        [Fact]
         public async Task Should_Allow_Authenticated_Requests()
         {
             var token = await _fixture.KeycloakFixture.GetAccessTokenClientIdSecretAsync();
@@ -243,6 +310,22 @@ namespace Holistic.Integration.Tests
             {
                 return Task.FromResult<object>(new MongoClient(connection));
             }).GetAwaiter().GetResult();
+        }
+
+        private static async Task<RedisValue> WaitForBalanceAsync(IDatabase db, string key, int retries = 30)
+        {
+            for (int i = 0; i < retries; i++)
+            {
+                var value = await db.StringGetAsync(key);
+                if (!value.IsNull)
+                {
+                    return value;
+                }
+
+                await Task.Delay(2000);
+            }
+
+            return RedisValue.Null;
         }
     }
 }

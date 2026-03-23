@@ -111,12 +111,14 @@ Resiliencia:
 - Outbox Pattern para evitar falha parcial entre banco e broker.
 - Consumidores idempotentes e controle de reentrega.
 - DLQ e retry com atraso configuravel por consumidor (RabbitMQ).
+- Recuperacao automatica de conexao no cliente RabbitMQ (`AutomaticRecoveryEnabled` + `TopologyRecoveryEnabled`).
 - Isolamento por servico e por fila para evitar falhas em cascata.
 
 Disponibilidade:
 
 - Independencia entre servicos: falha de um worker nao bloqueia os demais.
 - Gateway e API podem evoluir sem downtime dos workers.
+- Endpoints de saude (`/health/live` e `/health/ready`) no Gateway e na Transaction API.
 - Arquitetura preparada para multi-az e multi-cloud com configuracao externa.
 
 Seguranca e observabilidade:
@@ -249,6 +251,8 @@ Evidencia gerada:
 - Cenario NFR aprofundado: indisponibilidade do `balance-worker` sob carga com disponibilidade do write path.
 - Integracao de mensageria aprofundada: `Back.End/Tests/IntegrationTests/Messaging/RabbitMqDecouplingIntegrationTests.cs`
 - Seguranca de borda validada em integracao (401/403/201): `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
+- Recuperacao de pipeline apos reinicio do Outbox Worker: `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
+- Health endpoints validados em integracao: `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
 - Gates de qualidade (Acao 7): `docs/tests-quality-gates.md`
 - Matriz holistica 1-8 (Acao 8): `docs/holistic-execution-matrix.md`
 - Runner unico de validacao holistica: `Back.End/Tests/run-holistic-validation.ps1`

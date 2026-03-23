@@ -26,9 +26,17 @@ namespace Holistic.Integration.Tests
                 {
                     ["Keycloak:Authority"] = _keycloak.Authority,
                     ["Keycloak:Audience"] = "cashflow-api",
-                    ["ReverseProxy:Routes:transaction-route:ClusterId"] = "transaction-cluster",
-                    ["ReverseProxy:Routes:transaction-route:Match:Path"] = "/api/transactions/{**catch-all}",
-                    ["ReverseProxy:Routes:transaction-route:AuthorizationPolicy"] = "AuthenticatedUser",
+                    ["ReverseProxy:Routes:transaction-write-route:ClusterId"] = "transaction-cluster",
+                    ["ReverseProxy:Routes:transaction-write-route:Match:Path"] = "/api/transactions/{**catch-all}",
+                    ["ReverseProxy:Routes:transaction-write-route:Match:Methods:0"] = "POST",
+                    ["ReverseProxy:Routes:transaction-write-route:Match:Methods:1"] = "PUT",
+                    ["ReverseProxy:Routes:transaction-write-route:Match:Methods:2"] = "PATCH",
+                    ["ReverseProxy:Routes:transaction-write-route:Match:Methods:3"] = "DELETE",
+                    ["ReverseProxy:Routes:transaction-write-route:AuthorizationPolicy"] = "TransactionsWrite",
+                    ["ReverseProxy:Routes:transaction-read-route:ClusterId"] = "transaction-cluster",
+                    ["ReverseProxy:Routes:transaction-read-route:Match:Path"] = "/api/transactions/{**catch-all}",
+                    ["ReverseProxy:Routes:transaction-read-route:Match:Methods:0"] = "GET",
+                    ["ReverseProxy:Routes:transaction-read-route:AuthorizationPolicy"] = "AuthenticatedUser",
                     ["ReverseProxy:Clusters:transaction-cluster:Destinations:transaction-api:Address"] =
                     _downstream.BaseAddress.ToString().TrimEnd('/')
                 };

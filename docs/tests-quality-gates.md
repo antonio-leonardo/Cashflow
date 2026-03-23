@@ -17,6 +17,8 @@ Consolidar criterios de qualidade em gates executaveis, com foco em confiabilida
 | QG-04 | NFR aprofundado sob carga | `Back.End/Tests/Performance/k6/K6ThroughputE2ETests.cs` | `http_req_failed <= 5%` e `p95 <= 1500ms` |
 | QG-05 | Fluxo holistico autenticado | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | Requisicao autenticada percorre pipeline e materializa read models |
 | QG-06 | Seguranca de borda (authn/authz) | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | `401` sem token/invalido, `403` sem escopo write e `201` com credencial valida |
+| QG-07 | Recuperacao apos falha de processador | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | Write path segue disponivel e pipeline de eventos se recupera apos reinicio do Outbox Worker |
+| QG-08 | Saude operacional de servicos | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | Endpoints `/health/live` e `/health/ready` respondem com `200 OK` |
 
 ## Execucao recomendada
 

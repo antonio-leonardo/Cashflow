@@ -1,9 +1,12 @@
+using Cashflow.Service.Transaction.API.Healthchecks;
 using Cashflow.Service.Transaction.Application.Commands;
 using Cashflow.Service.Transaction.Application.Queries;
 using Cashflow.Service.Transaction.Domain;
 using Cashflow.Service.Transaction.Infrastructure.Persistence;
 using Cashflow.Service.Transaction.Postgres.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
 
@@ -47,6 +50,11 @@ namespace Cashflow.Service.Transaction.API
                             AutoReplenishment = true
                         }));
             });
+
+            builder.Services.AddHealthChecks()
+                .AddCheck("self", () => HealthCheckResult.Healthy("transaction-api alive"), tags: new[] { "live" })
+                .AddCheck<TransactionReadinessHealthCheck>("transaction", tags: new[] { "ready" })
+                .AddCheck<IdempotencyReadinessHealthCheck>("idempotency", tags: new[] { "ready" });
 
 
             if (!builder.Environment.IsEnvironment("Testing") && !builder.Environment.IsDevelopment())
@@ -104,6 +112,16 @@ namespace Cashflow.Service.Transaction.API
 
             app.UseHttpsRedirection();
             app.UseRateLimiter();
+
+            app.MapHealthChecks("/health/live", new HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("live")
+            });
+
+            app.MapHealthChecks("/health/ready", new HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("ready") || check.Tags.Contains("live")
+            });
 
             if (!app.Environment.IsEnvironment("Testing") && !app.Environment.IsDevelopment())
             {
