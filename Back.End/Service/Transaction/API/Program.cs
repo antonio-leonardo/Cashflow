@@ -171,7 +171,7 @@ namespace Cashflow.Service.Transaction.API
                 endpointGetTransactions.RequireAuthorization("AuthenticatedUser");
             }
 
-            app.Run();
+            await app.RunAsync();
         }
 
         private static bool HasScope(System.Security.Claims.ClaimsPrincipal user, string expectedScope)
