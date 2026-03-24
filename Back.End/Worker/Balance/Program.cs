@@ -5,6 +5,8 @@ namespace Cashflow.Worker.Balance
 {
     public class Program
     {
+        protected Program() { }
+
         public static void Main(string[] args)
         {
             var builder = Host.CreateApplicationBuilder(args);

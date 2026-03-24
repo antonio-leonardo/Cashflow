@@ -5,6 +5,8 @@ namespace Cashflow.Worker.Audit
 {
     public class Program
     {
+        protected Program() { }
+
         public static void Main(string[] args)
         {
             var builder = Host.CreateApplicationBuilder(args);
