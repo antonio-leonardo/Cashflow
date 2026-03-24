@@ -32,7 +32,8 @@ namespace Cashflow.Service.Transaction.Domain
                 Id.Value,
                 AccountId.Value,
                 Amount.Value,
-                Amount.Currency));
+                Amount.Currency,
+                type));
         }
 
         public static Transaction Create(

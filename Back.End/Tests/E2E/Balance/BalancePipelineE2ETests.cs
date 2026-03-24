@@ -65,18 +65,18 @@ namespace E2E.Balance.Tests
 
             Xunit.Assert.False(value.IsNull);
 
-            var dailyBalanceKey = $"balance:daily:{objectToRequest.AccountId}:{referenceDate:yyyy-MM-dd}";
-            var dailyValue = await db.StringGetAsync(dailyBalanceKey);
+            var dailyBalanceKey  = $"balance:daily:{objectToRequest.AccountId}:{referenceDate:yyyy-MM-dd}";
+            var dailyHashEntries = await db.HashGetAllAsync(dailyBalanceKey);
 
-            if (dailyValue.IsNull)
+            if (dailyHashEntries.Length == 0)
             {
                 var retries = 10;
 
                 for (int i = 0; i < retries; i++)
                 {
-                    dailyValue = await db.StringGetAsync(dailyBalanceKey);
+                    dailyHashEntries = await db.HashGetAllAsync(dailyBalanceKey);
 
-                    if (!dailyValue.IsNull)
+                    if (dailyHashEntries.Length > 0)
                     {
                         break;
                     }
@@ -85,7 +85,7 @@ namespace E2E.Balance.Tests
                 }
             }
 
-            Xunit.Assert.False(dailyValue.IsNull);
+            Xunit.Assert.NotEmpty(dailyHashEntries);
         }
 
         private ConnectionMultiplexer CreateConnection(string connection)

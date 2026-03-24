@@ -10,29 +10,64 @@ namespace Cashflow.Worker.Balance
         private const string BalanceKeyPrefix = "balance:";
         private const string DailyBalanceKeyPrefix = "balance:daily:";
 
+        private static readonly RedisValue CreditsField = "credits";
+        private static readonly RedisValue DebitsField  = "debits";
+        private static readonly RedisValue NetField      = "net";
+
         public RedisBalanceRepository(IConnectionMultiplexer redis) : base(redis)
         {
         }
 
         public async Task ApplyAsync(TransactionCreatedEventV1 evt)
         {
+            var isCredit    = evt.Type == TransactionType.Credit;
+            var signedAmount = isCredit ? evt.Amount : -evt.Amount;
+
             var totalBalanceKey = $"{BalanceKeyPrefix}{evt.AccountId}";
             var dailyBalanceKey = $"{DailyBalanceKeyPrefix}{evt.AccountId}:{DateOnly.FromDateTime(evt.OccurredAt):yyyy-MM-dd}";
 
-            await IncrementBalanceAsync(totalBalanceKey, evt.Amount);
-            await IncrementBalanceAsync(dailyBalanceKey, evt.Amount);
+            await IncrementNetStringAsync(totalBalanceKey, signedAmount);
+            await IncrementDailyHashAsync(dailyBalanceKey, evt.Amount, isCredit);
         }
 
-        private async Task IncrementBalanceAsync(string key, decimal amount)
+        private async Task IncrementNetStringAsync(string key, decimal signedAmount)
         {
             var value = await _db.StringGetAsync(key);
-            var currentBalance = value.HasValue && TryParseDecimal(value.ToString(), out var parsedBalance)
-                ? parsedBalance
-                : 0m;
+            var current = value.HasValue && TryParseDecimal(value.ToString(), out var parsed) ? parsed : 0m;
+            await _db.StringSetAsync(key, (current + signedAmount).ToString(CultureInfo.InvariantCulture));
+        }
 
-            currentBalance += amount;
+        private async Task IncrementDailyHashAsync(string key, decimal amount, bool isCredit)
+        {
+            var entries = await _db.HashGetAsync(key, new RedisValue[] { CreditsField, DebitsField, NetField });
 
-            await _db.StringSetAsync(key, currentBalance.ToString(CultureInfo.InvariantCulture));
+            var credits = ParseRedisDecimal(entries[0]);
+            var debits  = ParseRedisDecimal(entries[1]);
+            var net     = ParseRedisDecimal(entries[2]);
+
+            if (isCredit)
+            {
+                credits += amount;
+                net     += amount;
+            }
+            else
+            {
+                debits += amount;
+                net    -= amount;
+            }
+
+            await _db.HashSetAsync(key, new HashEntry[]
+            {
+                new(CreditsField, credits.ToString(CultureInfo.InvariantCulture)),
+                new(DebitsField,  debits.ToString(CultureInfo.InvariantCulture)),
+                new(NetField,     net.ToString(CultureInfo.InvariantCulture))
+            });
+        }
+
+        private static decimal ParseRedisDecimal(RedisValue value)
+        {
+            if (!value.HasValue) return 0m;
+            return TryParseDecimal(value.ToString(), out var result) ? result : 0m;
         }
 
         private static bool TryParseDecimal(string rawValue, out decimal parsedValue)

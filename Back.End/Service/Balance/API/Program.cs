@@ -97,8 +97,13 @@ namespace Cashflow.Service.Balance.API
                         referenceDate,
                         cancellationToken);
 
-                    return dailyBalance.HasValue
-                        ? Results.Ok(new GetDailyBalanceResponse(accountId, referenceDate, dailyBalance.Value))
+                    return dailyBalance is not null
+                        ? Results.Ok(new GetDailyBalanceResponse(
+                            accountId,
+                            referenceDate,
+                            dailyBalance.TotalCredits,
+                            dailyBalance.TotalDebits,
+                            dailyBalance.NetBalance))
                         : Results.NotFound();
                 })
                 .WithName("GetDailyBalance");

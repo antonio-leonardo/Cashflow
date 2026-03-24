@@ -16,7 +16,8 @@ public class UnitTest1
             transactionId,
             accountId,
             amount,
-            currency);
+            currency,
+            TransactionType.Credit);
 
         Assert.Equal(transactionId, evt.TransactionId);
         Assert.Equal(accountId, evt.AccountId);

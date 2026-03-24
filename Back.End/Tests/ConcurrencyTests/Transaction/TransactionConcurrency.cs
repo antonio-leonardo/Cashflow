@@ -15,7 +15,8 @@ public class TransactionConcurrency
                     Guid.NewGuid(),
                     accountId,
                     10,
-                    "BRL")))
+                    "BRL",
+                    TransactionType.Credit)))
             .ToList();
 
         var events = await Task.WhenAll(tasks);
