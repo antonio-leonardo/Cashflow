@@ -86,7 +86,6 @@ jobs:
           /k:"${SONAR_PROJECT_KEY:-cashflow}" \
           /o:"${SONAR_ORGANIZATION}" \
           /n:"${SONAR_PROJECT_NAME:-Cashflow}" \
-          /d:sonar.projectBaseDir="." \
           /d:sonar.host.url="${SONAR_HOST_URL}" \
           /d:sonar.token="${SONAR_TOKEN}" \
           /d:sonar.qualitygate.wait=true \
