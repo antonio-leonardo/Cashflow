@@ -271,6 +271,7 @@ Servicos principais:
 
 - Gateway: `http://localhost:5000`
 - Transaction API: `http://localhost:5001`
+- Balance Query API: `http://localhost:5002`
 - Keycloak: `http://localhost:8081`
 
 Execucao de carga com perfil dedicado:
@@ -286,6 +287,7 @@ Cashflow.slnx
   Back.End/
     Gateway -> Cashflow.Gateway
     Outbox/Worker -> Cashflow.Outbox.Worker
+    Service/Balance/API -> Cashflow.Service.Balance.API
     Service/Transaction (API, Application, Domain, Infrastructure)
     Worker (Balance, Report, Audit)
     Shared (Events, Messaging, Logging, Resilience, Contracts)
@@ -309,13 +311,13 @@ Pipeline atual:
 
 - Restore e build
 - Testes unitarios, integracao e contract
-- Build de imagens Docker
+- Build de imagens Docker (incluindo `balance-query-api`)
 
 ---
 
 ## 13. Roadmap
 
-- Exposicao de dados via API (queries otimizadas)
+- Expandir consultas otimizadas para read models de relatorio e auditoria
 - Front-end minimo para exibicao
 - Migracao do `docker compose` para Kubernetes
 

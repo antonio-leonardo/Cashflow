@@ -8,6 +8,7 @@
         public KeycloakContainerFixture KeycloakFixture = new();
 
         public TransactionApiContainerFixture TransactionApiFixture { get; private set; } = default!;
+        public BalanceQueryApiContainerFixture BalanceQueryApiFixture { get; private set; } = default!;
 
         public HolisticCompleteInfrastructureFixture()
         {
@@ -18,6 +19,7 @@
         {
             await OutboxWorkerFixture.DisposeAsync();
             await TransactionApiFixture.DisposeAsync();
+            await BalanceQueryApiFixture.DisposeAsync();
             await Task.WhenAll(
                 AllInfrastructureFixture.DisposeAsync(),
                 KeycloakFixture.DisposeAsync());
@@ -31,7 +33,9 @@
                 AllInfrastructureFixture.InitializeAsync(),
                 KeycloakFixture.InitializeAsync());
             TransactionApiFixture = new TransactionApiContainerFixture(this);
+            BalanceQueryApiFixture = new BalanceQueryApiContainerFixture(this);
             await TransactionApiFixture.InitializeAsync();
+            await BalanceQueryApiFixture.InitializeAsync();
             await OutboxWorkerFixture.InitializeAsync();
         }
     }

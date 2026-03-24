@@ -1,4 +1,5 @@
 using Cashflow.Shared.Resilience;
+using Cashflow.Shared.Contracts.Api;
 using Cashflow.Worker.Report;
 using Infrastructure.Test;
 using MongoDB.Bson;
@@ -35,7 +36,10 @@ namespace Holistic.Integration.Tests
 
         public async Task InitializeAsync()
         {
-            _factory = new GatewayWebApplicationFactory(_fixture.KeycloakFixture, _fixture.TransactionApiFixture);
+            _factory = new GatewayWebApplicationFactory(
+                _fixture.KeycloakFixture,
+                _fixture.TransactionApiFixture,
+                _fixture.BalanceQueryApiFixture);
             _client = _factory.CreateClient();
         }
 
@@ -83,6 +87,18 @@ namespace Holistic.Integration.Tests
         }
 
         [Fact]
+        public async Task Should_Block_Anonymous_Daily_Balance_Requests()
+        {
+            var accountId = Guid.NewGuid();
+            var referenceDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var response = await _client.GetAsync(
+                $"/api/balance/daily/{accountId}?date={referenceDate:yyyy-MM-dd}");
+
+            Xunit.Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
         public async Task Should_Return_Forbidden_When_Token_Misses_TransactionsWrite_Scope()
         {
             var readOnlyToken = await _fixture.KeycloakFixture.GetReadOnlyAccessTokenClientIdSecretAsync();
@@ -125,6 +141,18 @@ namespace Holistic.Integration.Tests
 
             Xunit.Assert.Equal(HttpStatusCode.OK, apiLive.StatusCode);
             Xunit.Assert.Equal(HttpStatusCode.OK, apiReady.StatusCode);
+
+            using var balanceQueryApiClient = new HttpClient
+            {
+                BaseAddress = _fixture.BalanceQueryApiFixture.BaseAddress,
+                Timeout = TimeSpan.FromSeconds(5)
+            };
+
+            var balanceApiLive = await balanceQueryApiClient.GetAsync("/health/live");
+            var balanceApiReady = await balanceQueryApiClient.GetAsync("/health/ready");
+
+            Xunit.Assert.Equal(HttpStatusCode.OK, balanceApiLive.StatusCode);
+            Xunit.Assert.Equal(HttpStatusCode.OK, balanceApiReady.StatusCode);
         }
 
         [Fact]
@@ -176,6 +204,7 @@ namespace Holistic.Integration.Tests
         public async Task Should_Allow_Authenticated_Requests()
         {
             var token = await _fixture.KeycloakFixture.GetAccessTokenClientIdSecretAsync();
+            var referenceDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
             var objectToRequest = new
             {
@@ -211,6 +240,8 @@ namespace Holistic.Integration.Tests
             var auditCollection = auditDatabase.GetCollection<BsonDocument>("events");
             var reportCollection = reportDatabase.GetCollection<TransactionReportDocument>("transactions");
             var balanceValue = await redisDb.StringGetAsync($"balance:{objectToRequest.AccountId}");
+            var dailyBalanceKey = $"balance:daily:{objectToRequest.AccountId}:{referenceDate:yyyy-MM-dd}";
+            var dailyBalanceValue = await redisDb.StringGetAsync(dailyBalanceKey);
 
             const int RETRIES = 10;
 
@@ -281,7 +312,83 @@ namespace Holistic.Integration.Tests
             }
 
             Xunit.Assert.False(balanceValue.IsNull);
+
+            if (dailyBalanceValue.IsNull)
+            {
+                var retries = 10;
+
+                for (int i = 0; i < retries; i++)
+                {
+                    dailyBalanceValue = await redisDb.StringGetAsync(dailyBalanceKey);
+
+                    if (!dailyBalanceValue.IsNull)
+                    {
+                        break;
+                    }
+
+                    await Task.Delay(5000);
+                }
+            }
+
+            Xunit.Assert.False(dailyBalanceValue.IsNull);
             //----------------------END: BALANCE----------------------//
+        }
+
+        [Fact]
+        public async Task Should_Consume_Daily_Balance_Via_Gateway_After_Authentication()
+        {
+            var token = await _fixture.KeycloakFixture.GetAccessTokenClientIdSecretAsync();
+            var accountId = Guid.NewGuid();
+            var referenceDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            const decimal expectedAmount = 250m;
+
+            var createTransactionRequest = new HttpRequestMessage(HttpMethod.Post, "/api/transactions")
+            {
+                Content = JsonContent.Create(new
+                {
+                    AccountId = accountId,
+                    Amount = expectedAmount,
+                    Currency = "BRL",
+                    Type = 1
+                })
+            };
+            createTransactionRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var createResponse = await _client.SendAsync(createTransactionRequest);
+            Xunit.Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+            GetDailyBalanceResponse? responseBody = null;
+            HttpStatusCode? lastStatusCode = null;
+
+            for (int i = 0; i < 15; i++)
+            {
+                var getDailyBalanceRequest = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    $"/api/balance/daily/{accountId}?date={referenceDate:yyyy-MM-dd}");
+                getDailyBalanceRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                using var getDailyBalanceResponse = await _client.SendAsync(getDailyBalanceRequest);
+                lastStatusCode = getDailyBalanceResponse.StatusCode;
+
+                if (getDailyBalanceResponse.StatusCode == HttpStatusCode.OK)
+                {
+                    responseBody = await getDailyBalanceResponse.Content
+                        .ReadFromJsonAsync<GetDailyBalanceResponse>();
+                    break;
+                }
+
+                Xunit.Assert.True(
+                    getDailyBalanceResponse.StatusCode == HttpStatusCode.NotFound,
+                    $"Expected status 200/404 while waiting eventual consistency, got {(int)getDailyBalanceResponse.StatusCode}.");
+
+                await Task.Delay(2000);
+            }
+
+            Xunit.Assert.Equal(HttpStatusCode.OK, lastStatusCode);
+            var dailyBalance = Xunit.Assert.IsType<GetDailyBalanceResponse>(responseBody);
+            Xunit.Assert.Equal(accountId, dailyBalance.AccountId);
+            Xunit.Assert.Equal(referenceDate, dailyBalance.Date);
+            Xunit.Assert.Equal(expectedAmount, dailyBalance.Balance);
         }
 
         private ConnectionMultiplexer CreateRedisConnection(string connection)

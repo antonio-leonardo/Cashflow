@@ -102,6 +102,12 @@ jobs:
           -t transaction-api \
           -f ./Back.End/Service/Transaction/API/Dockerfile \
           .
+
+        echo "Building Balance Query API..."
+        docker build \
+          -t balance-query-api \
+          -f ./Back.End/Service/Balance/API/Dockerfile \
+          .
           
         echo "Building Worker Audit..."
         docker build \

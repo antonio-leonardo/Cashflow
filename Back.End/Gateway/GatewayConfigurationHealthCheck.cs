@@ -18,10 +18,12 @@ namespace Cashflow.Gateway
             var authority = _configuration["Keycloak:Authority"];
             var audience = _configuration["Keycloak:Audience"];
             var clusterAddress = _configuration["ReverseProxy:Clusters:transaction-cluster:Destinations:transaction-api:Address"];
+            var balanceClusterAddress = _configuration["ReverseProxy:Clusters:balance-query-cluster:Destinations:balance-query-api:Address"];
 
             if (string.IsNullOrWhiteSpace(authority) ||
                 string.IsNullOrWhiteSpace(audience) ||
-                string.IsNullOrWhiteSpace(clusterAddress))
+                string.IsNullOrWhiteSpace(clusterAddress) ||
+                string.IsNullOrWhiteSpace(balanceClusterAddress))
             {
                 return Task.FromResult(HealthCheckResult.Unhealthy(
                     "Gateway configuration is incomplete (Keycloak/ReverseProxy)."));
