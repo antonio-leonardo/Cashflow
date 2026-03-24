@@ -16,6 +16,8 @@ jobs:
     name: Code Smells And Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     permissions:
       contents: read
 
@@ -30,9 +32,12 @@ jobs:
         SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+        SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+        SONAR_PROJECT_NAME: ${{ vars.SONAR_PROJECT_NAME }}
       run: |
         set -euo pipefail
         missing=0
+        repo_name="${GITHUB_REPOSITORY#*/}"
 
         if [ -z "${SONAR_HOST_URL:-}" ]; then
           echo "::error::Missing repository variable SONAR_HOST_URL"
@@ -49,9 +54,34 @@ jobs:
           missing=1
         fi
 
+        if [ -z "${SONAR_PROJECT_KEY:-}" ]; then
+          SONAR_PROJECT_KEY="${SONAR_ORGANIZATION}_${repo_name}"
+          echo "::warning::Repository variable SONAR_PROJECT_KEY not set. Falling back to '${SONAR_PROJECT_KEY}'."
+        fi
+
+        if [ -z "${SONAR_PROJECT_NAME:-}" ]; then
+          SONAR_PROJECT_NAME="${repo_name}"
+        fi
+
+        if [ "$missing" -eq 0 ]; then
+          sonar_branches_api="${SONAR_HOST_URL%/}/api/project_branches/list?project=${SONAR_PROJECT_KEY}"
+          http_code=$(curl -sS -u "${SONAR_TOKEN}:" -o sonar_project_branches.json -w "%{http_code}" "${sonar_branches_api}")
+
+          if [ "${http_code}" -ne 200 ]; then
+            echo "::error::Unable to access Sonar project '${SONAR_PROJECT_KEY}' in organization '${SONAR_ORGANIZATION}'. Configure SONAR_PROJECT_KEY with the exact SonarCloud project key."
+            missing=1
+          elif ! grep -q '"isMain":true' sonar_project_branches.json; then
+            echo "::error::Sonar project '${SONAR_PROJECT_KEY}' has no default branch yet. Run analysis on main branch first."
+            missing=1
+          fi
+        fi
+
         if [ "$missing" -ne 0 ]; then
           exit 1
         fi
+
+        echo "SONAR_PROJECT_KEY_EFFECTIVE=${SONAR_PROJECT_KEY}" >> "$GITHUB_ENV"
+        echo "SONAR_PROJECT_NAME_EFFECTIVE=${SONAR_PROJECT_NAME}" >> "$GITHUB_ENV"
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -79,13 +109,11 @@ jobs:
         SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
-        SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
-        SONAR_PROJECT_NAME: ${{ vars.SONAR_PROJECT_NAME }}
       run: |
         ./.dotnet/tools/dotnet-sonarscanner begin \
-          /k:"${SONAR_PROJECT_KEY:-cashflow}" \
+          /k:"${SONAR_PROJECT_KEY_EFFECTIVE}" \
           /o:"${SONAR_ORGANIZATION}" \
-          /n:"${SONAR_PROJECT_NAME:-Cashflow}" \
+          /n:"${SONAR_PROJECT_NAME_EFFECTIVE}" \
           /d:sonar.host.url="${SONAR_HOST_URL}" \
           /d:sonar.token="${SONAR_TOKEN}" \
           /d:sonar.qualitygate.wait=true \
