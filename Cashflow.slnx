@@ -7,6 +7,10 @@
     <Project Path="Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj" />
   </Folder>
   <Folder Name="/Service/" />
+  <Folder Name="/Service/Balance/" />
+  <Folder Name="/Service/Balance/API/">
+    <Project Path="Back.End/Service/Balance/API/Cashflow.Service.Balance.API.csproj" />
+  </Folder>
   <Folder Name="/Service/Transaction/" />
   <Folder Name="/Service/Transaction/API/">
     <Project Path="Back.End/Service/Transaction/API/Cashflow.Service.Transaction.API.csproj" />

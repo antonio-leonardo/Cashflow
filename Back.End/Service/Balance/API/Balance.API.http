@@ -1,0 +1,6 @@
+@host=http://localhost:5301
+@accountId=00000000-0000-0000-0000-000000000000
+@date=2026-03-24
+
+GET {{host}}/api/balance/daily/{{accountId}}?date={{date}}
+Accept: application/json

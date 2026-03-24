@@ -30,7 +30,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Gateway\Cashflow.Gateway.csproj" />
+    <ProjectReference Include="..\..\..\Service\Balance\API\Cashflow.Service.Balance.API.csproj" />
     <ProjectReference Include="..\..\..\Service\Transaction\API\Cashflow.Service.Transaction.API.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Contracts\Cashflow.Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Shared\NoSql\Abstractions\Cashflow.Shared.NoSql.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\Shared\NoSql\Providers\MongoDB\Cashflow.Shared.NoSql.MongoDB.csproj" />
     <ProjectReference Include="..\..\Shared\Infrastructure.Test.csproj" />

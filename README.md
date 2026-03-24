@@ -83,7 +83,7 @@ Contexto:
 - Isolamento de falhas foi tratado como requisito de arquitetura.
 
 Decisao:
-- Adotar microsservicos: `transaction-api`, `outbox-worker`, `balance-worker`, `report-worker`, `audit-worker`.
+- Adotar microsservicos: `transaction-api`, `balance-query-api`, `outbox-worker`, `balance-worker`, `report-worker`, `audit-worker`.
 
 Alternativas consideradas:
 - Monolito modular com filas internas.
@@ -389,6 +389,7 @@ Servicos principais:
 
 - Gateway: `http://localhost:5000`
 - Transaction API: `http://localhost:5001`
+- Balance Query API: `http://localhost:5002`
 - Keycloak: `http://localhost:8081`
 
 Execucao de carga com perfil dedicado:
@@ -404,6 +405,7 @@ Cashflow.slnx
   Back.End/
     Gateway -> Cashflow.Gateway
     Outbox/Worker -> Cashflow.Outbox.Worker
+    Service/Balance/API -> Cashflow.Service.Balance.API
     Service/Transaction (API, Application, Domain, Infrastructure)
     Worker (Balance, Report, Audit)
     Shared (Events, Messaging, Logging, Resilience, Contracts)
@@ -427,7 +429,7 @@ Pipeline atual:
 
 - Restore e build
 - Testes unitarios, integracao e contract
-- Build de imagens Docker
+- Build de imagens Docker (incluindo `balance-query-api`)
 - Workflow de qualidade estatica SonarQube: `.github/workflows/sonarqube-analysis.yml`
 
 ---
@@ -455,7 +457,7 @@ Detalhes completos:
 
 ## 14. Roadmap
 
-- Exposicao de dados via API (queries otimizadas)
+- Expandir consultas otimizadas para read models de relatorio e auditoria
 - Front-end minimo para exibicao
 - Migracao do `docker compose` para Kubernetes
 

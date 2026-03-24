@@ -92,6 +92,8 @@ services:
         condition: service_started
       transaction-api:
         condition: service_started
+      balance-query-api:
+        condition: service_started
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       Keycloak__Authority: http://keycloak:8080/realms/cashflow
@@ -118,6 +120,24 @@ services:
       RabbitMq__Port: 5672
     ports:
       - "5001:8080"
+    networks:
+      - cashflow-network
+    restart: always
+
+  balance-query-api:
+    build:
+      context: .
+      dockerfile: Back.End/Service/Balance/API/Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Redis__Connection: redis:6379
+      Keycloak__Authority: http://keycloak:8080/realms/cashflow
+      Keycloak__Audience: cashflow-api
+    ports:
+      - "5002:8080"
     networks:
       - cashflow-network
     restart: always

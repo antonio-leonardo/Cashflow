@@ -1,0 +1,90 @@
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
+using System.Net;
+
+namespace Infrastructure.Test
+{
+    public class BalanceQueryApiContainerFixture : IAsyncLifetime
+    {
+        private readonly HolisticCompleteInfrastructureFixture _infra;
+        private IContainer? _container;
+
+        public Uri BaseAddress { get; private set; } = default!;
+
+        private const string IMAGE_NAME = "cashflow-balance-query-api:latest";
+
+        public BalanceQueryApiContainerFixture(HolisticCompleteInfrastructureFixture infra)
+        {
+            _infra = infra;
+        }
+
+        public async Task InitializeAsync()
+        {
+            var image = new ImageFromDockerfileBuilder()
+                .WithDockerfileDirectory(CommonDirectoryPath.GetSolutionDirectory(), string.Empty)
+                .WithDockerfile("Back.End/Service/Balance/API/Dockerfile")
+                .WithName(IMAGE_NAME)
+                .WithDeleteIfExists(true)
+                .Build();
+
+            await image.CreateAsync();
+
+            _container = new ContainerBuilder(image)
+                .WithImage(image)
+                .WithPortBinding(0, 8080)
+                .WithNetwork(_infra.Network)
+                .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Testing")
+                .WithEnvironment("ASPNETCORE_URLS", "http://+:8080")
+                .WithEnvironment("Redis__Connection",
+                    _infra.RedisContainerFixture.NetworkConnectionString)
+                .WithEnvironment("Keycloak__Authority", _infra.KeycloakFixture.Authority)
+                .WithEnvironment("Keycloak__Audience", "cashflow-api")
+                .Build();
+
+            await _container.StartAsync();
+
+            var port = _container.GetMappedPublicPort(8080);
+            BaseAddress = new Uri($"http://127.0.0.1:{port}");
+
+            await WaitUntilReadyAsync();
+        }
+
+        public async Task DisposeAsync()
+        {
+            if (_container is not null)
+            {
+                await _container.DisposeAsync();
+            }
+        }
+
+        private async Task WaitUntilReadyAsync()
+        {
+            using var client = new HttpClient
+            {
+                BaseAddress = BaseAddress
+            };
+
+            var deadline = DateTime.UtcNow.AddMinutes(2);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    var response = await client.GetAsync("/health/ready");
+                    if (response.StatusCode == HttpStatusCode.OK)
+                    {
+                        return;
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    // API ainda iniciando.
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(2));
+            }
+
+            throw new TimeoutException("Balance Query API nao ficou pronta dentro do tempo esperado.");
+        }
+    }
+}

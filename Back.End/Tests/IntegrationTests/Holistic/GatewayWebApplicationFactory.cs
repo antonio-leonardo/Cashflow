@@ -8,14 +8,17 @@ namespace Holistic.Integration.Tests
     public sealed class GatewayWebApplicationFactory : WebApplicationFactory<Cashflow.Gateway.Program>
     {
         private readonly KeycloakContainerFixture _keycloak;
-        private readonly TransactionApiContainerFixture _downstream;
+        private readonly TransactionApiContainerFixture _transactionDownstream;
+        private readonly BalanceQueryApiContainerFixture _balanceDownstream;
 
         public GatewayWebApplicationFactory(
             KeycloakContainerFixture keycloak,
-            TransactionApiContainerFixture downstream)
+            TransactionApiContainerFixture transactionDownstream,
+            BalanceQueryApiContainerFixture balanceDownstream)
         {
             _keycloak = keycloak;
-            _downstream = downstream;
+            _transactionDownstream = transactionDownstream;
+            _balanceDownstream = balanceDownstream;
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -37,8 +40,14 @@ namespace Holistic.Integration.Tests
                     ["ReverseProxy:Routes:transaction-read-route:Match:Path"] = "/api/transactions/{**catch-all}",
                     ["ReverseProxy:Routes:transaction-read-route:Match:Methods:0"] = "GET",
                     ["ReverseProxy:Routes:transaction-read-route:AuthorizationPolicy"] = "AuthenticatedUser",
+                    ["ReverseProxy:Routes:balance-daily-read-route:ClusterId"] = "balance-query-cluster",
+                    ["ReverseProxy:Routes:balance-daily-read-route:Match:Path"] = "/api/balance/{**catch-all}",
+                    ["ReverseProxy:Routes:balance-daily-read-route:Match:Methods:0"] = "GET",
+                    ["ReverseProxy:Routes:balance-daily-read-route:AuthorizationPolicy"] = "AuthenticatedUser",
                     ["ReverseProxy:Clusters:transaction-cluster:Destinations:transaction-api:Address"] =
-                    _downstream.BaseAddress.ToString().TrimEnd('/')
+                    _transactionDownstream.BaseAddress.ToString().TrimEnd('/'),
+                    ["ReverseProxy:Clusters:balance-query-cluster:Destinations:balance-query-api:Address"] =
+                    _balanceDownstream.BaseAddress.ToString().TrimEnd('/')
                 };
 
                 config.AddInMemoryCollection(settings);

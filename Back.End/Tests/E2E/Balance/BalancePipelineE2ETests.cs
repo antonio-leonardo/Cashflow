@@ -24,6 +24,7 @@ namespace E2E.Balance.Tests
             await Task.Delay(1000);
 
             var client = _factory.CreateClient();
+            var referenceDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
             var objectToRequest = new
             {
@@ -63,6 +64,28 @@ namespace E2E.Balance.Tests
             }
 
             Xunit.Assert.False(value.IsNull);
+
+            var dailyBalanceKey = $"balance:daily:{objectToRequest.AccountId}:{referenceDate:yyyy-MM-dd}";
+            var dailyValue = await db.StringGetAsync(dailyBalanceKey);
+
+            if (dailyValue.IsNull)
+            {
+                var retries = 10;
+
+                for (int i = 0; i < retries; i++)
+                {
+                    dailyValue = await db.StringGetAsync(dailyBalanceKey);
+
+                    if (!dailyValue.IsNull)
+                    {
+                        break;
+                    }
+
+                    await Task.Delay(5000);
+                }
+            }
+
+            Xunit.Assert.False(dailyValue.IsNull);
         }
 
         private ConnectionMultiplexer CreateConnection(string connection)
