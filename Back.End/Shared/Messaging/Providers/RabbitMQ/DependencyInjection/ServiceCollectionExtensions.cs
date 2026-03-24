@@ -11,7 +11,23 @@ namespace Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            services.Configure<RabbitMqOptions>(configuration.GetSection("RabbitMq"));
+            var rabbitMqSection = configuration.GetSection("RabbitMq");
+            if (!rabbitMqSection.Exists())
+            {
+                rabbitMqSection = configuration.GetSection("Infrastructure:RabbitMq");
+            }
+
+            services.Configure<RabbitMqOptions>(options =>
+            {
+                rabbitMqSection.Bind(options);
+
+                var pwd = rabbitMqSection["Pwd"];
+                if (!string.IsNullOrWhiteSpace(pwd))
+                {
+                    options.Password = pwd;
+                }
+            });
+
             services.AddSingleton<IMessageBus, RabbitMqBus>();
             return services;
         }

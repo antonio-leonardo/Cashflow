@@ -14,9 +14,13 @@ namespace Cashflow.Service.Transaction.API
 {
     public class Program
     {
+        private const string TestingEnvironmentName = "Testing";
+        protected Program() { }
+
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            var isLocalEnvironment = IsLocalEnvironment(builder.Environment);
 
             builder.Services.AddOpenApi();
             builder.Services.AddPostgresProviderDependencyInjection(builder.Configuration);
@@ -56,59 +60,19 @@ namespace Cashflow.Service.Transaction.API
                 .AddCheck<TransactionReadinessHealthCheck>("transaction", tags: new[] { "ready" })
                 .AddCheck<IdempotencyReadinessHealthCheck>("idempotency", tags: new[] { "ready" });
 
-
-            if (!builder.Environment.IsEnvironment("Testing") && !builder.Environment.IsDevelopment())
+            if (!isLocalEnvironment)
             {
-                builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                    .AddJwtBearer(options =>
-                    {
-                        options.Authority = builder.Configuration["Keycloak:Authority"];
-                        options.Audience = builder.Configuration["Keycloak:Audience"];
-                        options.MapInboundClaims = false;
-                        options.RequireHttpsMetadata = true;
-                        options.TokenValidationParameters = new TokenValidationParameters
-                        {
-                            ValidateIssuer = true,
-                            ValidateAudience = true,
-                            ValidateLifetime = true,
-                            ClockSkew = TimeSpan.FromMinutes(1),
-                            RoleClaimType = "roles"
-                        };
-                    });
+                ConfigureAuthentication(builder);
             }
 
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+            if (app.Environment.IsDevelopment())
             {
-                if (app.Environment.IsDevelopment())
-                    app.MapOpenApi();
-
-                using var scope = app.Services.CreateScope();
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-                var db = scope.ServiceProvider.GetRequiredService<TransactionDbContext>();
-                await db.Database.EnsureCreatedAsync();
-                logger.LogInformation("TransactionDbContext initialized");
-
-                var idempotencyDb = scope.ServiceProvider.GetRequiredService<IdempotencyDbContext>();
-                await idempotencyDb.Database.EnsureCreatedAsync();
-                logger.LogInformation("IdempotencyDbContext initialized");
+                app.MapOpenApi();
             }
 
-            if (!app.Environment.IsEnvironment("Testing") && !app.Environment.IsDevelopment())
-            {
-                using var scope = app.Services.CreateScope();
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-                var db = scope.ServiceProvider.GetRequiredService<TransactionDbContext>();
-                await db.Database.EnsureCreatedAsync();
-                logger.LogInformation("TransactionDbContext initialized");
-
-                var idempotencyDb = scope.ServiceProvider.GetRequiredService<IdempotencyDbContext>();
-                await idempotencyDb.Database.EnsureCreatedAsync();
-                logger.LogInformation("IdempotencyDbContext initialized");
-            }
+            await InitializeDatabasesAsync(app);
 
             app.UseHttpsRedirection();
             app.UseRateLimiter();
@@ -123,7 +87,7 @@ namespace Cashflow.Service.Transaction.API
                 Predicate = check => check.Tags.Contains("ready") || check.Tags.Contains("live")
             });
 
-            if (!app.Environment.IsEnvironment("Testing") && !app.Environment.IsDevelopment())
+            if (!isLocalEnvironment)
             {
                 app.UseAuthentication();
                 app.UseAuthorization();
@@ -160,18 +124,17 @@ namespace Cashflow.Service.Transaction.API
                 IGetTransactionQueryHandler handler,
                 CancellationToken cancellationToken) =>
             {
-                var user = ctx.Request.Headers["X-User-Id"];
                 var model = await handler.HandleAsync(new GetTransactionQuery(id), cancellationToken);
                 return model is null ? Results.NotFound() : Results.Ok(model);
             }).WithName("GetTransaction");
 
-            if (!app.Environment.IsEnvironment("Testing") && !app.Environment.IsDevelopment())
+            if (!isLocalEnvironment)
             {
                 endpointPostTransactions.RequireAuthorization("TransactionsWrite");
                 endpointGetTransactions.RequireAuthorization("AuthenticatedUser");
             }
 
-            app.Run();
+            await app.RunAsync();
         }
 
         private static bool HasScope(System.Security.Claims.ClaimsPrincipal user, string expectedScope)
@@ -188,6 +151,46 @@ namespace Cashflow.Service.Transaction.API
                 .Where(claim => claim.Type == "role" || claim.Type == "roles")
                 .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                 .Any(role => string.Equals(role, expectedRole, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool IsLocalEnvironment(IHostEnvironment environment)
+        {
+            return environment.IsDevelopment() || environment.IsEnvironment(TestingEnvironmentName);
+        }
+
+        private static void ConfigureAuthentication(WebApplicationBuilder builder)
+        {
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.Authority = builder.Configuration["Keycloak:Authority"];
+                    options.Audience = builder.Configuration["Keycloak:Audience"];
+                    options.MapInboundClaims = false;
+                    options.RequireHttpsMetadata = true;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.FromMinutes(1),
+                        RoleClaimType = "roles"
+                    };
+                });
+        }
+
+        private static async Task InitializeDatabasesAsync(WebApplication app)
+        {
+            using var scope = app.Services.CreateScope();
+            var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
+            var logger = loggerFactory.CreateLogger(typeof(Program).FullName!);
+
+            var transactionDb = scope.ServiceProvider.GetRequiredService<TransactionDbContext>();
+            await transactionDb.Database.EnsureCreatedAsync();
+            logger.LogInformation("TransactionDbContext initialized");
+
+            var idempotencyDb = scope.ServiceProvider.GetRequiredService<IdempotencyDbContext>();
+            await idempotencyDb.Database.EnsureCreatedAsync();
+            logger.LogInformation("IdempotencyDbContext initialized");
         }
     }
     record CreateTransactionRequest(Guid AccountId, decimal Amount, string Currency, TransactionType Type);

@@ -16,7 +16,6 @@ namespace Cashflow.Shared.Messaging.RabbitMQ.MessageBus
         private const string RetryExchange = "cashflow.events.retry";
         private const string DlqExchange = "cashflow.events.dlq";
 
-        private readonly IConnection _connection;
         private readonly IChannel _channel;
         private readonly RabbitMqOptions _options;
         private readonly ConcurrentDictionary<string, bool> _topologyCreated = new();
@@ -36,15 +35,15 @@ namespace Cashflow.Shared.Messaging.RabbitMQ.MessageBus
                 NetworkRecoveryInterval = TimeSpan.FromSeconds(5)
             };
 
-            _connection = CreateConnection(factory);
-            _channel = _connection.CreateChannelAsync().GetAwaiter().GetResult();
+            var connection = CreateConnection(factory);
+            _channel = connection.CreateChannelAsync().GetAwaiter().GetResult();
 
             _channel.ExchangeDeclareAsync(MainExchange, ExchangeType.Direct, durable: true).GetAwaiter().GetResult();
             _channel.ExchangeDeclareAsync(RetryExchange, ExchangeType.Direct, durable: true).GetAwaiter().GetResult();
             _channel.ExchangeDeclareAsync(DlqExchange, ExchangeType.Direct, durable: true).GetAwaiter().GetResult();
         }
 
-        private IConnection CreateConnection(ConnectionFactory factory)
+        private static IConnection CreateConnection(ConnectionFactory factory)
         {
             var policy = ResiliencePolicies.GetResiliencePolicy();
 
