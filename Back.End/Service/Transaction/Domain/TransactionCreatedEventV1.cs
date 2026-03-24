@@ -8,18 +8,21 @@ namespace Cashflow.Service.Transaction.Domain
             Guid transactionId,
             Guid accountId,
             decimal amount,
-            string currency)
+            string currency,
+            TransactionType type)
             : base(version: 1)
         {
             TransactionId = transactionId;
             AccountId = accountId;
             Amount = amount;
             Currency = currency;
+            Type = type;
         }
 
         public Guid TransactionId { get; }
         public Guid AccountId { get; }
         public decimal Amount { get; }
         public string Currency { get; }
+        public TransactionType Type { get; }
     }
 }

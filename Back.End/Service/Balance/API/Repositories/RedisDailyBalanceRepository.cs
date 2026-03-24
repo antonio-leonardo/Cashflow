@@ -6,6 +6,11 @@ namespace Cashflow.Service.Balance.API.Repositories
     public sealed class RedisDailyBalanceRepository
     {
         private const string DailyBalanceKeyPrefix = "balance:daily:";
+
+        private static readonly RedisValue CreditsField = "credits";
+        private static readonly RedisValue DebitsField  = "debits";
+        private static readonly RedisValue NetField      = "net";
+
         private readonly IDatabase _database;
 
         public RedisDailyBalanceRepository(IConnectionMultiplexer redis)
@@ -13,29 +18,25 @@ namespace Cashflow.Service.Balance.API.Repositories
             _database = redis.GetDatabase();
         }
 
-        public async Task<decimal?> GetDailyBalanceAsync(
+        public async Task<DailyBalanceSummary?> GetDailyBalanceAsync(
             Guid accountId,
             DateOnly referenceDate,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var key = BuildDailyKey(accountId, referenceDate);
-            var value = await _database.StringGetAsync(key);
+            var key     = BuildDailyKey(accountId, referenceDate);
+            var entries = await _database.HashGetAsync(key, new RedisValue[] { CreditsField, DebitsField, NetField });
 
-            if (!value.HasValue)
+            if (!entries[0].HasValue && !entries[1].HasValue && !entries[2].HasValue)
             {
                 return null;
             }
 
-            var rawValue = value.ToString();
-            if (TryParseDecimal(rawValue, out var parsedValue))
-            {
-                return parsedValue;
-            }
-
-            throw new FormatException(
-                $"Invalid daily balance format found in Redis for key '{key}'.");
+            return new DailyBalanceSummary(
+                TotalCredits: ParseDecimal(entries[0]),
+                TotalDebits:  ParseDecimal(entries[1]),
+                NetBalance:   ParseDecimal(entries[2]));
         }
 
         private static string BuildDailyKey(Guid accountId, DateOnly date)
@@ -43,18 +44,24 @@ namespace Cashflow.Service.Balance.API.Repositories
             return $"{DailyBalanceKeyPrefix}{accountId}:{date:yyyy-MM-dd}";
         }
 
-        private static bool TryParseDecimal(string rawValue, out decimal parsedValue)
+        private static decimal ParseDecimal(RedisValue value)
         {
-            return decimal.TryParse(
-                rawValue,
-                NumberStyles.Number,
-                CultureInfo.InvariantCulture,
-                out parsedValue)
-                || decimal.TryParse(
-                    rawValue,
-                    NumberStyles.Number,
-                    CultureInfo.CurrentCulture,
-                    out parsedValue);
+            if (!value.HasValue) return 0m;
+
+            var raw = value.ToString();
+
+            if (decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var result))
+                return result;
+
+            if (decimal.TryParse(raw, NumberStyles.Number, CultureInfo.CurrentCulture, out result))
+                return result;
+
+            throw new FormatException($"Invalid decimal format in Redis: '{raw}'.");
         }
     }
+
+    public sealed record DailyBalanceSummary(
+        decimal TotalCredits,
+        decimal TotalDebits,
+        decimal NetBalance);
 }

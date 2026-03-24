@@ -12,7 +12,8 @@ public class MessagingIntegration
             Guid.NewGuid(),
             Guid.NewGuid(),
             10m,
-            "BRL");
+            "BRL",
+            TransactionType.Credit);
 
         var metadata = new MessageMetadata(
             CorrelationId: Guid.NewGuid().ToString(),

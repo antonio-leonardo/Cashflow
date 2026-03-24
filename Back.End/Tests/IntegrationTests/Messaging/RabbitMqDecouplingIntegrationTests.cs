@@ -45,7 +45,8 @@ namespace Messaging.Integration.Tests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 100m,
-                "BRL");
+                "BRL",
+                TransactionType.Credit);
 
             var correlationId = Guid.NewGuid().ToString();
 
@@ -85,7 +86,8 @@ namespace Messaging.Integration.Tests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 250m,
-                "BRL");
+                "BRL",
+                TransactionType.Credit);
 
             var envelope = new EventEnvelope<TransactionCreatedEventV1>(
                 @event,

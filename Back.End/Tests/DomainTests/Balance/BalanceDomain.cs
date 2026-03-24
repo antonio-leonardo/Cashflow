@@ -13,7 +13,8 @@ public class BalanceDomain
             Guid.NewGuid(),
             Guid.NewGuid(),
             50m,
-            "BRL");
+            "BRL",
+            TransactionType.Credit);
 
         balance += evt.Amount;
 

@@ -40,7 +40,8 @@ namespace Worker.Integration.Tests
                 Guid.NewGuid(),
                 Guid.NewGuid(),
                 500,
-                "BRL");
+                "BRL",
+                TransactionType.Credit);
 
             var metadata = new MessageMetadata(
                 Guid.NewGuid().ToString(),

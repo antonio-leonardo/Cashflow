@@ -240,8 +240,8 @@ namespace Holistic.Integration.Tests
             var auditCollection = auditDatabase.GetCollection<BsonDocument>("events");
             var reportCollection = reportDatabase.GetCollection<TransactionReportDocument>("transactions");
             var balanceValue = await redisDb.StringGetAsync($"balance:{objectToRequest.AccountId}");
-            var dailyBalanceKey = $"balance:daily:{objectToRequest.AccountId}:{referenceDate:yyyy-MM-dd}";
-            var dailyBalanceValue = await redisDb.StringGetAsync(dailyBalanceKey);
+            var dailyBalanceKey  = $"balance:daily:{objectToRequest.AccountId}:{referenceDate:yyyy-MM-dd}";
+            var dailyHashEntries = await redisDb.HashGetAllAsync(dailyBalanceKey);
 
             const int RETRIES = 10;
 
@@ -313,15 +313,15 @@ namespace Holistic.Integration.Tests
 
             Xunit.Assert.False(balanceValue.IsNull);
 
-            if (dailyBalanceValue.IsNull)
+            if (dailyHashEntries.Length == 0)
             {
                 var retries = 10;
 
                 for (int i = 0; i < retries; i++)
                 {
-                    dailyBalanceValue = await redisDb.StringGetAsync(dailyBalanceKey);
+                    dailyHashEntries = await redisDb.HashGetAllAsync(dailyBalanceKey);
 
-                    if (!dailyBalanceValue.IsNull)
+                    if (dailyHashEntries.Length > 0)
                     {
                         break;
                     }
@@ -330,7 +330,7 @@ namespace Holistic.Integration.Tests
                 }
             }
 
-            Xunit.Assert.False(dailyBalanceValue.IsNull);
+            Xunit.Assert.NotEmpty(dailyHashEntries);
             //----------------------END: BALANCE----------------------//
         }
 
@@ -388,7 +388,7 @@ namespace Holistic.Integration.Tests
             var dailyBalance = Xunit.Assert.IsType<GetDailyBalanceResponse>(responseBody);
             Xunit.Assert.Equal(accountId, dailyBalance.AccountId);
             Xunit.Assert.Equal(referenceDate, dailyBalance.Date);
-            Xunit.Assert.Equal(expectedAmount, dailyBalance.Balance);
+            Xunit.Assert.Equal(expectedAmount, dailyBalance.TotalDebits);
         }
 
         private ConnectionMultiplexer CreateRedisConnection(string connection)
