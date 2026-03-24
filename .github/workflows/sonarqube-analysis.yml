@@ -117,6 +117,7 @@ jobs:
           /d:sonar.host.url="${SONAR_HOST_URL}" \
           /d:sonar.token="${SONAR_TOKEN}" \
           /d:sonar.qualitygate.wait=true \
+          /d:sonar.newCode.referenceBranch=main \
           /d:sonar.exclusions="**/bin/**,**/obj/**,**/*.g.cs,**/*.designer.cs" \
           /d:sonar.coverage.exclusions="**/Program.cs" \
           /d:sonar.cs.vstest.reportsPaths="**/TestResults/**/*.trx" \
