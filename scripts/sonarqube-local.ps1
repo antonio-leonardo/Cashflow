@@ -181,7 +181,6 @@ try
         "begin",
         "/k:$ProjectKey",
         "/n:$ProjectName",
-        "/d:sonar.projectBaseDir=.",
         "/d:sonar.host.url=$SonarHostUrl",
         "/d:sonar.token=$SonarToken",
         "/d:sonar.qualitygate.wait=true",
