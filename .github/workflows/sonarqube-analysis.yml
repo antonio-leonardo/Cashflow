@@ -3,9 +3,10 @@ name: SonarQube Analysis
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - 'feature/**'
+      - 'task/**'
 
 concurrency:
   group: sonarqube-${{ github.ref }}
