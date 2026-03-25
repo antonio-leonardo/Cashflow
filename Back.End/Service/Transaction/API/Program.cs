@@ -23,6 +23,8 @@ namespace Cashflow.Service.Transaction.API
             var isLocalEnvironment = IsLocalEnvironment(builder.Environment);
 
             builder.Services.AddOpenApi();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
             builder.Services.AddPostgresProviderDependencyInjection(builder.Configuration);
             builder.Services.AddDatabaseInfrastructureDependencyInjection(builder.Configuration);
             builder.Services.AddAuthorization(options =>
@@ -67,9 +69,15 @@ namespace Cashflow.Service.Transaction.API
 
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment())
+            if (isLocalEnvironment)
             {
                 app.MapOpenApi();
+                app.UseSwagger();
+                app.UseSwaggerUI(options =>
+                {
+                    options.RoutePrefix = "swagger";
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Cashflow Transaction API v1");
+                });
             }
 
             await InitializeDatabasesAsync(app);
