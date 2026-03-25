@@ -23,7 +23,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Service\Balance\API\Cashflow.Service.Balance.API.csproj" />
+    <ProjectReference Include="..\..\..\Service\Transaction\Providers\Postgres\DependencyInjection\Cashflow.Service.Transaction.Postgres.DependencyInjection.csproj" />
     <ProjectReference Include="..\..\..\Service\Transaction\Domain\Cashflow.Service.Transaction.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging\Providers\RabbitMQ\DependencyInjection\Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\..\Worker\Balance\Cashflow.Worker.Balance.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,10 +9,14 @@ namespace Cashflow.Worker.Balance
     {
         private const string BalanceKeyPrefix = "balance:";
         private const string DailyBalanceKeyPrefix = "balance:daily:";
+        private const string BalanceLockKeyPrefix = "lock:balance:";
 
         private static readonly RedisValue CreditsField = "credits";
         private static readonly RedisValue DebitsField  = "debits";
         private static readonly RedisValue NetField      = "net";
+        private static readonly TimeSpan LockTtl = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan LockRetryDelay = TimeSpan.FromMilliseconds(50);
+        private const int MaxLockAttempts = 20;
 
         public RedisBalanceRepository(IConnectionMultiplexer redis) : base(redis)
         {
@@ -20,14 +24,44 @@ namespace Cashflow.Worker.Balance
 
         public async Task ApplyAsync(TransactionCreatedEventV1 evt)
         {
-            var isCredit    = evt.Type == TransactionType.Credit;
-            var signedAmount = isCredit ? evt.Amount : -evt.Amount;
+            await ExecuteWithAccountLockAsync(evt.AccountId, async () =>
+            {
+                var isCredit = evt.Type == TransactionType.Credit;
+                var signedAmount = isCredit ? evt.Amount : -evt.Amount;
 
-            var totalBalanceKey = $"{BalanceKeyPrefix}{evt.AccountId}";
-            var dailyBalanceKey = $"{DailyBalanceKeyPrefix}{evt.AccountId}:{DateOnly.FromDateTime(evt.OccurredAt):yyyy-MM-dd}";
+                var totalBalanceKey = $"{BalanceKeyPrefix}{evt.AccountId}";
+                var dailyBalanceKey = $"{DailyBalanceKeyPrefix}{evt.AccountId}:{DateOnly.FromDateTime(evt.OccurredAt):yyyy-MM-dd}";
 
-            await IncrementNetStringAsync(totalBalanceKey, signedAmount);
-            await IncrementDailyHashAsync(dailyBalanceKey, evt.Amount, isCredit);
+                await IncrementNetStringAsync(totalBalanceKey, signedAmount);
+                await IncrementDailyHashAsync(dailyBalanceKey, evt.Amount, isCredit);
+            });
+        }
+
+        private async Task ExecuteWithAccountLockAsync(Guid accountId, Func<Task> action)
+        {
+            var lockKey = $"{BalanceLockKeyPrefix}{accountId}";
+            var lockToken = Guid.NewGuid().ToString("N");
+
+            for (var attempt = 1; attempt <= MaxLockAttempts; attempt++)
+            {
+                var lockTaken = await _db.LockTakeAsync(lockKey, lockToken, LockTtl);
+                if (lockTaken)
+                {
+                    try
+                    {
+                        await action();
+                        return;
+                    }
+                    finally
+                    {
+                        await _db.LockReleaseAsync(lockKey, lockToken);
+                    }
+                }
+
+                await Task.Delay(LockRetryDelay);
+            }
+
+            throw new TimeoutException($"Could not acquire Redis lock for account '{accountId}'.");
         }
 
         private async Task IncrementNetStringAsync(string key, decimal signedAmount)
