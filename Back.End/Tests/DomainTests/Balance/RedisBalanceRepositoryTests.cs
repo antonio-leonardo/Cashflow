@@ -57,6 +57,21 @@ public class RedisBalanceRepositoryTests
             })
             .Returns(Task.CompletedTask);
 
+        _databaseMock
+            .Setup(db => db.LockTakeAsync(
+                It.IsAny<RedisKey>(),
+                It.IsAny<RedisValue>(),
+                It.IsAny<TimeSpan>(),
+                It.IsAny<CommandFlags>()))
+            .ReturnsAsync(true);
+
+        _databaseMock
+            .Setup(db => db.LockReleaseAsync(
+                It.IsAny<RedisKey>(),
+                It.IsAny<RedisValue>(),
+                It.IsAny<CommandFlags>()))
+            .ReturnsAsync(true);
+
         _sut = new RedisBalanceRepository(_multiplexerMock.Object);
     }
 
@@ -84,6 +99,7 @@ public class RedisBalanceRepositoryTests
         await _sut.ApplyAsync(evt);
 
         AssertStringSetWasCalled();
+        AssertLockWasUsed();
         AssertHashValue("credits", 9.00m);
         AssertHashValue("debits", 2.00m);
         AssertHashValue("net", 7.00m);
@@ -113,6 +129,7 @@ public class RedisBalanceRepositoryTests
         await _sut.ApplyAsync(evt);
 
         AssertStringSetWasCalled();
+        AssertLockWasUsed();
         AssertHashValue("credits", 5.00m);
         AssertHashValue("debits", 6.00m);
         AssertHashValue("net", -1.00m);
@@ -142,9 +159,34 @@ public class RedisBalanceRepositoryTests
         await _sut.ApplyAsync(evt);
 
         AssertStringSetWasCalled();
+        AssertLockWasUsed();
         AssertHashValue("credits", 3.25m);
         AssertHashValue("debits", 0.00m);
         AssertHashValue("net", 3.25m);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_ShouldThrowTimeout_WhenLockCannotBeAcquired()
+    {
+        _databaseMock
+            .Setup(db => db.LockTakeAsync(
+                It.IsAny<RedisKey>(),
+                It.IsAny<RedisValue>(),
+                It.IsAny<TimeSpan>(),
+                It.IsAny<CommandFlags>()))
+            .ReturnsAsync(false);
+
+        var accountId = Guid.NewGuid();
+        var evt = new TransactionCreatedEventV1(
+            Guid.NewGuid(),
+            accountId,
+            10.00m,
+            "BRL",
+            TransactionType.Credit);
+
+        var exception = await Assert.ThrowsAsync<TimeoutException>(() => _sut.ApplyAsync(evt));
+
+        Assert.Contains(accountId.ToString(), exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     private void AssertHashValue(string field, decimal expected)
@@ -158,5 +200,13 @@ public class RedisBalanceRepositoryTests
     {
         Assert.Contains(_databaseMock.Invocations, invocation =>
             invocation.Method.Name == nameof(IDatabase.StringSetAsync));
+    }
+
+    private void AssertLockWasUsed()
+    {
+        Assert.Contains(_databaseMock.Invocations, invocation =>
+            invocation.Method.Name == nameof(IDatabase.LockTakeAsync));
+        Assert.Contains(_databaseMock.Invocations, invocation =>
+            invocation.Method.Name == nameof(IDatabase.LockReleaseAsync));
     }
 }
