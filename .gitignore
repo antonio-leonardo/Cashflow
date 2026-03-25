@@ -378,3 +378,4 @@ Back.End/Tests/Performance/results/*.json
 .sonarqube/
 .scannerwork/
 .sonar/
+.claude/

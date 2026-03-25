@@ -68,23 +68,31 @@ Secrets obrigatorios no repositorio:
 - `SONAR_TOKEN`
 - `SONAR_ORGANIZATION` (exemplo: `antonio-leonardo`)
 
-Variaveis opcionais (Repository Variables):
+Variaveis obrigatorias (Repository Variables):
 - `SONAR_HOST_URL` (exemplo SonarCloud: `https://sonarcloud.io`)
-- `SONAR_PROJECT_KEY` (default: `cashflow`)
+
+Variaveis opcionais (Repository Variables):
+- `SONAR_PROJECT_KEY` (recomendado: `antonio-leonardo_Cashflow`; se ausente, o workflow tenta resolver automaticamente)
 - `SONAR_PROJECT_NAME` (default: `Cashflow`)
 
 Comportamento:
-- roda em `push`/`pull_request` para `main` e em `workflow_dispatch`;
-- provisiona .NET, Java 17 e Node 20 no runner;
+- roda em `push` para `main`, `feature/**` e `task/**`, alem de `workflow_dispatch`;
+- provisiona .NET e Java 17 no runner;
 - executa `begin -> restore -> build -> test -> end` usando `dotnet-sonarscanner`;
-- aguarda o `Quality Gate`.
+- valida o acesso ao projeto SonarCloud antes do build/test;
+- valida leitura do `Quality Gate` antes da analise;
+- aguarda o `Quality Gate` com retry para falhas transientes da API.
+
+Importante sobre token:
+- gere `SONAR_TOKEN` em `My Account -> Security` com um usuario que tenha acesso ao projeto (Browse + Execute Analysis).
 
 Checklist no GitHub (uma vez por repositorio):
 - `Settings -> Secrets and variables -> Actions -> New repository secret`:
   - `SONAR_TOKEN`
   - `SONAR_ORGANIZATION`
-- `Settings -> Secrets and variables -> Actions -> Variables` (opcional):
+- `Settings -> Secrets and variables -> Actions -> Variables`:
   - `SONAR_HOST_URL`
+- `Settings -> Secrets and variables -> Actions -> Variables` (opcional):
   - `SONAR_PROJECT_KEY`
   - `SONAR_PROJECT_NAME`
 - `Settings -> Branches -> Branch protection rules (main)`:

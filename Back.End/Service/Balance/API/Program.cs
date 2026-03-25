@@ -21,6 +21,8 @@ namespace Cashflow.Service.Balance.API
             var isLocalEnvironment = IsLocalEnvironment(builder.Environment);
 
             builder.Services.AddOpenApi();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
             builder.Services.AddRedisProviderDependencyInjection(builder.Configuration);
             builder.Services.AddScoped<RedisDailyBalanceRepository>();
 
@@ -58,9 +60,15 @@ namespace Cashflow.Service.Balance.API
 
             var app = builder.Build();
 
-            if (app.Environment.IsDevelopment())
+            if (isLocalEnvironment)
             {
                 app.MapOpenApi();
+                app.UseSwagger();
+                app.UseSwaggerUI(options =>
+                {
+                    options.RoutePrefix = "swagger";
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Cashflow Balance Query API v1");
+                });
             }
 
             app.UseHttpsRedirection();

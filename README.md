@@ -183,7 +183,7 @@ Disponibilidade:
 
 - Independencia entre servicos: falha de um worker nao bloqueia os demais.
 - Gateway e API podem evoluir sem downtime dos workers.
-- Endpoints de saude (`/health/live` e `/health/ready`) no Gateway e na Transaction API.
+- Endpoints de saude (`/health/live` e `/health/ready`) no Gateway, Transaction API e Balance Query API.
 - Arquitetura preparada para multi-az e multi-cloud com configuracao externa.
 
 Seguranca e observabilidade:
@@ -392,6 +392,19 @@ Servicos principais:
 - Balance Query API: `http://localhost:5002`
 - Keycloak: `http://localhost:8081`
 
+Documentacao de API (OpenAPI/Swagger):
+
+- Transaction API (UI): `http://localhost:5001/swagger`
+- Transaction API (JSON): `http://localhost:5001/swagger/v1/swagger.json`
+- Balance Query API (UI): `http://localhost:5002/swagger`
+- Balance Query API (JSON): `http://localhost:5002/swagger/v1/swagger.json`
+
+Health checks:
+
+- Gateway: `http://localhost:5000/health/live` e `http://localhost:5000/health/ready`
+- Transaction API: `http://localhost:5001/health/live` e `http://localhost:5001/health/ready`
+- Balance Query API: `http://localhost:5002/health/live` e `http://localhost:5002/health/ready`
+
 Execucao de carga com perfil dedicado:
 
 - `docker compose --profile perf run --rm k6`
@@ -451,7 +464,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\sonarqube-local.ps1 -ProjectK
 
 Detalhes completos:
 - `docs/sonarqube-code-smells.md`
-- Workflow cloud: `.github/workflows/sonarqube-analysis.yml` (usa secrets `SONAR_HOST_URL` + `SONAR_TOKEN`)
+- Workflow cloud: `.github/workflows/sonarqube-analysis.yml` (usa `SONAR_HOST_URL` em Variables + secrets `SONAR_TOKEN` e `SONAR_ORGANIZATION`)
 
 ---
 
