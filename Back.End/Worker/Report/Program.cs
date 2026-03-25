@@ -3,7 +3,7 @@ using Cashflow.Shared.NoSql.MongoDB;
 
 namespace Cashflow.Worker.Report
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {

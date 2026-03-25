@@ -92,19 +92,5 @@ namespace Cashflow.Outbox.Worker
                 $"Cashflow.Service.Transaction.Domain.{eventTypeName}");
         }
 
-        //private void LogError(string message, Exception? exception)
-        //{
-        //    var context = new LogContext(
-        //        "OutboxWorker",
-        //        null,
-        //        null,
-        //        null);
-
-        //    _logService.Log(
-        //        Cashflow.Shared.Logging.LogLevel.Error,
-        //        message,
-        //        context,
-        //        exception);
-        //}
     }
 }

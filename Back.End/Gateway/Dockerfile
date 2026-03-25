@@ -19,4 +19,6 @@ WORKDIR /app
 
 COPY --from=build /app/publish .
 
+USER app
+
 ENTRYPOINT ["dotnet", "Cashflow.Gateway.dll"]

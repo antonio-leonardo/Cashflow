@@ -3,7 +3,7 @@ using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 
 namespace Cashflow.Outbox.Worker
 {
-    public class Program
+    public static class Program
     {
         public static void Main(string[] args)
         {
