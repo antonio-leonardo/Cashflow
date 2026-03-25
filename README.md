@@ -464,7 +464,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\sonarqube-local.ps1 -ProjectK
 
 Detalhes completos:
 - `docs/sonarqube-code-smells.md`
-- Workflow cloud: `.github/workflows/sonarqube-analysis.yml` (usa secrets `SONAR_HOST_URL` + `SONAR_TOKEN`)
+- Workflow cloud: `.github/workflows/sonarqube-analysis.yml` (usa `SONAR_HOST_URL` em Variables + secrets `SONAR_TOKEN` e `SONAR_ORGANIZATION`)
 
 ---
 

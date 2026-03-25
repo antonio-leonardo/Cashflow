@@ -39,6 +39,8 @@ jobs:
         set -euo pipefail
         missing=0
         repo_name="${GITHUB_REPOSITORY#*/}"
+        sonar_host_url="${SONAR_HOST_URL%/}"
+        resolved_project_key=""
 
         if [ -z "${SONAR_HOST_URL:-}" ]; then
           echo "::error::Missing repository variable SONAR_HOST_URL"
@@ -55,25 +57,112 @@ jobs:
           missing=1
         fi
 
-        if [ -z "${SONAR_PROJECT_KEY:-}" ]; then
-          SONAR_PROJECT_KEY="${SONAR_ORGANIZATION}_${repo_name}"
-          echo "::warning::Repository variable SONAR_PROJECT_KEY not set. Falling back to '${SONAR_PROJECT_KEY}'."
-        fi
-
         if [ -z "${SONAR_PROJECT_NAME:-}" ]; then
           SONAR_PROJECT_NAME="${repo_name}"
         fi
 
         if [ "$missing" -eq 0 ]; then
-          sonar_branches_api="${SONAR_HOST_URL%/}/api/project_branches/list?project=${SONAR_PROJECT_KEY}"
-          http_code=$(curl -sS -u "${SONAR_TOKEN}:" -o sonar_project_branches.json -w "%{http_code}" "${sonar_branches_api}")
+          candidate_key="${SONAR_PROJECT_KEY:-${SONAR_ORGANIZATION}_${repo_name}}"
+          if [ -z "${SONAR_PROJECT_KEY:-}" ]; then
+            echo "::warning::Repository variable SONAR_PROJECT_KEY not set. Falling back to '${candidate_key}'."
+          fi
 
-          if [ "${http_code}" -ne 200 ]; then
-            echo "::error::Unable to access Sonar project '${SONAR_PROJECT_KEY}' in organization '${SONAR_ORGANIZATION}'. Configure SONAR_PROJECT_KEY with the exact SonarCloud project key."
+          project_http_code=$(curl -sS -u "${SONAR_TOKEN}:" -G \
+            --data-urlencode "organization=${SONAR_ORGANIZATION}" \
+            --data-urlencode "projects=${candidate_key}" \
+            -o sonar_project_exact.json -w "%{http_code}" \
+            "${sonar_host_url}/api/projects/search")
+
+          if [ "${project_http_code}" -ne 200 ]; then
+            echo "::error::Unable to query SonarCloud projects (HTTP ${project_http_code}). Verify SONAR_HOST_URL, SONAR_TOKEN and SONAR_ORGANIZATION."
             missing=1
-          elif ! grep -q '"isMain":true' sonar_project_branches.json; then
-            echo "::error::Sonar project '${SONAR_PROJECT_KEY}' has no default branch yet. Run analysis on main branch first."
-            missing=1
+          fi
+
+          exact_count="0"
+          if [ "$missing" -eq 0 ]; then
+            exact_count=$(python - <<'PY'
+import json
+try:
+    with open("sonar_project_exact.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+except Exception:
+    print("0")
+    raise SystemExit(0)
+print(len(data.get("components", [])))
+PY
+)
+          fi
+
+          if [ "$missing" -eq 0 ] && [ "${exact_count}" -eq 0 ]; then
+            if [ -n "${SONAR_PROJECT_KEY:-}" ]; then
+              echo "::error::SONAR_PROJECT_KEY='${candidate_key}' was not found in organization '${SONAR_ORGANIZATION}'."
+              missing=1
+            else
+              search_http_code=$(curl -sS -u "${SONAR_TOKEN}:" -G \
+                --data-urlencode "organization=${SONAR_ORGANIZATION}" \
+                --data-urlencode "q=${repo_name}" \
+                --data-urlencode "ps=100" \
+                -o sonar_project_search.json -w "%{http_code}" \
+                "${sonar_host_url}/api/projects/search")
+
+              if [ "${search_http_code}" -ne 200 ]; then
+                echo "::error::Unable to search SonarCloud project by repository name '${repo_name}' (HTTP ${search_http_code})."
+                missing=1
+              else
+                resolved_project_key=$(REPO_NAME="${repo_name}" python - <<'PY'
+import json
+import os
+repo_name = os.environ["REPO_NAME"].lower()
+with open("sonar_project_search.json", "r", encoding="utf-8") as f:
+    data = json.load(f)
+components = data.get("components", [])
+exact = [c.get("key", "") for c in components if c.get("name", "").lower() == repo_name and c.get("key")]
+if exact:
+    print(exact[0])
+elif len(components) == 1 and components[0].get("key"):
+    print(components[0]["key"])
+else:
+    print("")
+PY
+)
+
+                if [ -z "${resolved_project_key}" ]; then
+                  echo "::error::Could not auto-resolve SONAR_PROJECT_KEY for repository '${repo_name}'. Configure vars.SONAR_PROJECT_KEY explicitly."
+                  missing=1
+                else
+                  echo "::notice::Auto-resolved SONAR_PROJECT_KEY='${resolved_project_key}'."
+                fi
+              fi
+            fi
+          elif [ "$missing" -eq 0 ]; then
+            resolved_project_key="${candidate_key}"
+          fi
+
+          if [ "$missing" -eq 0 ]; then
+            sonar_branches_http_code=$(curl -sS -u "${SONAR_TOKEN}:" -G \
+              --data-urlencode "project=${resolved_project_key}" \
+              -o sonar_project_branches.json -w "%{http_code}" \
+              "${sonar_host_url}/api/project_branches/list")
+
+            if [ "${sonar_branches_http_code}" -ne 200 ]; then
+              echo "::error::Unable to access Sonar project '${resolved_project_key}' in organization '${SONAR_ORGANIZATION}' (HTTP ${sonar_branches_http_code})."
+              missing=1
+            elif ! grep -q '"isMain":true' sonar_project_branches.json; then
+              echo "::error::Sonar project '${resolved_project_key}' has no default branch yet. Run analysis on main branch first."
+              missing=1
+            fi
+          fi
+
+          if [ "$missing" -eq 0 ]; then
+            qg_http_code=$(curl -sS -u "${SONAR_TOKEN}:" -G \
+              --data-urlencode "projectKey=${resolved_project_key}" \
+              -o sonar_qualitygate_precheck.json -w "%{http_code}" \
+              "${sonar_host_url}/api/qualitygates/project_status")
+
+            if [ "${qg_http_code}" -ne 200 ]; then
+              echo "::error::SONAR_TOKEN cannot read Quality Gate for project '${resolved_project_key}' (HTTP ${qg_http_code}). Use a user token with access to this project."
+              missing=1
+            fi
           fi
         fi
 
@@ -81,7 +170,7 @@ jobs:
           exit 1
         fi
 
-        echo "SONAR_PROJECT_KEY_EFFECTIVE=${SONAR_PROJECT_KEY}" >> "$GITHUB_ENV"
+        echo "SONAR_PROJECT_KEY_EFFECTIVE=${resolved_project_key}" >> "$GITHUB_ENV"
         echo "SONAR_PROJECT_NAME_EFFECTIVE=${SONAR_PROJECT_NAME}" >> "$GITHUB_ENV"
 
     - name: Setup .NET
@@ -94,11 +183,6 @@ jobs:
       with:
         distribution: temurin
         java-version: '17'
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
 
     - name: Install SonarScanner for .NET
       run: |
@@ -138,4 +222,32 @@ jobs:
       if: ${{ always() }}
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: ./.dotnet/tools/dotnet-sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
+      run: |
+        set -euo pipefail
+        max_attempts=3
+
+        for attempt in $(seq 1 "${max_attempts}"); do
+          echo "Running Sonar End (attempt ${attempt}/${max_attempts})..."
+          set +e
+          ./.dotnet/tools/dotnet-sonarscanner end /d:sonar.token="${SONAR_TOKEN}" 2>&1 | tee "sonar-end-attempt-${attempt}.log"
+          exit_code=${PIPESTATUS[0]}
+          set -e
+
+          if [ "${exit_code}" -eq 0 ]; then
+            echo "Sonar End completed successfully."
+            exit 0
+          fi
+
+          if grep -q "Project not found" "sonar-end-attempt-${attempt}.log" && [ "${attempt}" -lt "${max_attempts}" ]; then
+            wait_seconds=$((attempt * 20))
+            echo "::warning::SonarCloud returned 'Project not found' while checking Quality Gate. Retrying in ${wait_seconds}s."
+            sleep "${wait_seconds}"
+            continue
+          fi
+
+          echo "::error::Sonar End failed on attempt ${attempt} with exit code ${exit_code}."
+          exit "${exit_code}"
+        done
+
+        echo "::error::Sonar End failed after ${max_attempts} attempts."
+        exit 1
