@@ -38,7 +38,7 @@ namespace Cashflow.Service.Transaction.Domain
                 Amount.Value,
                 Amount.Currency,
                 type,
-                parsedCorrelationId,
+                parsedCorrelationId ?? default,
                 Activity.Current?.Id));
         }
 
