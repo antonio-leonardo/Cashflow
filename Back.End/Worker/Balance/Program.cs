@@ -1,5 +1,6 @@
 using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 using Cashflow.Shared.NoSql.Redis;
+using Cashflow.Shared.Observability;
 
 namespace Cashflow.Worker.Balance
 {
@@ -10,6 +11,7 @@ namespace Cashflow.Worker.Balance
         public static void Main(string[] args)
         {
             var builder = Host.CreateApplicationBuilder(args);
+            builder.Services.AddCashflowOpenTelemetryForWorker(builder.Configuration, "cashflow-balance-worker");
 
             builder.Services.AddRabbitMQDependencyInjection(builder.Configuration);
             builder.Services.AddRedisProviderDependencyInjection(builder.Configuration);

@@ -1,8 +1,10 @@
+using Cashflow.Shared.Observability;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
+using Yarp.ReverseProxy.Transforms;
 
 namespace Cashflow.Gateway
 {
@@ -17,7 +19,28 @@ namespace Cashflow.Gateway
 
             builder.Services
                 .AddReverseProxy()
-                .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+                .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+                .AddTransforms(transformBuilderContext =>
+                {
+                    transformBuilderContext.AddRequestTransform(transformContext =>
+                    {
+                        var correlationId = transformContext.HttpContext.Request
+                            .Headers[ObservabilityConstants.CorrelationIdHeaderName]
+                            .ToString();
+
+                        if (!string.IsNullOrWhiteSpace(correlationId))
+                        {
+                            transformContext.ProxyRequest.Headers.Remove(ObservabilityConstants.CorrelationIdHeaderName);
+                            transformContext.ProxyRequest.Headers.TryAddWithoutValidation(
+                                ObservabilityConstants.CorrelationIdHeaderName,
+                                correlationId);
+                        }
+
+                        return ValueTask.CompletedTask;
+                    });
+                });
+
+            builder.Services.AddCashflowOpenTelemetryForWeb(builder.Configuration, "cashflow-gateway");
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -72,6 +95,7 @@ namespace Cashflow.Gateway
 
             var app = builder.Build();
 
+            app.UseCashflowCorrelationId();
             app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();

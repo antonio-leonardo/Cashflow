@@ -391,6 +391,7 @@ Servicos principais:
 - Transaction API: `http://localhost:5001`
 - Balance Query API: `http://localhost:5002`
 - Keycloak: `http://localhost:8081`
+- Jaeger (traces): `http://localhost:16686`
 
 Documentacao de API (OpenAPI/Swagger):
 
@@ -404,6 +405,12 @@ Health checks:
 - Gateway: `http://localhost:5000/health/live` e `http://localhost:5000/health/ready`
 - Transaction API: `http://localhost:5001/health/live` e `http://localhost:5001/health/ready`
 - Balance Query API: `http://localhost:5002/health/live` e `http://localhost:5002/health/ready`
+
+Observabilidade distribuida (OpenTelemetry + Jaeger):
+
+- Cada servico publica traces e metrics via OTLP para `http://jaeger:4317` no Docker Compose.
+- Para visualizar traces: acesse `http://localhost:16686`, selecione o servico (ex.: `cashflow-gateway`, `cashflow-transaction-api`, `cashflow-balance-query-api`) e clique em **Find Traces**.
+- O `CorrelationId` e propagado no header `X-Correlation-Id` do Gateway ate os servicos e eventos.
 
 Execucao de carga com perfil dedicado:
 

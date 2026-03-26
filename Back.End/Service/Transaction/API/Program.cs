@@ -4,6 +4,7 @@ using Cashflow.Service.Transaction.Application.Queries;
 using Cashflow.Service.Transaction.Domain;
 using Cashflow.Service.Transaction.Infrastructure.Persistence;
 using Cashflow.Service.Transaction.Postgres.DependencyInjection;
+using Cashflow.Shared.Observability;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -25,6 +26,7 @@ namespace Cashflow.Service.Transaction.API
             builder.Services.AddOpenApi();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddCashflowOpenTelemetryForWeb(builder.Configuration, "cashflow-transaction-api");
             builder.Services.AddPostgresProviderDependencyInjection(builder.Configuration);
             builder.Services.AddDatabaseInfrastructureDependencyInjection(builder.Configuration);
             builder.Services.AddAuthorization(options =>
@@ -80,6 +82,7 @@ namespace Cashflow.Service.Transaction.API
                 });
             }
 
+            app.UseCashflowCorrelationId();
             await InitializeDatabasesAsync(app);
 
             app.UseHttpsRedirection();
@@ -108,8 +111,8 @@ namespace Cashflow.Service.Transaction.API
                 HttpContext http,
                 CancellationToken cancellationToken) =>
             {
-                var correlationId = http.Request.Headers["X-Correlation-Id"].FirstOrDefault()
-                    ?? Guid.NewGuid().ToString();
+                var correlationId = http.Request.Headers[ObservabilityConstants.CorrelationIdHeaderName].FirstOrDefault()
+                    ?? http.TraceIdentifier;
                 var userId = http.User.FindFirst("sub")?.Value;
 
                 var command = new CreateTransactionCommand(

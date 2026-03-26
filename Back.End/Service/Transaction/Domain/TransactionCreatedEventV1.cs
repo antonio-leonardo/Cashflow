@@ -9,8 +9,11 @@ namespace Cashflow.Service.Transaction.Domain
             Guid accountId,
             decimal amount,
             string currency,
-            TransactionType type)
-            : base(version: 1)
+            TransactionType type,
+            Guid? correlationId = null,
+            string? traceParent = null,
+            string? baggage = null)
+            : base(correlationId: correlationId, version: 1, traceParent: traceParent, baggage: baggage)
         {
             TransactionId = transactionId;
             AccountId = accountId;

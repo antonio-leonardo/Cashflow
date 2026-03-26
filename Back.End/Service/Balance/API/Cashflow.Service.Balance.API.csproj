@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Shared\Contracts\Cashflow.Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Shared\NoSql\Providers\Redis\Cashflow.Shared.NoSql.Redis.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Observability\Cashflow.Shared.Observability.csproj" />
   </ItemGroup>
 
 </Project>
