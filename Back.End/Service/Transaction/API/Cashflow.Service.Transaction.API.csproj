@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\Observability\Cashflow.Shared.Observability.csproj" />
     <ProjectReference Include="..\Application\Cashflow.Service.Transaction.Application.csproj" />
     <ProjectReference Include="..\Infrastructure\Cashflow.Service.Transaction.Infrastructure.csproj" />
     <ProjectReference Include="..\Providers\Postgres\DependencyInjection\Cashflow.Service.Transaction.Postgres.DependencyInjection.csproj" />

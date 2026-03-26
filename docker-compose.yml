@@ -83,6 +83,19 @@ services:
     networks:
       - cashflow-network
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.60
+    container_name: cashflow-jaeger
+    restart: always
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - cashflow-network
+
   gateway:
     build:
       context: .
@@ -98,6 +111,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       Keycloak__Authority: http://keycloak:8080/realms/cashflow
       Keycloak__Audience: cashflow-api
+      OpenTelemetry__Otlp__Endpoint: http://jaeger:4317
     ports:
       - "5000:8080"
     networks:
@@ -118,6 +132,7 @@ services:
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=cashflow;Username=postgres;Password=postgres
       RabbitMq__Host: rabbitmq
       RabbitMq__Port: 5672
+      OpenTelemetry__Otlp__Endpoint: http://jaeger:4317
     ports:
       - "5001:8080"
     networks:
@@ -136,6 +151,7 @@ services:
       Redis__Connection: redis:6379
       Keycloak__Authority: http://keycloak:8080/realms/cashflow
       Keycloak__Audience: cashflow-api
+      OpenTelemetry__Otlp__Endpoint: http://jaeger:4317
     ports:
       - "5002:8080"
     networks:
@@ -155,6 +171,7 @@ services:
       ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=cashflow;Username=postgres;Password=postgres
       RabbitMq__Host: rabbitmq
       RabbitMq__Port: 5672
+      OpenTelemetry__Otlp__Endpoint: http://jaeger:4317
     networks:
       - cashflow-network
     restart: always
@@ -172,6 +189,7 @@ services:
       Redis__Connection: redis:6379
       RabbitMq__Host: rabbitmq
       RabbitMq__Port: 5672
+      OpenTelemetry__Otlp__Endpoint: http://jaeger:4317
     networks:
       - cashflow-network
     restart: always
@@ -189,6 +207,7 @@ services:
       Mongo__Connection: mongodb://mongo:27017
       RabbitMq__Host: rabbitmq
       RabbitMq__Port: 5672
+      OpenTelemetry__Otlp__Endpoint: http://jaeger:4317
     networks:
       - cashflow-network
     restart: always
@@ -206,6 +225,7 @@ services:
       Mongo__Connection: mongodb://mongo:27017
       RabbitMq__Host: rabbitmq
       RabbitMq__Port: 5672
+      OpenTelemetry__Otlp__Endpoint: http://jaeger:4317
     networks:
       - cashflow-network
     restart: always

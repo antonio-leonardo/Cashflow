@@ -1,4 +1,5 @@
 using Cashflow.Shared.Events;
+using System.Diagnostics;
 
 namespace Cashflow.Service.Transaction.Domain
 {
@@ -19,7 +20,8 @@ namespace Cashflow.Service.Transaction.Domain
             AccountId accountId,
             Money amount,
             TransactionType type,
-            DateTime createdAtUtc)
+            DateTime createdAtUtc,
+            string? correlationId)
         {
             Id = id;
             AccountId = accountId;
@@ -28,12 +30,16 @@ namespace Cashflow.Service.Transaction.Domain
             Status = TransactionStatus.Created;
             CreatedAtUtc = createdAtUtc;
 
+            var parsedCorrelationId = ParseCorrelationId(correlationId);
+
             AddDomainEvent(new TransactionCreatedEventV1(
                 Id.Value,
                 AccountId.Value,
                 Amount.Value,
                 Amount.Currency,
-                type));
+                type,
+                parsedCorrelationId ?? default,
+                Activity.Current?.Id));
         }
 
         public static Transaction Create(
@@ -42,7 +48,8 @@ namespace Cashflow.Service.Transaction.Domain
             decimal amount,
             string currency,
             TransactionType type,
-            DateTime? createdAtUtc = null)
+            DateTime? createdAtUtc = null,
+            string? correlationId = null)
         {
             if (amount <= 0)
             {
@@ -55,9 +62,17 @@ namespace Cashflow.Service.Transaction.Domain
                 new AccountId(accountId),
                 money,
                 type,
-                createdAtUtc ?? DateTime.UtcNow);
+                createdAtUtc ?? DateTime.UtcNow,
+                correlationId);
         }
 
         private void AddDomainEvent(IEvent @event) => _domainEvents.Add(@event);
+
+        private static Guid? ParseCorrelationId(string? correlationId)
+        {
+            return Guid.TryParse(correlationId, out var parsed)
+                ? parsed
+                : null;
+        }
     }
 }

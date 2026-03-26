@@ -2,6 +2,7 @@ using Cashflow.Service.Balance.API.Healthchecks;
 using Cashflow.Service.Balance.API.Repositories;
 using Cashflow.Shared.Contracts.Api;
 using Cashflow.Shared.NoSql.Redis;
+using Cashflow.Shared.Observability;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -23,6 +24,7 @@ namespace Cashflow.Service.Balance.API
             builder.Services.AddOpenApi();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddCashflowOpenTelemetryForWeb(builder.Configuration, "cashflow-balance-query-api");
             builder.Services.AddRedisProviderDependencyInjection(builder.Configuration);
             builder.Services.AddScoped<RedisDailyBalanceRepository>();
 
@@ -71,6 +73,7 @@ namespace Cashflow.Service.Balance.API
                 });
             }
 
+            app.UseCashflowCorrelationId();
             app.UseHttpsRedirection();
             app.UseRateLimiter();
 

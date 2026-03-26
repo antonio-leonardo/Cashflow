@@ -1,5 +1,6 @@
 using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 using Cashflow.Shared.NoSql.MongoDB;
+using Cashflow.Shared.Observability;
 
 namespace Cashflow.Worker.Report
 {
@@ -8,6 +9,7 @@ namespace Cashflow.Worker.Report
         public static void Main(string[] args)
         {
             var builder = Host.CreateApplicationBuilder(args);
+            builder.Services.AddCashflowOpenTelemetryForWorker(builder.Configuration, "cashflow-report-worker");
 
             builder.Services.AddRabbitMQDependencyInjection(builder.Configuration);
 

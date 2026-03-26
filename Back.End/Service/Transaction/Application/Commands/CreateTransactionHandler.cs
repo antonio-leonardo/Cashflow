@@ -23,7 +23,8 @@ namespace Cashflow.Service.Transaction.Application.Commands
                 command.AccountId,
                 command.Amount,
                 command.Currency,
-                command.Type);
+                command.Type,
+                correlationId: command.CorrelationId);
 
             await _repository.AddAsync(transaction, cancellationToken);
             await _repository.SaveChangesAsync(cancellationToken);

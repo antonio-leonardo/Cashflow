@@ -4,6 +4,7 @@ using Cashflow.Shared.Events;
 using Cashflow.Shared.Logging;
 using Cashflow.Shared.Messaging.Abstractions;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace Cashflow.Outbox.Worker
@@ -57,12 +58,16 @@ namespace Cashflow.Outbox.Worker
                                 outboxEvent.Payload,
                                 eventType!);
 
+                            var extractedMetadata = ExtractMetadataFromPayload(outboxEvent.Payload, outboxEvent.EventId);
+
                             var metadata = new MessageMetadata(
-                                outboxEvent.EventId.ToString(),
+                                extractedMetadata.CorrelationId,
                                 outboxEvent.EventId.ToString(),
                                 "OutboxWorker",
                                 null,
-                                DateTime.UtcNow);
+                                DateTime.UtcNow,
+                                extractedMetadata.TraceParent,
+                                extractedMetadata.Baggage);
 
                             var envelopeType = typeof(EventEnvelope<>).MakeGenericType(eventType!);
                             var envelope = Activator.CreateInstance(envelopeType, deserialized!, metadata)!;
@@ -90,6 +95,41 @@ namespace Cashflow.Outbox.Worker
             // Por enquanto, lidamos apenas com eventos do domínio de Transações.
             return typeof(TransactionCreatedEventV1).Assembly.GetType(
                 $"Cashflow.Service.Transaction.Domain.{eventTypeName}");
+        }
+
+        private static (string CorrelationId, string? TraceParent, string? Baggage) ExtractMetadataFromPayload(
+            string payload,
+            Guid fallbackEventId)
+        {
+            var correlationId = fallbackEventId.ToString();
+            string? traceParent = Activity.Current?.Id;
+            string? baggage = null;
+
+            using var document = JsonDocument.Parse(payload);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("CorrelationId", out var correlationProperty) &&
+                correlationProperty.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(correlationProperty.GetString()))
+            {
+                correlationId = correlationProperty.GetString()!;
+            }
+
+            if (root.TryGetProperty("TraceParent", out var traceParentProperty) &&
+                traceParentProperty.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(traceParentProperty.GetString()))
+            {
+                traceParent = traceParentProperty.GetString();
+            }
+
+            if (root.TryGetProperty("Baggage", out var baggageProperty) &&
+                baggageProperty.ValueKind == JsonValueKind.String &&
+                !string.IsNullOrWhiteSpace(baggageProperty.GetString()))
+            {
+                baggage = baggageProperty.GetString();
+            }
+
+            return (correlationId, traceParent, baggage);
         }
 
     }
