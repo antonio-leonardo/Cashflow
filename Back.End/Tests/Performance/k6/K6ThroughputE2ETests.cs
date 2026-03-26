@@ -8,7 +8,8 @@ namespace K6.Performance.Tests
 {
     public class K6ThroughputE2ETests
     {
-        private const string SummaryRelativePath = "Back.End/Tests/Performance/results/transactions-throughput-summary.json";
+        private const string TransactionSummaryRelativePath = "Back.End/Tests/Performance/results/transactions-throughput-summary.json";
+        private const string DailyBalanceSummaryRelativePath = "Back.End/Tests/Performance/results/daily-balance-throughput-summary.json";
         private const string KeepStackEnvVar = "KEEP_CASHFLOW_STACK";
         private const string CleanupVolumesEnvVar = "CLEANUP_CASHFLOW_VOLUMES";
         private const double MaxLossRate = 0.05;
@@ -33,7 +34,7 @@ namespace K6.Performance.Tests
             }
 
             var repositoryRoot = ResolveRepositoryRoot();
-            var summaryFilePath = Path.Combine(repositoryRoot, SummaryRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            var summaryFilePath = Path.Combine(repositoryRoot, TransactionSummaryRelativePath.Replace('/', Path.DirectorySeparatorChar));
 
             EnsureSummaryDirectoryExists(summaryFilePath);
 
@@ -59,7 +60,7 @@ namespace K6.Performance.Tests
             }
 
             var repositoryRoot = ResolveRepositoryRoot();
-            var summaryFilePath = Path.Combine(repositoryRoot, SummaryRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            var summaryFilePath = Path.Combine(repositoryRoot, TransactionSummaryRelativePath.Replace('/', Path.DirectorySeparatorChar));
 
             EnsureSummaryDirectoryExists(summaryFilePath);
 
@@ -88,6 +89,82 @@ namespace K6.Performance.Tests
                     $"Unable to stop balance-worker for degraded scenario.{Environment.NewLine}{stopBalanceResult.Output}");
 
                 await RunK6AndAssertTargetsAsync(repositoryRoot, summaryFilePath);
+            }
+            finally
+            {
+                await CleanupDockerComposeAsync(repositoryRoot);
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "Performance")]
+        [Trait("Suite", "NFRDailyConsolidatedBalance")]
+        public async Task BalanceDailyApi_Should_Handle_50Rps_With_Max_5Percent_Loss()
+        {
+            if (string.Equals(Environment.GetEnvironmentVariable("CI"), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                _output.WriteLine("Performance tests are skipped in CI. Run them explicitly in a performance stage.");
+                return;
+            }
+
+            var repositoryRoot = ResolveRepositoryRoot();
+            var summaryFilePath = Path.Combine(repositoryRoot, DailyBalanceSummaryRelativePath.Replace('/', Path.DirectorySeparatorChar));
+
+            EnsureSummaryDirectoryExists(summaryFilePath);
+
+            try
+            {
+                var upResult = await RunDockerComposeCommandAsync(
+                    repositoryRoot,
+                    "compose up -d transaction-api worker-outbox balance-worker report-worker audit-worker balance-query-api redis rabbitmq postgres",
+                    TimeSpan.FromMinutes(6));
+
+                _output.WriteLine(upResult.Output);
+
+                Assert.True(
+                    upResult.ExitCode == 0,
+                    $"Unable to start infrastructure for daily consolidated scenario.{Environment.NewLine}{upResult.Output}");
+
+                await EnsureBalanceQueryApiReadyAsync(repositoryRoot);
+
+                DeleteExistingSummaryFile(summaryFilePath);
+
+                // Use a smaller prime set to keep setup time bounded.
+                const int primeAccounts = 40;
+                const int primeWaitMs = 10000;
+
+                var result = await RunDockerComposeCommandAsync(
+                    repositoryRoot,
+                    BuildK6RunArguments(
+                        targetRps: 50,
+                        durationSeconds: 60,
+                        mode: "daily-balance",
+                        baseUrl: "http://balance-query-api:8080",
+                        primeBaseUrl: "http://transaction-api:8080",
+                        summaryFile: "daily-balance-throughput-summary.json",
+                        primeAccounts: primeAccounts,
+                        primeWaitMs: primeWaitMs),
+                    TimeSpan.FromMinutes(8));
+
+                _output.WriteLine(result.Output);
+
+                Assert.True(
+                    result.ExitCode == 0,
+                    $"k6 execution failed with exit code {result.ExitCode}.{Environment.NewLine}{result.Output}");
+
+                Assert.True(
+                    File.Exists(summaryFilePath),
+                    $"Summary file was not generated at '{summaryFilePath}'.");
+
+                var summary = await ReadSummaryAsync(summaryFilePath);
+                Assert.NotNull(summary);
+                Assert.Equal("PASS", summary!.Result);
+                Assert.True(
+                    summary.FailedRate <= MaxLossRate,
+                    $"Expected loss <= {MaxLossRate * 100:F0}%, got {(summary.FailedRate * 100):F2}%.");
+                Assert.True(
+                    summary.P95DurationMs <= LatencyP95ThresholdMs,
+                    $"Expected p95 latency <= {LatencyP95ThresholdMs:F0} ms, got {summary.P95DurationMs:F2} ms.");
             }
             finally
             {
@@ -201,8 +278,67 @@ namespace K6.Performance.Tests
             throw new XunitException("Transaction API did not become reachable on http://localhost:5001 within timeout.");
         }
 
+        private static string BuildK6RunArguments(
+            int targetRps,
+            int durationSeconds,
+            string mode,
+            string baseUrl,
+            string primeBaseUrl,
+            string summaryFile,
+            int primeAccounts,
+            int primeWaitMs)
+            => $"compose --profile perf run --rm " +
+               $"-e MODE={mode} " +
+               $"-e BASE_URL={baseUrl} " +
+               $"-e PRIME_BASE_URL={primeBaseUrl} " +
+               $"-e TRANSACTIONS_ENDPOINT=/api/transactions " +
+               $"-e DAILY_BALANCE_ENDPOINT_TEMPLATE=/api/balance/daily/{{accountId}}?date={{date}} " +
+               $"-e PRIME_WAIT_MS={primeWaitMs} " +
+               $"-e PRIME_ACCOUNTS={primeAccounts} " +
+               $"-e TARGET_RPS={targetRps} " +
+               $"-e DURATION={durationSeconds}s " +
+               $"-e PRE_ALLOCATED_VUS=120 " +
+               $"-e MAX_VUS=400 " +
+               $"-e LATENCY_P95_MS={LatencyP95ThresholdMs:F0} " +
+               $"-e SUMMARY_FILE=results/{summaryFile} " +
+               $"k6 run k6/transactions-throughput.js";
+
         private static string BuildK6RunArguments(int targetRps, int durationSeconds)
             => $"compose --profile perf run --rm -e TARGET_RPS={targetRps} -e DURATION={durationSeconds}s -e PRE_ALLOCATED_VUS=120 -e MAX_VUS=400 -e LATENCY_P95_MS={LatencyP95ThresholdMs:F0} k6 run k6/transactions-throughput.js";
+
+        private async Task EnsureBalanceQueryApiReadyAsync(string repositoryRoot)
+        {
+            // balance-query-api is available via published ports on the host while running tests.
+            using var client = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(2)
+            };
+
+            var deadline = DateTime.UtcNow.AddMinutes(2);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    var response = await client.GetAsync("http://localhost:5002/health/ready");
+                    if ((int)response.StatusCode >= 100 && (int)response.StatusCode < 500)
+                    {
+                        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                        {
+                            return;
+                        }
+                    }
+                }
+                catch
+                {
+                    // retry until timeout
+                }
+
+                await Task.Delay(1000);
+            }
+
+            throw new XunitException("Balance Query API did not become reachable on http://localhost:5002/health/ready within timeout.");
+        }
 
         private async Task CleanupDockerComposeAsync(string repositoryRoot)
         {
