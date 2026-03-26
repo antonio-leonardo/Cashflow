@@ -76,7 +76,10 @@ namespace Cashflow.Shared.Messaging.RabbitMQ.MessageBus
             where TEvent : IEvent
         {
             var eventName = typeof(TEvent).Name;
-            await EnsureTopologyAsync(eventName, eventName);
+            // IMPORTANT: publishing should not declare queues/bindings.
+            // Queues are declared by consumers (SubscribeAsync) so that messages
+            // are routed to the correct consumer queue and are not "trapped"
+            // into a publisher-owned queue when consumers start later.
 
             using var activity = MessagingActivitySource.StartActivity($"rabbitmq publish {eventName}", ActivityKind.Producer);
             activity?.SetTag("messaging.system", "rabbitmq");

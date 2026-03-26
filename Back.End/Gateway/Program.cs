@@ -95,6 +95,12 @@ namespace Cashflow.Gateway
 
             var app = builder.Build();
 
+            if (!isLocalEnvironment)
+            {
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
             app.UseCashflowCorrelationId();
             app.UseRateLimiter();
             app.UseAuthentication();

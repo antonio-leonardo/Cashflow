@@ -1,4 +1,4 @@
-﻿# Cashflow - Sistema de Transacoes Event-Driven
+# Cashflow - Sistema de Transacoes Event-Driven
 
 **Autor:** Antonio Leonardo  
 **Plataforma:** .NET 10  
@@ -128,6 +128,8 @@ Seguranca e observabilidade:
 - Rate limiting no Gateway e na Transaction API para protecao de borda.
 - CorrelationId propagado em toda a cadeia de eventos.
 - Logs estruturados e rastreio distribuido com OpenTelemetry.
+
+Metricas operacionais (SLI/SLO) e evidencias: `docs/sli-slo.md`.
 
 ---
 

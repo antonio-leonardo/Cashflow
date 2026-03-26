@@ -75,6 +75,10 @@ namespace Cashflow.Service.Balance.API
 
             app.UseCashflowCorrelationId();
             app.UseHttpsRedirection();
+            if (!isLocalEnvironment)
+            {
+                app.UseHsts();
+            }
             app.UseRateLimiter();
 
             app.MapHealthChecks("/health/live", new HealthCheckOptions

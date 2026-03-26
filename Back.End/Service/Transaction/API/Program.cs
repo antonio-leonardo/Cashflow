@@ -86,6 +86,10 @@ namespace Cashflow.Service.Transaction.API
             await InitializeDatabasesAsync(app);
 
             app.UseHttpsRedirection();
+            if (!isLocalEnvironment)
+            {
+                app.UseHsts();
+            }
             app.UseRateLimiter();
 
             app.MapHealthChecks("/health/live", new HealthCheckOptions

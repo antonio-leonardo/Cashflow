@@ -1,4 +1,4 @@
-﻿# Cashflow - Sistema de Transacoes Event-Driven
+# Cashflow - Sistema de Transacoes Event-Driven
 
 **Autor:** Antonio Leonardo  
 **Plataforma:** .NET 10  
@@ -194,6 +194,7 @@ Seguranca e observabilidade:
 - CorrelationId propagado em toda a cadeia de eventos.
 - Logs estruturados e rastreio distribuido com OpenTelemetry.
 
+- Metricas operacionais (SLI/SLO) e evidencias: `docs/sli-slo.md`.
 ---
 
 ## 4. Integracao entre componentes
@@ -363,8 +364,10 @@ docker compose --profile perf run --rm k6
 Evidencia gerada:
 
 - `Back.End/Tests/Performance/results/transactions-throughput-summary.json`
+- `Back.End/Tests/Performance/results/daily-balance-throughput-summary.json`
 - Wrapper para Test Explorer (Visual Studio): `Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj`
 - Cenario NFR aprofundado: indisponibilidade do `balance-worker` sob carga com disponibilidade do write path.
+- Cenario NFR diario: disponibilidade do consolidado diario (`GET /api/balance/daily/{accountId}?date=yyyy-MM-dd`) sob carga.
 - Integracao de mensageria aprofundada: `Back.End/Tests/IntegrationTests/Messaging/RabbitMqDecouplingIntegrationTests.cs`
 - Seguranca de borda validada em integracao (401/403/201): `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
 - Recuperacao de pipeline apos reinicio do Outbox Worker: `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
