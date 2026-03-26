@@ -14,6 +14,7 @@ namespace K6.Performance.Tests
         private const string CleanupVolumesEnvVar = "CLEANUP_CASHFLOW_VOLUMES";
         private const double MaxLossRate = 0.05;
         private const double LatencyP95ThresholdMs = 1500;
+        private const string SetupTimeout = "2m";
 
         private readonly ITestOutputHelper _output;
 
@@ -126,12 +127,17 @@ namespace K6.Performance.Tests
                     $"Unable to start infrastructure for daily consolidated scenario.{Environment.NewLine}{upResult.Output}");
 
                 await EnsureBalanceQueryApiReadyAsync(repositoryRoot);
+                await EnsureWorkerQueuesReadyAsync();
 
                 DeleteExistingSummaryFile(summaryFilePath);
 
-                // Use a smaller prime set to keep setup time bounded.
-                const int primeAccounts = 40;
-                const int primeWaitMs = 10000;
+                // Use a prime set bounded in time (k6 setupTimeout is limited).
+                const int primeAccounts = 20;
+                const int primeWaitMs = 8000;
+                const int primeMaxWaitSeconds = 70;
+                const int primePollIntervalSeconds = 1;
+                const int minReadyAccounts = 5;
+                const int primeWarmupMs = 15000;
 
                 var result = await RunDockerComposeCommandAsync(
                     repositoryRoot,
@@ -143,7 +149,11 @@ namespace K6.Performance.Tests
                         primeBaseUrl: "http://transaction-api:8080",
                         summaryFile: "daily-balance-throughput-summary.json",
                         primeAccounts: primeAccounts,
-                        primeWaitMs: primeWaitMs),
+                        primeWaitMs: primeWaitMs,
+                        primeMaxWaitSeconds: primeMaxWaitSeconds,
+                        primePollIntervalSeconds: primePollIntervalSeconds,
+                        minReadyAccounts: minReadyAccounts,
+                        primeWarmupMs: primeWarmupMs),
                     TimeSpan.FromMinutes(8));
 
                 _output.WriteLine(result.Output);
@@ -286,7 +296,11 @@ namespace K6.Performance.Tests
             string primeBaseUrl,
             string summaryFile,
             int primeAccounts,
-            int primeWaitMs)
+            int primeWaitMs,
+            int primeMaxWaitSeconds,
+            int primePollIntervalSeconds,
+            int minReadyAccounts,
+            int primeWarmupMs)
             => $"compose --profile perf run --rm " +
                $"-e MODE={mode} " +
                $"-e BASE_URL={baseUrl} " +
@@ -295,16 +309,73 @@ namespace K6.Performance.Tests
                $"-e DAILY_BALANCE_ENDPOINT_TEMPLATE=/api/balance/daily/{{accountId}}?date={{date}} " +
                $"-e PRIME_WAIT_MS={primeWaitMs} " +
                $"-e PRIME_ACCOUNTS={primeAccounts} " +
+               $"-e PRIME_MAX_WAIT_SECONDS={primeMaxWaitSeconds} " +
+               $"-e PRIME_POLL_INTERVAL_SECONDS={primePollIntervalSeconds} " +
+               $"-e MIN_READY_ACCOUNTS={minReadyAccounts} " +
+               $"-e PRIME_WARMUP_MS={primeWarmupMs} " +
                $"-e TARGET_RPS={targetRps} " +
                $"-e DURATION={durationSeconds}s " +
                $"-e PRE_ALLOCATED_VUS=120 " +
                $"-e MAX_VUS=400 " +
                $"-e LATENCY_P95_MS={LatencyP95ThresholdMs:F0} " +
+               $"-e SETUP_TIMEOUT={SetupTimeout} " +
                $"-e SUMMARY_FILE=results/{summaryFile} " +
                $"k6 run k6/transactions-throughput.js";
 
         private static string BuildK6RunArguments(int targetRps, int durationSeconds)
             => $"compose --profile perf run --rm -e TARGET_RPS={targetRps} -e DURATION={durationSeconds}s -e PRE_ALLOCATED_VUS=120 -e MAX_VUS=400 -e LATENCY_P95_MS={LatencyP95ThresholdMs:F0} k6 run k6/transactions-throughput.js";
+
+        private async Task EnsureWorkerQueuesReadyAsync()
+        {
+            var workerQueues = new[]
+            {
+                "balance.TransactionCreatedEventV1",
+                "audit.TransactionCreatedEventV1",
+                "report.TransactionCreatedEventV1"
+            };
+
+            var credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes("guest:guest"));
+
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            client.DefaultRequestHeaders.Add("Authorization", $"Basic {credentials}");
+
+            var deadline = DateTime.UtcNow.AddMinutes(2);
+
+            foreach (var queue in workerQueues)
+            {
+                var confirmed = false;
+                var encodedQueue = Uri.EscapeDataString(queue);
+
+                while (DateTime.UtcNow < deadline)
+                {
+                    try
+                    {
+                        var response = await client.GetAsync(
+                            $"http://localhost:15672/api/queues/%2F/{encodedQueue}");
+
+                        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                        {
+                            _output.WriteLine($"[worker-ready] Queue '{queue}' confirmed in RabbitMQ.");
+                            confirmed = true;
+                            break;
+                        }
+                    }
+                    catch
+                    {
+                        // Management API ainda não disponível — retry
+                    }
+
+                    await Task.Delay(1000);
+                }
+
+                if (!confirmed)
+                {
+                    throw new XunitException(
+                        $"Worker queue '{queue}' was not found in RabbitMQ within 2 minutes. " +
+                        $"The worker may have failed to start or SubscribeAsync did not complete.");
+                }
+            }
+        }
 
         private async Task EnsureBalanceQueryApiReadyAsync(string repositoryRoot)
         {

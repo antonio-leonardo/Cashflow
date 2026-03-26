@@ -8,29 +8,12 @@ using System.Reflection;
 
 namespace Cashflow.Shared.Observability
 {
-    public static class OpenTelemetryServiceCollectionExtensions
+    public static class OpenTelemetryWorkerServiceCollectionExtensions
     {
-        public static IServiceCollection AddCashflowOpenTelemetryForWeb(
-            this IServiceCollection services,
-            IConfiguration configuration,
-            string serviceName)
-        {
-            return AddCashflowOpenTelemetry(services, configuration, serviceName, includeAspNetCore: true);
-        }
-
         public static IServiceCollection AddCashflowOpenTelemetryForWorker(
             this IServiceCollection services,
             IConfiguration configuration,
             string serviceName)
-        {
-            return AddCashflowOpenTelemetry(services, configuration, serviceName, includeAspNetCore: false);
-        }
-
-        private static IServiceCollection AddCashflowOpenTelemetry(
-            IServiceCollection services,
-            IConfiguration configuration,
-            string serviceName,
-            bool includeAspNetCore)
         {
             var serviceVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0";
 
@@ -58,14 +41,6 @@ namespace Cashflow.Shared.Observability
                         options.RecordException = true;
                     });
 
-                if (includeAspNetCore)
-                {
-                    tracing.AddAspNetCoreInstrumentation(options =>
-                    {
-                        options.RecordException = true;
-                    });
-                }
-
                 AddTraceExporter(tracing, configuration);
             });
 
@@ -75,11 +50,6 @@ namespace Cashflow.Shared.Observability
                     .AddMeter(ObservabilityConstants.MessagingMeterName)
                     .AddRuntimeInstrumentation()
                     .AddHttpClientInstrumentation();
-
-                if (includeAspNetCore)
-                {
-                    metrics.AddAspNetCoreInstrumentation();
-                }
 
                 AddMetricsExporter(metrics, configuration);
             });

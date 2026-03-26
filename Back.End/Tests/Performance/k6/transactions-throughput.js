@@ -1,5 +1,5 @@
 import http from "k6/http";
-import { check } from "k6";
+import { check, sleep } from "k6";
 
 const mode = (__ENV.MODE || "transactions").toLowerCase();
 
@@ -26,8 +26,10 @@ const preAllocatedVUs = Number(__ENV.PRE_ALLOCATED_VUS || 100);
 const maxVUs = Number(__ENV.MAX_VUS || 300);
 const latencyP95Ms = Number(__ENV.LATENCY_P95_MS || 1500);
 const summaryFile = __ENV.SUMMARY_FILE || "results/transactions-throughput-summary.json";
+const setupTimeout = __ENV.SETUP_TIMEOUT || "2m";
 
 export const options = {
+  setupTimeout,
   discardResponseBodies: true,
   scenarios: {
     steady_50_rps: {
@@ -70,6 +72,12 @@ export function setup() {
     headers["Authorization"] = `Bearer ${authToken}`;
   }
 
+  // Warm-up para garantir que os workers já iniciaram o Subscribe/Topology
+  // no RabbitMQ antes de começarmos a publicar eventos via outbox.
+  const warmupMs = Number(__ENV.PRIME_WARMUP_MS || 15000);
+  sleep(warmupMs / 1000);
+
+  const primeSucceededAccounts = [];
   for (const accountId of accounts) {
     const payload = JSON.stringify({
       AccountId: accountId,
@@ -78,15 +86,66 @@ export function setup() {
       Type: primeType,
     });
 
-    // Best-effort priming; the load assertions will be strict on request success.
-    http.post(`${primeBaseUrl}${transactionsEndpoint}`, payload, {
+    const primeResp = http.post(`${primeBaseUrl}${transactionsEndpoint}`, payload, {
       headers,
       timeout: "10s",
     });
+
+    if (primeResp.status === 201) {
+      primeSucceededAccounts.push(accountId);
+    } else {
+      // Help debugging when priming fails (still keep it short to avoid huge logs).
+      console.log(`[prime] accountId=${accountId} status=${primeResp.status}`);
+    }
   }
 
+  if (primeSucceededAccounts.length === 0) {
+    throw new Error(`No priming transactions succeeded (all status != 201).`);
+  }
+
+  // Give the async pipeline a head start.
   sleep(primeWaitMs / 1000);
-  return { accounts, today };
+
+  // Deterministic gate: ensure the consolidated daily endpoint is already serving 200
+  // for the accounts used during the load test. Otherwise we'd measure 404s from
+  // eventual consistency instead of the API under load.
+  const maxWaitSeconds = Number(__ENV.PRIME_MAX_WAIT_SECONDS || 75);
+  const pollIntervalSeconds = Number(__ENV.PRIME_POLL_INTERVAL_SECONDS || 1);
+  let minReadyAccounts = Number(__ENV.MIN_READY_ACCOUNTS || Math.min(10, primeAccounts));
+  minReadyAccounts = Math.min(minReadyAccounts, primeSucceededAccounts.length);
+
+  const deadline = Date.now() + maxWaitSeconds * 1000;
+  const readyAccounts = [];
+  const lastStatusByAccount = {};
+
+  // Only consider accounts where priming succeeded.
+  for (const accountId of primeSucceededAccounts) {
+    if (readyAccounts.length >= minReadyAccounts) {
+      break;
+    }
+
+    const path = dailyBalanceEndpointTemplate
+      .replace("{accountId}", accountId)
+      .replace("{date}", today);
+
+    while (Date.now() < deadline) {
+      const resp = http.get(`${baseUrl}${path}`, { headers, timeout: "10s" });
+      lastStatusByAccount[accountId] = resp.status;
+      if (resp.status === 200) {
+        readyAccounts.push(accountId);
+        break;
+      }
+      sleep(pollIntervalSeconds);
+    }
+  }
+
+  if (readyAccounts.length < minReadyAccounts) {
+    throw new Error(
+      `Daily balance not ready for enough accounts: ready=${readyAccounts.length}, required=${minReadyAccounts}, today=${today}. lastStatusByAccount=${JSON.stringify(lastStatusByAccount)}`
+    );
+  }
+
+  return { accounts: readyAccounts, today };
 }
 
 export default function (data) {
