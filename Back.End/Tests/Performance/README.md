@@ -8,7 +8,8 @@ This folder contains the load test harness for the NFR target:
 ## Scenario implemented
 
 - Script: `k6/transactions-throughput.js`
-- Endpoint under load (default): `POST /api/transactions`
+- Endpoint under load (default): `POST /api/v1/transactions`
+- Endpoint under load (daily mode): `GET /api/v1/balance/daily/{accountId}?date=yyyy-MM-dd`
 - Load profile: constant arrival rate (`constant-arrival-rate`)
 - Default execution: `50 req/s` for `60s`
 - Acceptance threshold: `http_req_failed <= 0.05`
@@ -39,6 +40,7 @@ The wrapper test project is versioned and portable:
 - Project: `Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj`
 - Test: `TransactionApi_Should_Handle_50Rps_With_Max_5Percent_Loss`
 - Test: `TransactionApi_Should_Stay_Available_Under_Load_When_BalanceWorker_Is_Down`
+- Test: `BalanceDailyApi_Should_Handle_50Rps_With_Max_5Percent_Loss`
 
 This test invokes docker compose + k6 and appears like any other xUnit test in Test Explorer.
 After test execution it automatically runs `docker compose --profile perf down --remove-orphans` to release CPU/RAM.

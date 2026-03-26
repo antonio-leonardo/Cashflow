@@ -1,39 +1,41 @@
-# Testes e Qualidade (Acao 7)
+# Testes e Qualidade (ação 7)
 
-Status: Active  
-Ultima atualizacao: 2026-03-23
+Status: Ativo
+Última atualização: 2026-03-23
 
 ## Objetivo
 
-Consolidar criterios de qualidade em gates executaveis, com foco em confiabilidade, integracao robusta e requisitos nao funcionais.
+Consolidar critérios de qualidade em gates executáveis, com foco em confiabilidade, Integração robusta e requisitos não funcionais.
 
 ## Gates de qualidade
 
-| Gate | Objetivo | Suite / Evidencia | Criterio de aprovacao |
+| Gate | Objetivo | Suite / Evidência | Critério de aprovação |
 |---|---|---|---|
-| QG-01 | Compatibilidade de contrato na borda | `Back.End/Tests/ContractTests/Gateway` | Sem quebra de contrato entre Gateway e Transaction API |
-| QG-02 | Integracao robusta por mensageria | `Back.End/Tests/IntegrationTests/Messaging/RabbitMqDecouplingIntegrationTests.cs` | Fan-out entre consumidores e roteamento para DLQ validos |
-| QG-03 | Independencia entre servicos | `Back.End/Tests/E2E/*/ServiceIndependenceE2ETests.cs` | Write path continua disponivel com worker isolado em falha |
+| QG-01 | Compatibilidade de contrato na borda (write) | `Back.End/Tests/ContractTests/Gateway` | Sem quebra de contrato entre Gateway e Transaction API |
+| QG-01B | Compatibilidade de contrato na borda (read) | `Back.End/Tests/ContractTests/Balance` | Sem quebra de contrato entre Gateway e Balance Query API |
+| QG-02 | Integração robusta por mensageria | `Back.End/Tests/IntegrationTests/Messaging/RabbitMqDecouplingIntegrationTests.cs` | Fan-out entre consumidores e roteamento para DLQ válidos |
+| QG-03 | Independência entre serviços | `Back.End/Tests/E2E/*/ServiceIndependenceE2ETests.cs` | Write path continua disponível com worker isolado em falha |
 | QG-04 | NFR aprofundado sob carga | `Back.End/Tests/Performance/k6/K6ThroughputE2ETests.cs` | `http_req_failed <= 5%` e `p95 <= 1500ms` |
-| QG-05 | Fluxo holistico autenticado | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | Requisicao autenticada percorre pipeline e materializa read models |
-| QG-06 | Seguranca de borda (authn/authz) | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | `401` sem token/invalido, `403` sem escopo write e `201` com credencial valida |
-| QG-07 | Recuperacao apos falha de processador | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | Write path segue disponivel e pipeline de eventos se recupera apos reinicio do Outbox Worker |
-| QG-08 | Saude operacional de servicos | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | Endpoints `/health/live` e `/health/ready` respondem com `200 OK` |
+| QG-05 | Fluxo holístico autenticado | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | Requisição autenticada percorre pipeline e materializa read models |
+| QG-06 | Segurança de borda (authn/authz) | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | `401` sem token/inválido, `403` sem escopo write e `201` com credencial válida |
+| QG-07 | Recuperação após falha de processador | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | Write path segue disponível e pipeline de eventos se recupera após reinício do Outbox Worker |
+| QG-08 | Saúde operacional de serviços | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | Endpoints `/health/live` e `/health/ready` respondem com `200 OK` |
+| QG-09 | Versionamento e compatibilidade de consulta | `Back.End/Tests/IntegrationTests/Balance/BalanceApiIntegrationTests.cs` | Rotas `/api/v1/...` ativas e compatíveis com rota legado `/api/...` |
 
-## Execucao recomendada
+## Execução recomendada
 
-Execucao completa:
+Execução completa:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File Back.End/Tests/run-holistic-validation.ps1
 ```
 
-Execucao rapida (triagem):
+Execução rápida (triagem):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File Back.End/Tests/run-holistic-validation.ps1 -Quick
 ```
 
-Saida consolidada:
+Saída consolidada:
 
 - `TestResults/holistic-validation-summary.json`

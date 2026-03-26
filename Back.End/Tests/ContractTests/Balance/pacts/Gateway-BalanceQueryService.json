@@ -1,0 +1,102 @@
+{
+  "consumer": {
+    "name": "Gateway"
+  },
+  "interactions": [
+    {
+      "description": "Daily Balance Query",
+      "request": {
+        "matchingRules": {
+          "query": {
+            "date": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "\\d{4}-\\d{2}-\\d{2}"
+                }
+              ]
+            }
+          }
+        },
+        "method": "GET",
+        "path": "/api/v1/balance/daily/14a1d8ef-0892-417a-a991-7744915d00ec",
+        "query": {
+          "date": [
+            "2026-03-26"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "accountId": "14a1d8ef-0892-417a-a991-7744915d00ec",
+          "date": "2026-03-26",
+          "netBalance": 1000.4,
+          "totalCredits": 1200.5,
+          "totalDebits": 200.1
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.accountId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.date": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "\\d{4}-\\d{2}-\\d{2}"
+                }
+              ]
+            },
+            "$.netBalance": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.totalCredits": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.totalDebits": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.27",
+      "models": "1.2.8"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "BalanceQueryService"
+  }
+}

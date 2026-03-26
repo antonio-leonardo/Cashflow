@@ -1,24 +1,24 @@
-﻿# ADR-004: Gateway com Keycloak (OIDC)
+# ADR-004: Gateway com Keycloak (OIDC)
 
-Date: 2026-03-20  
+Date: 2026-03-20
 Status: Accepted
 
 ## Context
-A autenticacao deve ser centralizada e independente dos servicos de dominio. O desafio exige independencia entre servicos e integracao segura com OIDC.
+A Autenticação deve ser centralizada e independente dos serviços de domínio. O desafio exige independência entre serviços e Integração segura com OIDC.
 
 ## Decision
-Usar API Gateway (YARP) com autenticacao via Keycloak (OIDC/OAuth2). O Gateway aplica politica de acesso e encaminha requisicoes autenticadas para a Transaction API.
+Usar API Gateway (YARP) com autenticação via Keycloak (OIDC/OAuth2). O Gateway aplica política de acesso e encaminha requisições autenticadas para a Transaction API.
 
 ## Alternatives considered
-- Autenticacao embutida em cada servico.
-- API Gateway com provedor proprietario.
+- Autenticação embutida em cada serviço.
+- API Gateway com provedor proprietário.
 
 ## Consequences
 Positivas:
-- Politica de acesso unificada.
-- Isolamento do dominio em relacao a autenticacao.
-- Facilidade para testes de integracao do gateway.
+- política de acesso unificada.
+- Isolamento do domínio em relação a Autenticação.
+- Facilidade para testes de Integração do gateway.
 
 Negativas:
-- Dependencia adicional (Keycloak).
-- Necessidade de testes de integracao OIDC para evitar regressao.
+- Dependência adicional (Keycloak).
+- Necessidade de testes de Integração OIDC para evitar regressão.

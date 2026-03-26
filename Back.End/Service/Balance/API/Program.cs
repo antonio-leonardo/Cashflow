@@ -97,38 +97,46 @@ namespace Cashflow.Service.Balance.API
                 app.UseAuthorization();
             }
 
-            var endpointGetDailyBalance = app.MapGet(
-                "/api/balance/daily/{accountId:guid}",
-                async (
-                    Guid accountId,
-                    DateOnly? date,
-                    RedisDailyBalanceRepository repository,
-                    CancellationToken cancellationToken) =>
-                {
-                    var referenceDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
+            var endpointGetDailyBalanceV1 = app.MapGet(
+                    "/api/v1/balance/daily/{accountId:guid}",
+                    GetDailyBalanceAsync)
+                .WithName("GetDailyBalanceV1");
 
-                    var dailyBalance = await repository.GetDailyBalanceAsync(
-                        accountId,
-                        referenceDate,
-                        cancellationToken);
-
-                    return dailyBalance is not null
-                        ? Results.Ok(new GetDailyBalanceResponse(
-                            accountId,
-                            referenceDate,
-                            dailyBalance.TotalCredits,
-                            dailyBalance.TotalDebits,
-                            dailyBalance.NetBalance))
-                        : Results.NotFound();
-                })
+            var endpointGetDailyBalanceLegacy = app.MapGet(
+                    "/api/balance/daily/{accountId:guid}",
+                    GetDailyBalanceAsync)
                 .WithName("GetDailyBalance");
 
             if (!isLocalEnvironment)
             {
-                endpointGetDailyBalance.RequireAuthorization("AuthenticatedUser");
+                endpointGetDailyBalanceV1.RequireAuthorization("AuthenticatedUser");
+                endpointGetDailyBalanceLegacy.RequireAuthorization("AuthenticatedUser");
             }
 
             app.Run();
+        }
+
+        private static async Task<IResult> GetDailyBalanceAsync(
+            Guid accountId,
+            DateOnly? date,
+            RedisDailyBalanceRepository repository,
+            CancellationToken cancellationToken)
+        {
+            var referenceDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var dailyBalance = await repository.GetDailyBalanceAsync(
+                accountId,
+                referenceDate,
+                cancellationToken);
+
+            return dailyBalance is not null
+                ? Results.Ok(new GetDailyBalanceResponse(
+                    accountId,
+                    referenceDate,
+                    dailyBalance.TotalCredits,
+                    dailyBalance.TotalDebits,
+                    dailyBalance.NetBalance))
+                : Results.NotFound();
         }
 
         private static bool IsLocalEnvironment(IHostEnvironment environment)

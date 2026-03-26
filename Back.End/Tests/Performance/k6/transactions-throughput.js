@@ -8,10 +8,10 @@ const baseUrl = (__ENV.BASE_URL || "http://localhost:5001").replace(/\/+$/, "");
 const authToken = __ENV.AUTH_TOKEN || "";
 
 // Modo transactions (write path)
-const transactionsEndpoint = __ENV.TRANSACTIONS_ENDPOINT || "/api/transactions";
+const transactionsEndpoint = __ENV.TRANSACTIONS_ENDPOINT || "/api/v1/transactions";
 
 // Modo daily-balance (read path)
-const dailyBalanceEndpointTemplate = __ENV.DAILY_BALANCE_ENDPOINT_TEMPLATE || "/api/balance/daily/{accountId}?date={date}";
+const dailyBalanceEndpointTemplate = __ENV.DAILY_BALANCE_ENDPOINT_TEMPLATE || "/api/v1/balance/daily/{accountId}?date={date}";
 
 const primeBaseUrl = (__ENV.PRIME_BASE_URL || "http://transaction-api:8080").replace(/\/+$/, "");
 const primeWaitMs = Number(__ENV.PRIME_WAIT_MS || 5000);

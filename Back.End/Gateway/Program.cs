@@ -1,6 +1,8 @@
 using Cashflow.Shared.Observability;
+using Cashflow.Shared.Resilience;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
@@ -72,25 +74,103 @@ namespace Cashflow.Gateway
                             HasRole(context.User, "transactions.writer")));
             });
 
+            var downstreamReadyTimeoutSeconds =
+                builder.Configuration.GetValue<int?>("DownstreamHealthChecks:TimeoutSeconds") ?? 2;
+
+            var transactionHttpPolicy = ResiliencePolicies.GetHttpResiliencePolicy();
+            var balanceHttpPolicy = ResiliencePolicies.GetHttpResiliencePolicy();
+
+            builder.Services.AddHttpClient(
+                GatewayDownstreamClients.TransactionReadinessClient,
+                client =>
+                {
+                    ConfigureDownstreamHealthClient(
+                        client,
+                        builder.Configuration["ReverseProxy:Clusters:transaction-cluster:Destinations:transaction-api:Address"],
+                        downstreamReadyTimeoutSeconds);
+                })
+                .AddHttpMessageHandler(_ => new PollyResilienceHandler(transactionHttpPolicy));
+
+            builder.Services.AddHttpClient(
+                GatewayDownstreamClients.BalanceReadinessClient,
+                client =>
+                {
+                    ConfigureDownstreamHealthClient(
+                        client,
+                        builder.Configuration["ReverseProxy:Clusters:balance-query-cluster:Destinations:balance-query-api:Address"],
+                        downstreamReadyTimeoutSeconds);
+                })
+                .AddHttpMessageHandler(_ => new PollyResilienceHandler(balanceHttpPolicy));
+
             builder.Services.AddHealthChecks()
                 .AddCheck("self", () => HealthCheckResult.Healthy("gateway alive"), tags: new[] { "live" })
-                .AddCheck<GatewayConfigurationHealthCheck>("config", tags: new[] { "ready" });
+                .AddCheck<GatewayConfigurationHealthCheck>("config", tags: new[] { "ready" })
+                .AddCheck<GatewayDownstreamReadinessHealthCheck>("downstreams", tags: new[] { "ready" });
 
             builder.Services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+                var globalPermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:Global:PermitLimit")
+                    ?? builder.Configuration.GetValue<int?>("RateLimiting:PermitLimit")
+                    ?? 100;
+                var globalWindowSeconds = builder.Configuration.GetValue<int?>("RateLimiting:Global:WindowSeconds")
+                    ?? builder.Configuration.GetValue<int?>("RateLimiting:WindowSeconds")
+                    ?? 1;
+                var globalQueueLimit = builder.Configuration.GetValue<int?>("RateLimiting:Global:QueueLimit")
+                    ?? builder.Configuration.GetValue<int?>("RateLimiting:QueueLimit")
+                    ?? 50;
 
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                     RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: "gateway-global",
                         factory: _ => new FixedWindowRateLimiterOptions
                         {
-                            PermitLimit = builder.Configuration.GetValue<int?>("RateLimiting:PermitLimit") ?? 100,
-                            Window = TimeSpan.FromSeconds(builder.Configuration.GetValue<int?>("RateLimiting:WindowSeconds") ?? 1),
-                            QueueLimit = builder.Configuration.GetValue<int?>("RateLimiting:QueueLimit") ?? 50,
+                            PermitLimit = globalPermitLimit,
+                            Window = TimeSpan.FromSeconds(globalWindowSeconds),
+                            QueueLimit = globalQueueLimit,
                             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                             AutoReplenishment = true
                         }));
+
+                options.AddFixedWindowLimiter(
+                    GatewayRateLimiterPolicies.TransactionWrite,
+                    policyOptions =>
+                    {
+                        ConfigureFixedWindowPolicy(
+                            policyOptions,
+                            builder.Configuration,
+                            "RateLimiting:Policies:TransactionWrite",
+                            defaultPermitLimit: 40,
+                            defaultWindowSeconds: 1,
+                            defaultQueueLimit: 20);
+                    });
+
+                options.AddFixedWindowLimiter(
+                    GatewayRateLimiterPolicies.TransactionRead,
+                    policyOptions =>
+                    {
+                        ConfigureFixedWindowPolicy(
+                            policyOptions,
+                            builder.Configuration,
+                            "RateLimiting:Policies:TransactionRead",
+                            defaultPermitLimit: 120,
+                            defaultWindowSeconds: 1,
+                            defaultQueueLimit: 40);
+                    });
+
+                options.AddFixedWindowLimiter(
+                    GatewayRateLimiterPolicies.BalanceRead,
+                    policyOptions =>
+                    {
+                        ConfigureFixedWindowPolicy(
+                            policyOptions,
+                            builder.Configuration,
+                            "RateLimiting:Policies:BalanceRead",
+                            defaultPermitLimit: 150,
+                            defaultWindowSeconds: 1,
+                            defaultQueueLimit: 60);
+                    });
             });
 
             var app = builder.Build();
@@ -121,6 +201,39 @@ namespace Cashflow.Gateway
             app.Run();
         }
 
+        private static void ConfigureDownstreamHealthClient(
+            HttpClient client,
+            string? baseAddress,
+            int timeoutSeconds)
+        {
+            if (Uri.TryCreate(baseAddress, UriKind.Absolute, out var uri))
+            {
+                client.BaseAddress = uri;
+            }
+
+            client.Timeout = TimeSpan.FromSeconds(Math.Max(timeoutSeconds, 1));
+            client.DefaultRequestHeaders.TryAddWithoutValidation(
+                ObservabilityConstants.CorrelationIdHeaderName,
+                $"gateway-ready-{Guid.NewGuid():N}");
+            client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
+        }
+
+        private static void ConfigureFixedWindowPolicy(
+            FixedWindowRateLimiterOptions policyOptions,
+            IConfiguration configuration,
+            string sectionPath,
+            int defaultPermitLimit,
+            int defaultWindowSeconds,
+            int defaultQueueLimit)
+        {
+            policyOptions.PermitLimit = configuration.GetValue<int?>($"{sectionPath}:PermitLimit") ?? defaultPermitLimit;
+            policyOptions.Window = TimeSpan.FromSeconds(
+                configuration.GetValue<int?>($"{sectionPath}:WindowSeconds") ?? defaultWindowSeconds);
+            policyOptions.QueueLimit = configuration.GetValue<int?>($"{sectionPath}:QueueLimit") ?? defaultQueueLimit;
+            policyOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            policyOptions.AutoReplenishment = true;
+        }
+
         private static bool HasScope(System.Security.Claims.ClaimsPrincipal user, string expectedScope)
         {
             return user.Claims
@@ -136,5 +249,19 @@ namespace Cashflow.Gateway
                 .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
                 .Any(role => string.Equals(role, expectedRole, StringComparison.OrdinalIgnoreCase));
         }
+    }
+
+    internal static class GatewayDownstreamClients
+    {
+        public const string TransactionReadinessClient = "transaction-api-readiness-client";
+        public const string BalanceReadinessClient = "balance-query-api-readiness-client";
+        public const string ReadinessPath = "/health/ready";
+    }
+
+    internal static class GatewayRateLimiterPolicies
+    {
+        public const string TransactionWrite = "gateway-transaction-write";
+        public const string TransactionRead = "gateway-transaction-read";
+        public const string BalanceRead = "gateway-balance-read";
     }
 }
