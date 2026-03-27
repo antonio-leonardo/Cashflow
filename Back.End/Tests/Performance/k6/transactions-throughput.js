@@ -186,7 +186,7 @@ export default function (data) {
       "status is 201": (r) => r.status === 201,
     });
   } else if (mode === "daily-balance") {
-    const accountId = data.accounts[Math.floor(Math.random() * data.accounts.length)];
+    const accountId = data.accounts[secureRandomInt(data.accounts.length)];
     const date = data.today;
 
     const dailyPath = dailyBalanceEndpointTemplate
@@ -260,9 +260,53 @@ export function handleSummary(data) {
 }
 
 function pseudoUuidV4() {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
-    const random = Math.floor(Math.random() * 16);
-    const value = char === "x" ? random : (random & 0x3) | 0x8;
-    return value.toString(16);
-  });
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+
+  // RFC 4122 v4: set version and variant bits.
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  const hex = [];
+  for (let i = 0; i < bytes.length; i++) {
+    hex.push(bytes[i].toString(16).padStart(2, "0"));
+  }
+
+  return (
+    hex[0] +
+    hex[1] +
+    hex[2] +
+    hex[3] +
+    "-" +
+    hex[4] +
+    hex[5] +
+    "-" +
+    hex[6] +
+    hex[7] +
+    "-" +
+    hex[8] +
+    hex[9] +
+    "-" +
+    hex[10] +
+    hex[11] +
+    hex[12] +
+    hex[13] +
+    hex[14] +
+    hex[15]
+  );
+}
+
+function secureRandomInt(maxExclusive) {
+  if (maxExclusive <= 0) {
+    return 0;
+  }
+
+  const value = new Uint32Array(1);
+  const limit = Math.floor(0x100000000 / maxExclusive) * maxExclusive;
+
+  do {
+    crypto.getRandomValues(value);
+  } while (value[0] >= limit);
+
+  return value[0] % maxExclusive;
 }

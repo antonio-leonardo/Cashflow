@@ -1,5 +1,4 @@
 using Cashflow.Service.Transaction.Domain;
-using Microsoft.Extensions.Logging;
 
 namespace Cashflow.Worker.Balance
 {
@@ -36,10 +35,8 @@ namespace Cashflow.Worker.Balance
             if (!applied)
             {
                 _logger.LogInformation(
-                    "Duplicate event ignored by read-side idempotency. EventId={EventId}, AccountId={AccountId}, Key={IdempotencyKey}.",
-                    evt.EventId,
-                    evt.AccountId,
-                    effectiveIdempotencyKey);
+                    "Duplicate event ignored by read-side idempotency. EventId={EventId}.",
+                    evt.EventId);
             }
         }
     }
