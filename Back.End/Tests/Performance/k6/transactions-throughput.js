@@ -12,6 +12,10 @@ const transactionsEndpoint = __ENV.TRANSACTIONS_ENDPOINT || "/api/v1/transaction
 
 // Modo daily-balance (read path)
 const dailyBalanceEndpointTemplate = __ENV.DAILY_BALANCE_ENDPOINT_TEMPLATE || "/api/v1/balance/daily/{accountId}?date={date}";
+const hotAccountIdFromEnv = (__ENV.HOT_ACCOUNT_ID || "").trim();
+const hotAccountAmount = Number(__ENV.HOT_ACCOUNT_AMOUNT || 100);
+const hotAccountType = Number(__ENV.HOT_ACCOUNT_TYPE || 1);
+const hotAccountCurrency = (__ENV.HOT_ACCOUNT_CURRENCY || "BRL");
 
 const primeBaseUrl = (__ENV.PRIME_BASE_URL || "http://transaction-api:8080").replace(/\/+$/, "");
 const primeWaitMs = Number(__ENV.PRIME_WAIT_MS || 5000);
@@ -49,6 +53,14 @@ export const options = {
 };
 
 export function setup() {
+  if (mode === "hot-account") {
+    return {
+      hotAccountId: hotAccountIdFromEnv || pseudoUuidV4(),
+      accounts: [],
+      today: "",
+    };
+  }
+
   if (mode !== "daily-balance") {
     return { accounts: [], today: "" };
   }
@@ -157,7 +169,23 @@ export default function (data) {
 
   let response;
 
-  if (mode === "daily-balance") {
+  if (mode === "hot-account") {
+    const payload = JSON.stringify({
+      AccountId: data.hotAccountId,
+      Amount: hotAccountAmount,
+      Currency: hotAccountCurrency,
+      Type: hotAccountType,
+    });
+
+    response = http.post(`${baseUrl}${transactionsEndpoint}`, payload, {
+      headers: { ...headers, "Content-Type": "application/json" },
+      timeout: "10s",
+    });
+
+    check(response, {
+      "status is 201": (r) => r.status === 201,
+    });
+  } else if (mode === "daily-balance") {
     const accountId = data.accounts[Math.floor(Math.random() * data.accounts.length)];
     const date = data.today;
 
@@ -193,6 +221,8 @@ export default function (data) {
 export function handleSummary(data) {
   const failedRate = data.metrics.http_req_failed?.values?.rate ?? 1;
   const checksRate = data.metrics.checks?.values?.rate ?? 0;
+  const checksPassed = data.metrics.checks?.values?.passes ?? 0;
+  const checksFailed = data.metrics.checks?.values?.fails ?? 0;
   const totalRequests = data.metrics.http_reqs?.values?.count ?? 0;
   const p95DurationMs = data.metrics.http_req_duration?.values?.["p(95)"] ?? Number.POSITIVE_INFINITY;
   const avgDurationMs = data.metrics.http_req_duration?.values?.avg ?? Number.POSITIVE_INFINITY;
@@ -205,6 +235,8 @@ export function handleSummary(data) {
     targetRps,
     duration,
     totalRequests,
+    checksPassed,
+    checksFailed,
     failedRate,
     passedRate: checksRate,
     p95DurationMs,

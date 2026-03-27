@@ -24,6 +24,7 @@
 12. [CI/CD](#12-cicd)
 13. [SonarQube (Code Smells)](#13-sonarqube-code-smells)
 14. [Roadmap](#14-roadmap)
+15. [Evidências por requisito](#15-evidências-por-requisito)
 
 ---
 
@@ -397,7 +398,7 @@ Subir infraestrutura:
 docker compose up -d
 ```
 
-serviços principais:
+Serviços principais:
 
 - Gateway: `http://localhost:5000`
 - Transaction API: `http://localhost:5001`
@@ -503,4 +504,49 @@ Detalhes completos:
 
 ---
 
-licença: Projeto de autoria de Antonio Leonardo.
+## 15. Evidências por requisito
+
+Esta seção apresenta a rastreabilidade objetiva entre requisitos do desafio e evidências executáveis no repositório.
+
+### 15.1 Requisitos de negócio
+
+| Requisito | Implementação | Evidência de teste | Critério de aprovação |
+|---|---|---|---|
+| Serviço de controle de lançamentos | `POST /api/v1/transactions` no `Gateway` e na `Transaction API` | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` | Criação de transação com resposta `201 Created` no fluxo autenticado |
+| Serviço de consolidado diário | `GET /api/v1/balance/daily/{accountId}?date=yyyy-MM-dd` na `Balance Query API` | `Back.End/Tests/IntegrationTests/Balance/BalanceApiIntegrationTests.cs` | Consulta de saldo diário com retorno consistente do read model |
+
+### 15.2 Requisitos não funcionais
+
+| Requisito | Implementação | Evidência de teste | Critério de aprovação |
+|---|---|---|---|
+| Disponibilidade do write path com queda do consolidado | Arquitetura assíncrona com `Outbox`, filas e desacoplamento de workers | `Back.End/Tests/Performance/k6/K6ThroughputE2ETests.cs` (`TransactionApi_Should_Stay_Available_Under_Load_When_BalanceWorker_Is_Down`) | `http_req_failed <= 5%` e `p95 <= 1500ms` no cenário degradado |
+| Pico de 50 req/s com perda máxima de 5% no consolidado | `Balance Query API` otimizada em Redis, com rate limiting e isolamento por serviço | `Back.End/Tests/Performance/k6/K6ThroughputE2ETests.cs` (`BalanceDailyApi_Should_Handle_50Rps_With_Max_5Percent_Loss`) | `http_req_failed <= 5%` e `p95 <= 1500ms` |
+| Idempotência no read side | Deduplicação por chave de idempotência (`processed:*`) no `balance-worker` | `Back.End/Tests/E2E/Balance/BalancePipelineE2ETests.cs` (`Duplicate_EventId_Redelivery_Should_Be_Applied_Only_Once`) | Reentrega do mesmo evento não duplica saldo total nem saldo diário |
+| Resiliência configurável em chamadas downstream | Políticas de retry, circuit breaker, bulkhead, timeout e fallback configuráveis | `Back.End/Tests/DomainTests/Balance/ResiliencePoliciesTests.cs` | Fallback HTTP configurável e sanitização de parâmetros inválidos validados |
+
+### 15.3 Requisitos técnicos obrigatórios
+
+| Requisito | Evidência |
+|---|---|
+| Desenvolvimento em C# | Solution `.NET 10` com projetos em `Back.End/*` |
+| Testes automatizados | Suites em `Back.End/Tests` (Domain, Integration, E2E, Contract e Performance) |
+| Boas práticas (arquitetura, padrões e SOLID) | ADRs em `docs/decisions/*`, CQRS, Outbox Pattern, mensageria orientada a eventos e separação por contexto |
+| README com instruções de execução | Seções `10. Execução local` e `9. Testes e qualidade` deste documento |
+| Documentação no repositório | Documentos em `docs/*` e baseline Kubernetes em `k8s/*` |
+
+### 15.4 Comandos de validação recomendados
+
+```bash
+# Validação de domínio (inclui políticas de resiliência e idempotência no balance worker)
+dotnet test Back.End/Tests/DomainTests/Balance/Balance.Domain.Tests.csproj
+
+# Validação E2E de idempotência por redelivery
+dotnet test Back.End/Tests/E2E/Balance/E2E.Balance.Tests.csproj --filter "Duplicate_EventId_Redelivery_Should_Be_Applied_Only_Once"
+
+# Validação holística (gates consolidados)
+powershell -ExecutionPolicy Bypass -File Back.End/Tests/run-holistic-validation.ps1
+```
+
+---
+
+Licença: projeto de autoria de Antonio Leonardo.

@@ -4,7 +4,7 @@ Date: 2026-03-20
 Status: Accepted
 
 ## Context
-Transações exigem consistência forte no write model, enquanto consultas de saldo e relatórios exigem alta performance e modelos otimizados.
+Transações exigem consistência forte no write model, enquanto as consultas de saldo e relatório exigem alta performance e modelos otimizados.
 
 ## Decision
 Separar Write Model e Read Models (CQRS) e manter um banco por serviço (database-per-service).
@@ -20,5 +20,5 @@ Positivas:
 - Redução de acoplamento entre equipes.
 
 Negativas:
-- Queries cross-service exigem materialização por eventos.
+- Consultas cross-service exigem materialização por eventos.
 - Maior custo operacional e de sincronização.

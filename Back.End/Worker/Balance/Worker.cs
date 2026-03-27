@@ -36,7 +36,10 @@ namespace Cashflow.Worker.Balance
             {
                 var handler = scope.ServiceProvider
                 .GetRequiredService<TransactionCreatedHandler>();
-                await handler.HandleAsync(envelope.Event, ct);
+                await handler.HandleAsync(
+                    envelope.Event,
+                    envelope.Event.EventId.ToString("N"),
+                    ct);
             }
         }
     }

@@ -1,10 +1,11 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace Cashflow.Worker.Audit
 {
     public class AuditDocument
     {
+        [BsonId]
         [BsonRepresentation(BsonType.String)]
         public Guid EventId { get; set; }
 

@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using StackExchange.Redis;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -10,11 +12,17 @@ namespace K6.Performance.Tests
     {
         private const string TransactionSummaryRelativePath = "Back.End/Tests/Performance/results/transactions-throughput-summary.json";
         private const string DailyBalanceSummaryRelativePath = "Back.End/Tests/Performance/results/daily-balance-throughput-summary.json";
+        private const string HotAccountSummaryRelativePath = "Back.End/Tests/Performance/results/hot-account-throughput-summary.json";
         private const string KeepStackEnvVar = "KEEP_CASHFLOW_STACK";
         private const string CleanupVolumesEnvVar = "CLEANUP_CASHFLOW_VOLUMES";
         private const double MaxLossRate = 0.05;
         private const double LatencyP95ThresholdMs = 1500;
         private const string SetupTimeout = "2m";
+        private const string RedisHostConnectionString = "localhost:6379";
+        private const decimal HotAccountTransactionAmount = 100m;
+        private const int HotAccountTransactionType = 1;
+        private static readonly TimeSpan HotAccountConsistencyTimeout = TimeSpan.FromMinutes(2);
+        private static readonly TimeSpan HotAccountConsistencyPollInterval = TimeSpan.FromSeconds(2);
 
         private readonly ITestOutputHelper _output;
 
@@ -42,6 +50,90 @@ namespace K6.Performance.Tests
             try
             {
                 await RunK6AndAssertTargetsAsync(repositoryRoot, summaryFilePath);
+            }
+            finally
+            {
+                await CleanupDockerComposeAsync(repositoryRoot);
+            }
+        }
+
+        [Fact]
+        [Trait("Category", "Performance")]
+        [Trait("Suite", "NFRHotAccount")]
+        public async Task TransactionApi_HotAccount_Should_Handle_50Rps_With_Max_5Percent_Loss()
+        {
+            if (string.Equals(Environment.GetEnvironmentVariable("CI"), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                _output.WriteLine("Performance tests are skipped in CI. Run them explicitly in a performance stage.");
+                return;
+            }
+
+            var repositoryRoot = ResolveRepositoryRoot();
+            var summaryFilePath = Path.Combine(repositoryRoot, HotAccountSummaryRelativePath.Replace('/', Path.DirectorySeparatorChar));
+
+            EnsureSummaryDirectoryExists(summaryFilePath);
+
+            try
+            {
+                var upResult = await RunDockerComposeCommandAsync(
+                    repositoryRoot,
+                    "compose up -d transaction-api worker-outbox balance-worker report-worker audit-worker redis rabbitmq postgres",
+                    TimeSpan.FromMinutes(6));
+
+                _output.WriteLine(upResult.Output);
+
+                Assert.True(
+                    upResult.ExitCode == 0,
+                    $"Unable to start infrastructure for hot-account scenario.{Environment.NewLine}{upResult.Output}");
+
+                await EnsureTransactionApiReadyAsync(repositoryRoot);
+                await EnsureWorkerQueuesReadyAsync();
+
+                DeleteExistingSummaryFile(summaryFilePath);
+
+                var hotAccountId = Guid.NewGuid();
+
+                var result = await RunDockerComposeCommandAsync(
+                    repositoryRoot,
+                    BuildHotAccountK6RunArguments(
+                        targetRps: 50,
+                        durationSeconds: 60,
+                        hotAccountId: hotAccountId),
+                    TimeSpan.FromMinutes(8));
+
+                _output.WriteLine($"[hot-account] AccountId under load: {hotAccountId}");
+                _output.WriteLine(result.Output);
+
+                Assert.True(
+                    result.ExitCode == 0,
+                    $"k6 hot-account execution failed with exit code {result.ExitCode}.{Environment.NewLine}{result.Output}");
+
+                Assert.True(
+                    File.Exists(summaryFilePath),
+                    $"Summary file was not generated at '{summaryFilePath}'.");
+
+                var summary = await ReadSummaryAsync(summaryFilePath);
+                Assert.NotNull(summary);
+                Assert.Equal("PASS", summary!.Result);
+                Assert.True(
+                    summary.FailedRate <= MaxLossRate,
+                    $"Expected loss <= {MaxLossRate * 100:F0}%, got {(summary.FailedRate * 100):F2}%.");
+                Assert.True(
+                    summary.P95DurationMs <= LatencyP95ThresholdMs,
+                    $"Expected p95 latency <= {LatencyP95ThresholdMs:F0} ms, got {summary.P95DurationMs:F2} ms.");
+
+                Assert.True(
+                    summary.ChecksPassed > 0,
+                    $"Expected at least one accepted request in hot-account run, got {summary.ChecksPassed}.");
+
+                var signedAmountPerRequest = GetSignedAmountByTransactionType(
+                    HotAccountTransactionAmount,
+                    HotAccountTransactionType);
+                var expectedBalance = summary.ChecksPassed * signedAmountPerRequest;
+                _output.WriteLine(
+                    $"[hot-account] Accepted requests={summary.ChecksPassed}, expected consolidated balance={expectedBalance.ToString(CultureInfo.InvariantCulture)} (type={HotAccountTransactionType}).");
+
+                await AssertHotAccountConsolidatedBalanceAsync(hotAccountId, expectedBalance);
             }
             finally
             {
@@ -325,6 +417,74 @@ namespace K6.Performance.Tests
         private static string BuildK6RunArguments(int targetRps, int durationSeconds)
             => $"compose --profile perf run --rm -e TARGET_RPS={targetRps} -e DURATION={durationSeconds}s -e PRE_ALLOCATED_VUS=120 -e MAX_VUS=400 -e LATENCY_P95_MS={LatencyP95ThresholdMs:F0} k6 run k6/transactions-throughput.js";
 
+        private static string BuildHotAccountK6RunArguments(int targetRps, int durationSeconds, Guid hotAccountId)
+            => $"compose --profile perf run --rm " +
+               $"-e MODE=hot-account " +
+               $"-e HOT_ACCOUNT_ID={hotAccountId:D} " +
+               $"-e HOT_ACCOUNT_AMOUNT={HotAccountTransactionAmount.ToString(CultureInfo.InvariantCulture)} " +
+               $"-e HOT_ACCOUNT_TYPE={HotAccountTransactionType} " +
+               $"-e BASE_URL=http://transaction-api:8080 " +
+               $"-e TRANSACTIONS_ENDPOINT=/api/v1/transactions " +
+               $"-e TARGET_RPS={targetRps} " +
+               $"-e DURATION={durationSeconds}s " +
+               $"-e PRE_ALLOCATED_VUS=120 " +
+               $"-e MAX_VUS=400 " +
+               $"-e LATENCY_P95_MS={LatencyP95ThresholdMs:F0} " +
+               $"-e SUMMARY_FILE=results/hot-account-throughput-summary.json " +
+               $"k6 run k6/transactions-throughput.js";
+
+        private static decimal GetSignedAmountByTransactionType(decimal amount, int transactionType)
+        {
+            // Domain enum: 0=Credit, 1=Debit.
+            return transactionType == 0 ? amount : -amount;
+        }
+
+        private async Task AssertHotAccountConsolidatedBalanceAsync(Guid accountId, decimal expectedBalance)
+        {
+            var balanceKey = $"balance:{accountId:D}";
+            await using var redis = await ConnectionMultiplexer.ConnectAsync(RedisHostConnectionString);
+            var db = redis.GetDatabase();
+            var deadline = DateTime.UtcNow.Add(HotAccountConsistencyTimeout);
+
+            RedisValue lastRawValue = RedisValue.Null;
+            decimal lastParsedValue = 0m;
+            var hasParsedValue = false;
+
+            while (DateTime.UtcNow < deadline)
+            {
+                lastRawValue = await db.StringGetAsync(balanceKey);
+
+                if (!lastRawValue.IsNullOrEmpty &&
+                    decimal.TryParse(
+                        lastRawValue.ToString(),
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out var observedBalance))
+                {
+                    hasParsedValue = true;
+                    lastParsedValue = observedBalance;
+
+                    if (observedBalance == expectedBalance)
+                    {
+                        _output.WriteLine(
+                            $"[hot-account] Consolidated balance confirmed for {accountId:D}: {observedBalance.ToString(CultureInfo.InvariantCulture)}.");
+                        return;
+                    }
+                }
+
+                await Task.Delay(HotAccountConsistencyPollInterval);
+            }
+
+            var observedDisplay = hasParsedValue
+                ? lastParsedValue.ToString(CultureInfo.InvariantCulture)
+                : (lastRawValue.IsNullOrEmpty ? "<null>" : lastRawValue.ToString());
+
+            throw new XunitException(
+                $"Hot-account consolidated balance mismatch for account {accountId:D}. " +
+                $"Expected {expectedBalance.ToString(CultureInfo.InvariantCulture)} based on accepted requests, " +
+                $"observed {observedDisplay} after waiting {HotAccountConsistencyTimeout.TotalSeconds:F0}s.");
+        }
+
         private async Task EnsureWorkerQueuesReadyAsync()
         {
             var workerQueues = new[]
@@ -526,6 +686,10 @@ namespace K6.Performance.Tests
 
         private sealed class K6Summary
         {
+            public long TotalRequests { get; set; }
+            public long ChecksPassed { get; set; }
+            public long ChecksFailed { get; set; }
+            public double PassedRate { get; set; }
             public double FailedRate { get; set; }
             public double P95DurationMs { get; set; }
             public string Result { get; set; } = string.Empty;

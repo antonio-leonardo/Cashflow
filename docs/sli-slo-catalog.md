@@ -12,7 +12,7 @@ Transformar metas técnicas em catálogo operacional com medição recorrente.
 | Transaction API | Latência p95 de escrita | `p95 <= 1500ms` em 50 req/s | k6 + logs estruturados | `Back.End/Tests/Performance/results/transactions-throughput-summary.json` |
 | Balance Query API | Latência p95 de consolidado diário | `p95 <= 1500ms` em 50 req/s | k6 modo `daily-balance` | `Back.End/Tests/Performance/results/daily-balance-throughput-summary.json` |
 | Pipeline de eventos | Tempo de recuperação após falha de worker | Recuperação dentro da janela dos testes E2E/Holistic | E2E/Integration + Redis/Mongo verificação | `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs` |
-| Integridade de read model | Sem duplicação por reentrega | Sem divergência em deduplicação/Idempotência | Integração + estado persistido | `IdempotencyReadinessHealthCheck` e suites E2E |
+| Integridade de read model | Sem duplicação por reentrega | Sem divergência em deduplicação/Idempotência | Integração + estado persistido + unit tests de políticas | `Back.End/Tests/E2E/Balance/BalancePipelineE2ETests.cs` (`Duplicate_EventId_Redelivery_Should_Be_Applied_Only_Once`) + `Back.End/Tests/DomainTests/Balance/ResiliencePoliciesTests.cs` |
 
 ## Governança recomendada
 

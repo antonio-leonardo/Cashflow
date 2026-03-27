@@ -5,16 +5,19 @@ namespace Cashflow.Shared.Events
     public abstract class EventBase : IEvent
     {
         protected EventBase(
+            Guid? eventId = null,
             Guid? correlationId = null,
+            DateTime? occurredAt = null,
             int version = 1,
+            string? eventType = null,
             string? traceParent = null,
             string? baggage = null)
         {
-            EventId = Guid.NewGuid();
+            EventId = eventId ?? Guid.NewGuid();
             CorrelationId = correlationId ?? Guid.NewGuid();
-            OccurredAt = DateTime.UtcNow;
-            Version = version;
-            EventType = GetType().Name;
+            OccurredAt = occurredAt ?? DateTime.UtcNow;
+            Version = version <= 0 ? 1 : version;
+            EventType = string.IsNullOrWhiteSpace(eventType) ? GetType().Name : eventType;
             TraceParent = traceParent ?? Activity.Current?.Id;
             Baggage = baggage ?? BuildBaggageHeaderFromActivity();
         }

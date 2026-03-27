@@ -1,7 +1,7 @@
 {
   "realm": "cashflow",
   "enabled": true,
-  "sslRequired": "none",
+  "sslRequired": "external",
   "registrationAllowed": true,
   "resetPasswordAllowed": true,
   "rememberMe": true,
@@ -12,7 +12,6 @@
     {
       "clientId": "cashflow-api",
       "name": "cashflow-api",
-      "secret": "Teste",
       "enabled": true,
       "publicClient": false,
       "directAccessGrantsEnabled": true,
@@ -68,7 +67,6 @@
     {
       "clientId": "cashflow-readonly",
       "name": "cashflow-readonly",
-      "secret": "ReadOnlySecret",
       "enabled": true,
       "publicClient": false,
       "directAccessGrantsEnabled": true,
@@ -96,19 +94,5 @@
       ]
     }
   ],
-  "users": [
-    {
-      "username": "integration-user",
-      "enabled": true,
-      "emailVerified": true,
-      "requiredActions": [],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "P@ssw0rd!",
-          "temporary": false
-        }
-      ]
-    }
-  ]
+  "users": []
 }
