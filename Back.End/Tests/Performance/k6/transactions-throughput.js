@@ -1,5 +1,6 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
+import crypto from "k6/crypto";
 
 const mode = (__ENV.MODE || "transactions").toLowerCase();
 
@@ -260,8 +261,7 @@ export function handleSummary(data) {
 }
 
 function pseudoUuidV4() {
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
+  const bytes = getSecureRandomBytes(16);
 
   // RFC 4122 v4: set version and variant bits.
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
@@ -301,12 +301,27 @@ function secureRandomInt(maxExclusive) {
     return 0;
   }
 
-  const value = new Uint32Array(1);
   const limit = Math.floor(0x100000000 / maxExclusive) * maxExclusive;
+  let value;
 
   do {
-    crypto.getRandomValues(value);
-  } while (value[0] >= limit);
+    value = getSecureRandomUint32();
+  } while (value >= limit);
 
-  return value[0] % maxExclusive;
+  return value % maxExclusive;
+}
+
+function getSecureRandomUint32() {
+  const bytes = getSecureRandomBytes(4);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return view.getUint32(0, false);
+}
+
+function getSecureRandomBytes(length) {
+  if (length <= 0) {
+    return new Uint8Array(0);
+  }
+
+  const buffer = crypto.randomBytes(length);
+  return new Uint8Array(buffer);
 }
