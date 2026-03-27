@@ -77,8 +77,35 @@ namespace Cashflow.Gateway
             var downstreamReadyTimeoutSeconds =
                 builder.Configuration.GetValue<int?>("DownstreamHealthChecks:TimeoutSeconds") ?? 2;
 
-            var transactionHttpPolicy = ResiliencePolicies.GetHttpResiliencePolicy();
-            var balanceHttpPolicy = ResiliencePolicies.GetHttpResiliencePolicy();
+            var transactionReadinessResilienceOptions = BindHttpResilienceOptions(
+                builder.Configuration,
+                "Resilience:Downstreams:TransactionReadiness",
+                new HttpResiliencePolicyOptions
+                {
+                    RetryCount = 2,
+                    RetryBaseDelayMilliseconds = 200,
+                    CircuitBreakerFailureThreshold = 5,
+                    CircuitBreakerBreakSeconds = 15,
+                    BulkheadParallelization = 20,
+                    BulkheadQueue = 60,
+                    TimeoutSeconds = 3,
+                    EnableFallback = false
+                });
+
+            var balanceReadinessResilienceOptions = BindHttpResilienceOptions(
+                builder.Configuration,
+                "Resilience:Downstreams:BalanceReadiness",
+                new HttpResiliencePolicyOptions
+                {
+                    RetryCount = 2,
+                    RetryBaseDelayMilliseconds = 200,
+                    CircuitBreakerFailureThreshold = 5,
+                    CircuitBreakerBreakSeconds = 15,
+                    BulkheadParallelization = 20,
+                    BulkheadQueue = 60,
+                    TimeoutSeconds = 3,
+                    EnableFallback = false
+                });
 
             builder.Services.AddHttpClient(
                 GatewayDownstreamClients.TransactionReadinessClient,
@@ -89,7 +116,16 @@ namespace Cashflow.Gateway
                         builder.Configuration["ReverseProxy:Clusters:transaction-cluster:Destinations:transaction-api:Address"],
                         downstreamReadyTimeoutSeconds);
                 })
-                .AddHttpMessageHandler(_ => new PollyResilienceHandler(transactionHttpPolicy));
+                .AddHttpMessageHandler(sp =>
+                {
+                    var logger = sp.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("Gateway.Resilience.TransactionReadiness");
+                    var policy = ResiliencePolicies.GetHttpResiliencePolicy(
+                        transactionReadinessResilienceOptions,
+                        logger,
+                        "gateway-transaction-readiness");
+                    return new PollyResilienceHandler(policy);
+                });
 
             builder.Services.AddHttpClient(
                 GatewayDownstreamClients.BalanceReadinessClient,
@@ -100,7 +136,16 @@ namespace Cashflow.Gateway
                         builder.Configuration["ReverseProxy:Clusters:balance-query-cluster:Destinations:balance-query-api:Address"],
                         downstreamReadyTimeoutSeconds);
                 })
-                .AddHttpMessageHandler(_ => new PollyResilienceHandler(balanceHttpPolicy));
+                .AddHttpMessageHandler(sp =>
+                {
+                    var logger = sp.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("Gateway.Resilience.BalanceReadiness");
+                    var policy = ResiliencePolicies.GetHttpResiliencePolicy(
+                        balanceReadinessResilienceOptions,
+                        logger,
+                        "gateway-balance-readiness");
+                    return new PollyResilienceHandler(policy);
+                });
 
             builder.Services.AddHealthChecks()
                 .AddCheck("self", () => HealthCheckResult.Healthy("gateway alive"), tags: new[] { "live" })
@@ -232,6 +277,15 @@ namespace Cashflow.Gateway
             policyOptions.QueueLimit = configuration.GetValue<int?>($"{sectionPath}:QueueLimit") ?? defaultQueueLimit;
             policyOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
             policyOptions.AutoReplenishment = true;
+        }
+
+        private static HttpResiliencePolicyOptions BindHttpResilienceOptions(
+            IConfiguration configuration,
+            string sectionPath,
+            HttpResiliencePolicyOptions defaults)
+        {
+            configuration.GetSection(sectionPath).Bind(defaults);
+            return defaults;
         }
 
         private static bool HasScope(System.Security.Claims.ClaimsPrincipal user, string expectedScope)

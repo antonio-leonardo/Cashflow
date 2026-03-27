@@ -12,8 +12,6 @@ public class RedisBalanceRepositoryTests
     private readonly Mock<IDatabase> _databaseMock;
     private readonly RedisBalanceRepository _sut;
 
-    private readonly Dictionary<string, string> _lastHashValues = new(StringComparer.Ordinal);
-
     public RedisBalanceRepositoryTests()
     {
         _databaseMock = new Mock<IDatabase>();
@@ -24,101 +22,59 @@ public class RedisBalanceRepositoryTests
             .Returns(_databaseMock.Object);
 
         _databaseMock
-            .Setup(db => db.StringSetAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<RedisValue>(),
-                It.IsAny<TimeSpan?>(),
-                It.IsAny<bool>(),
-                It.IsAny<When>(),
+            .Setup(db => db.ScriptEvaluateAsync(
+                It.IsAny<string>(),
+                It.IsAny<RedisKey[]>(),
+                It.IsAny<RedisValue[]>(),
                 It.IsAny<CommandFlags>()))
-            .ReturnsAsync(true);
-
-        _databaseMock
-            .Setup(db => db.StringSetAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<RedisValue>(),
-                It.IsAny<TimeSpan?>(),
-                It.IsAny<When>(),
-                It.IsAny<CommandFlags>()))
-            .ReturnsAsync(true);
-
-        _databaseMock
-            .Setup(db => db.HashSetAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<HashEntry[]>(),
-                It.IsAny<CommandFlags>()))
-            .Callback<RedisKey, HashEntry[], CommandFlags>((_, entries, _) =>
-            {
-                _lastHashValues.Clear();
-                foreach (var entry in entries)
-                {
-                    _lastHashValues[entry.Name.ToString()] = entry.Value.ToString();
-                }
-            })
-            .Returns(Task.CompletedTask);
-
-        _databaseMock
-            .Setup(db => db.LockTakeAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<RedisValue>(),
-                It.IsAny<TimeSpan>(),
-                It.IsAny<CommandFlags>()))
-            .ReturnsAsync(true);
-
-        _databaseMock
-            .Setup(db => db.LockReleaseAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<RedisValue>(),
-                It.IsAny<CommandFlags>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(RedisResult.Create(1L));
 
         _sut = new RedisBalanceRepository(_multiplexerMock.Object);
     }
 
     [Fact]
-    public async Task ApplyAsync_ShouldIncreaseNetAndCredits_ForCreditTransaction()
+    public async Task ApplyAsync_ShouldExecuteIdempotentAtomicScript_ForCreditTransaction()
     {
-        _databaseMock
-            .Setup(db => db.StringGetAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>()))
-            .ReturnsAsync("10.00");
-
-        _databaseMock
-            .Setup(db => db.HashGetAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<RedisValue[]>(),
-                It.IsAny<CommandFlags>()))
-            .ReturnsAsync(new RedisValue[] { "5.00", "2.00", "3.00" });
+        var accountId = Guid.NewGuid();
+        var transactionId = Guid.NewGuid();
+        var consumerName = "balance-worker";
+        var idempotencyKey = Guid.NewGuid().ToString("N");
+        var ttl = TimeSpan.FromDays(30);
 
         var evt = new TransactionCreatedEventV1(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
+            transactionId,
+            accountId,
             4.00m,
             "BRL",
             TransactionType.Credit);
 
-        await _sut.ApplyAsync(evt);
+        var applied = await _sut.ApplyAsync(evt, consumerName, idempotencyKey, ttl);
 
-        AssertStringSetWasCalled();
-        AssertLockWasUsed();
-        AssertHashValue("credits", 9.00m);
-        AssertHashValue("debits", 2.00m);
-        AssertHashValue("net", 7.00m);
+        Assert.True(applied);
+
+        var expectedTtlSeconds = ((int)Math.Ceiling(ttl.TotalSeconds)).ToString(CultureInfo.InvariantCulture);
+        var expectedProcessedKey = $"processed:{consumerName}:{idempotencyKey}";
+
+        _databaseMock.Verify(db => db.ScriptEvaluateAsync(
+            It.Is<string>(script =>
+                script.Contains("redis.call('SET', processedKey", StringComparison.Ordinal) &&
+                script.Contains("'NX'", StringComparison.Ordinal) &&
+                script.Contains("HINCRBYFLOAT", StringComparison.Ordinal)),
+            It.Is<RedisKey[]>(keys =>
+                keys.Length == 3 &&
+                keys[0] == expectedProcessedKey &&
+                keys[1] == $"balance:{accountId}" &&
+                keys[2].ToString().StartsWith($"balance:daily:{accountId}:", StringComparison.Ordinal)),
+            It.Is<RedisValue[]>(values =>
+                values.Length == 7 &&
+                values[0] == expectedTtlSeconds &&
+                values[6] == "1"),
+            It.IsAny<CommandFlags>()), Times.Once);
     }
 
     [Fact]
-    public async Task ApplyAsync_ShouldDecreaseNetAndIncreaseDebits_ForDebitTransaction()
+    public async Task ApplyAsync_ShouldFlagDebit_ForDebitTransaction()
     {
-        _databaseMock
-            .Setup(db => db.StringGetAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>()))
-            .ReturnsAsync("10.00");
-
-        _databaseMock
-            .Setup(db => db.HashGetAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<RedisValue[]>(),
-                It.IsAny<CommandFlags>()))
-            .ReturnsAsync(new RedisValue[] { "5.00", "2.00", "3.00" });
-
         var evt = new TransactionCreatedEventV1(
             Guid.NewGuid(),
             Guid.NewGuid(),
@@ -126,29 +82,20 @@ public class RedisBalanceRepositoryTests
             "BRL",
             TransactionType.Debit);
 
-        await _sut.ApplyAsync(evt);
+        var applied = await _sut.ApplyAsync(evt, "balance-worker", "idempotency-key", TimeSpan.FromDays(30));
 
-        AssertStringSetWasCalled();
-        AssertLockWasUsed();
-        AssertHashValue("credits", 5.00m);
-        AssertHashValue("debits", 6.00m);
-        AssertHashValue("net", -1.00m);
+        Assert.True(applied);
+
+        _databaseMock.Verify(db => db.ScriptEvaluateAsync(
+            It.IsAny<string>(),
+            It.IsAny<RedisKey[]>(),
+            It.Is<RedisValue[]>(values => values.Length == 7 && values[6] == "0"),
+            It.IsAny<CommandFlags>()), Times.Once);
     }
 
     [Fact]
-    public async Task ApplyAsync_ShouldUseZero_WhenRedisContainsInvalidString()
+    public async Task ApplyAsync_ShouldEnforceMinimumTtlOfOneSecond()
     {
-        _databaseMock
-            .Setup(db => db.StringGetAsync(It.IsAny<RedisKey>(), It.IsAny<CommandFlags>()))
-            .ReturnsAsync("invalid");
-
-        _databaseMock
-            .Setup(db => db.HashGetAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<RedisValue[]>(),
-                It.IsAny<CommandFlags>()))
-            .ReturnsAsync(new RedisValue[] { RedisValue.Null, RedisValue.Null, RedisValue.Null });
-
         var evt = new TransactionCreatedEventV1(
             Guid.NewGuid(),
             Guid.NewGuid(),
@@ -156,57 +103,37 @@ public class RedisBalanceRepositoryTests
             "BRL",
             TransactionType.Credit);
 
-        await _sut.ApplyAsync(evt);
+        var applied = await _sut.ApplyAsync(evt, "balance-worker", "idempotency-key", TimeSpan.Zero);
 
-        AssertStringSetWasCalled();
-        AssertLockWasUsed();
-        AssertHashValue("credits", 3.25m);
-        AssertHashValue("debits", 0.00m);
-        AssertHashValue("net", 3.25m);
+        Assert.True(applied);
+
+        _databaseMock.Verify(db => db.ScriptEvaluateAsync(
+            It.IsAny<string>(),
+            It.IsAny<RedisKey[]>(),
+            It.Is<RedisValue[]>(values => values.Length == 7 && values[0] == "1"),
+            It.IsAny<CommandFlags>()), Times.Once);
     }
 
     [Fact]
-    public async Task ApplyAsync_ShouldThrowTimeout_WhenLockCannotBeAcquired()
+    public async Task ApplyAsync_ShouldReturnFalse_WhenEventWasAlreadyProcessed()
     {
         _databaseMock
-            .Setup(db => db.LockTakeAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<RedisValue>(),
-                It.IsAny<TimeSpan>(),
+            .Setup(db => db.ScriptEvaluateAsync(
+                It.IsAny<string>(),
+                It.IsAny<RedisKey[]>(),
+                It.IsAny<RedisValue[]>(),
                 It.IsAny<CommandFlags>()))
-            .ReturnsAsync(false);
+            .ReturnsAsync(RedisResult.Create(0L));
 
-        var accountId = Guid.NewGuid();
         var evt = new TransactionCreatedEventV1(
             Guid.NewGuid(),
-            accountId,
-            10.00m,
+            Guid.NewGuid(),
+            7m,
             "BRL",
-            TransactionType.Credit);
+            TransactionType.Debit);
 
-        var exception = await Assert.ThrowsAsync<TimeoutException>(() => _sut.ApplyAsync(evt));
+        var applied = await _sut.ApplyAsync(evt, "balance-worker", evt.EventId.ToString("N"), TimeSpan.FromDays(30));
 
-        Assert.Contains(accountId.ToString(), exception.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private void AssertHashValue(string field, decimal expected)
-    {
-        Assert.True(_lastHashValues.TryGetValue(field, out var rawValue));
-        var parsed = decimal.Parse(rawValue, CultureInfo.InvariantCulture);
-        Assert.Equal(expected, parsed);
-    }
-
-    private void AssertStringSetWasCalled()
-    {
-        Assert.Contains(_databaseMock.Invocations, invocation =>
-            invocation.Method.Name == nameof(IDatabase.StringSetAsync));
-    }
-
-    private void AssertLockWasUsed()
-    {
-        Assert.Contains(_databaseMock.Invocations, invocation =>
-            invocation.Method.Name == nameof(IDatabase.LockTakeAsync));
-        Assert.Contains(_databaseMock.Invocations, invocation =>
-            invocation.Method.Name == nameof(IDatabase.LockReleaseAsync));
+        Assert.False(applied);
     }
 }

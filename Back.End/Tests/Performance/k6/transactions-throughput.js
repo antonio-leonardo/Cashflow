@@ -1,5 +1,6 @@
 import http from "k6/http";
 import { check, sleep } from "k6";
+import crypto from "k6/crypto";
 
 const mode = (__ENV.MODE || "transactions").toLowerCase();
 
@@ -12,6 +13,10 @@ const transactionsEndpoint = __ENV.TRANSACTIONS_ENDPOINT || "/api/v1/transaction
 
 // Modo daily-balance (read path)
 const dailyBalanceEndpointTemplate = __ENV.DAILY_BALANCE_ENDPOINT_TEMPLATE || "/api/v1/balance/daily/{accountId}?date={date}";
+const hotAccountIdFromEnv = (__ENV.HOT_ACCOUNT_ID || "").trim();
+const hotAccountAmount = Number(__ENV.HOT_ACCOUNT_AMOUNT || 100);
+const hotAccountType = Number(__ENV.HOT_ACCOUNT_TYPE || 1);
+const hotAccountCurrency = (__ENV.HOT_ACCOUNT_CURRENCY || "BRL");
 
 const primeBaseUrl = (__ENV.PRIME_BASE_URL || "http://transaction-api:8080").replace(/\/+$/, "");
 const primeWaitMs = Number(__ENV.PRIME_WAIT_MS || 5000);
@@ -49,6 +54,14 @@ export const options = {
 };
 
 export function setup() {
+  if (mode === "hot-account") {
+    return {
+      hotAccountId: hotAccountIdFromEnv || pseudoUuidV4(),
+      accounts: [],
+      today: "",
+    };
+  }
+
   if (mode !== "daily-balance") {
     return { accounts: [], today: "" };
   }
@@ -157,8 +170,24 @@ export default function (data) {
 
   let response;
 
-  if (mode === "daily-balance") {
-    const accountId = data.accounts[Math.floor(Math.random() * data.accounts.length)];
+  if (mode === "hot-account") {
+    const payload = JSON.stringify({
+      AccountId: data.hotAccountId,
+      Amount: hotAccountAmount,
+      Currency: hotAccountCurrency,
+      Type: hotAccountType,
+    });
+
+    response = http.post(`${baseUrl}${transactionsEndpoint}`, payload, {
+      headers: { ...headers, "Content-Type": "application/json" },
+      timeout: "10s",
+    });
+
+    check(response, {
+      "status is 201": (r) => r.status === 201,
+    });
+  } else if (mode === "daily-balance") {
+    const accountId = data.accounts[secureRandomInt(data.accounts.length)];
     const date = data.today;
 
     const dailyPath = dailyBalanceEndpointTemplate
@@ -193,6 +222,8 @@ export default function (data) {
 export function handleSummary(data) {
   const failedRate = data.metrics.http_req_failed?.values?.rate ?? 1;
   const checksRate = data.metrics.checks?.values?.rate ?? 0;
+  const checksPassed = data.metrics.checks?.values?.passes ?? 0;
+  const checksFailed = data.metrics.checks?.values?.fails ?? 0;
   const totalRequests = data.metrics.http_reqs?.values?.count ?? 0;
   const p95DurationMs = data.metrics.http_req_duration?.values?.["p(95)"] ?? Number.POSITIVE_INFINITY;
   const avgDurationMs = data.metrics.http_req_duration?.values?.avg ?? Number.POSITIVE_INFINITY;
@@ -205,6 +236,8 @@ export function handleSummary(data) {
     targetRps,
     duration,
     totalRequests,
+    checksPassed,
+    checksFailed,
     failedRate,
     passedRate: checksRate,
     p95DurationMs,
@@ -228,9 +261,67 @@ export function handleSummary(data) {
 }
 
 function pseudoUuidV4() {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
-    const random = Math.floor(Math.random() * 16);
-    const value = char === "x" ? random : (random & 0x3) | 0x8;
-    return value.toString(16);
-  });
+  const bytes = getSecureRandomBytes(16);
+
+  // RFC 4122 v4: set version and variant bits.
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  const hex = [];
+  for (let i = 0; i < bytes.length; i++) {
+    hex.push(bytes[i].toString(16).padStart(2, "0"));
+  }
+
+  return (
+    hex[0] +
+    hex[1] +
+    hex[2] +
+    hex[3] +
+    "-" +
+    hex[4] +
+    hex[5] +
+    "-" +
+    hex[6] +
+    hex[7] +
+    "-" +
+    hex[8] +
+    hex[9] +
+    "-" +
+    hex[10] +
+    hex[11] +
+    hex[12] +
+    hex[13] +
+    hex[14] +
+    hex[15]
+  );
+}
+
+function secureRandomInt(maxExclusive) {
+  if (maxExclusive <= 0) {
+    return 0;
+  }
+
+  const limit = Math.floor(0x100000000 / maxExclusive) * maxExclusive;
+  let value;
+
+  do {
+    value = getSecureRandomUint32();
+  } while (value >= limit);
+
+  return value % maxExclusive;
+}
+
+function getSecureRandomUint32() {
+  const bytes = getSecureRandomBytes(4);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return view.getUint32(0, false);
+}
+
+function getSecureRandomBytes(length) {
+  if (length <= 0) {
+    return new Uint8Array(0);
+  }
+
+  const buffer = crypto.randomBytes(length);
+  return new Uint8Array(buffer);
 }

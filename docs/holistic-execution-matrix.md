@@ -5,13 +5,13 @@ Status: Ativo
 
 ## Objetivo
 
-Consolidar os temas 1 a 8 em uma visão única de execução e evidências técnicas.
+Consolidar os temas 1 a 8 em uma visão única de execução e de evidências técnicas.
 
 ## Matriz 1-8
 
-| Tema | Descrição | Status bool | Evidência principal |
+| Tema | Descrição | Status | Evidência principal |
 |---|---|---:|---|
-| 1 | Estabilidade da suite (base) | `true` | `Back.End/Tests/Shared/DockerHostBootstrap.cs` e suites estáveis em Testcontainers |
+| 1 | Estabilidade da suíte (base) | `true` | `Back.End/Tests/Shared/DockerHostBootstrap.cs` e suítes estáveis com Testcontainers |
 | 2 | Independência de serviços | `true` | `Back.End/Tests/E2E/*/ServiceIndependenceE2ETests.cs` |
 | 3 | NFR inicial de carga | `true` | `Back.End/Tests/Performance/k6/transactions-throughput.js` |
 | 4 | Decisões arquiteturais explícitas | `true` | `docs/decisions/decision-matrix.md` + ADRs |

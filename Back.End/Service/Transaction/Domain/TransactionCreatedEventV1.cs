@@ -12,8 +12,19 @@ namespace Cashflow.Service.Transaction.Domain
             TransactionType type,
             Guid correlationId = default,
             string? traceParent = null,
-            string? baggage = null)
-            : base(correlationId: correlationId == default ? null : correlationId, version: 1, traceParent: traceParent, baggage: baggage)
+            string? baggage = null,
+            Guid eventId = default,
+            DateTime occurredAt = default,
+            int version = 1,
+            string? eventType = null)
+            : base(
+                  eventId: eventId == default ? null : eventId,
+                  correlationId: correlationId == default ? null : correlationId,
+                  occurredAt: occurredAt == default ? null : occurredAt,
+                  version: version,
+                  eventType: string.IsNullOrWhiteSpace(eventType) ? null : eventType,
+                  traceParent: traceParent,
+                  baggage: baggage)
         {
             TransactionId = transactionId;
             AccountId = accountId;

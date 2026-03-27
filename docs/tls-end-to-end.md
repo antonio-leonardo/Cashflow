@@ -19,7 +19,7 @@ Arquivos gerados:
 ## 2) Subir stack com override TLS
 
 ```bash
-TLS_CERT_PASSWORD=changeit docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d
+TLS_CERT_PASSWORD=changeit TLS_ALLOW_INSECURE_DOWNSTREAM_CERTS=true docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d
 ```
 
 ## 3) Validar tráfego HTTPS
@@ -32,5 +32,5 @@ TLS_CERT_PASSWORD=changeit docker compose -f docker-compose.yml -f docker-compos
 
 - O override `docker-compose.tls.yml` configura Kestrel com certificados PFX.
 - O gateway passa a encaminhar para downstreams em `https://...:8443`.
-- A opção `DangerousAcceptAnyServerCertificate=true` foi incluída apenas para laboratório local com certificado self-signed.
-- Em produção, substituir por certificados emitidos por AC confiável e remover essa opção.
+- A flag `TLS_ALLOW_INSECURE_DOWNSTREAM_CERTS` existe apenas para laboratório local com certificado self-signed.
+- Em produção, manter `TLS_ALLOW_INSECURE_DOWNSTREAM_CERTS=false` e usar certificados emitidos por AC confiável.

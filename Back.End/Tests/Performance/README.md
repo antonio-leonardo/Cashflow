@@ -10,6 +10,8 @@ This folder contains the load test harness for the NFR target:
 - Script: `k6/transactions-throughput.js`
 - Endpoint under load (default): `POST /api/v1/transactions`
 - Endpoint under load (daily mode): `GET /api/v1/balance/daily/{accountId}?date=yyyy-MM-dd`
+- Endpoint under load (hot-account mode): `POST /api/v1/transactions` usando o mesmo `AccountId`
+- Validação hot-account: compara saldo consolidado no Redis com a quantidade de requests aceitas no k6
 - Load profile: constant arrival rate (`constant-arrival-rate`)
 - Default execution: `50 req/s` for `60s`
 - Acceptance threshold: `http_req_failed <= 0.05`
@@ -39,6 +41,7 @@ The wrapper test project is versioned and portable:
 
 - Project: `Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj`
 - Test: `TransactionApi_Should_Handle_50Rps_With_Max_5Percent_Loss`
+- Test: `TransactionApi_HotAccount_Should_Handle_50Rps_With_Max_5Percent_Loss`
 - Test: `TransactionApi_Should_Stay_Available_Under_Load_When_BalanceWorker_Is_Down`
 - Test: `BalanceDailyApi_Should_Handle_50Rps_With_Max_5Percent_Loss`
 
@@ -56,6 +59,12 @@ Use environment variables to tune the run without changing the script:
 
 ```bash
 TARGET_RPS=50 DURATION=120s PRE_ALLOCATED_VUS=120 MAX_VUS=400 docker compose --profile perf run --rm k6
+```
+
+Hot-account (mesma conta durante todo o teste):
+
+```bash
+MODE=hot-account HOT_ACCOUNT_ID=<uuid> TARGET_RPS=50 DURATION=60s docker compose --profile perf run --rm k6
 ```
 
 For Gateway-authenticated runs, provide:

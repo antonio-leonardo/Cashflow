@@ -1,4 +1,4 @@
-﻿using Cashflow.Service.Transaction.Domain;
+using Cashflow.Service.Transaction.Domain;
 using Cashflow.Shared.NoSql.MongoDB;
 using MongoDB.Driver;
 
@@ -12,14 +12,21 @@ namespace Cashflow.Worker.Report
 
         public async Task HandleAsync(TransactionCreatedEventV1 evt, CancellationToken ct)
         {
-            await this.InsertAsync(new TransactionReportDocument
+            try
             {
-                Id = evt.TransactionId,
-                AccountId = evt.AccountId,
-                Amount = evt.Amount,
-                Currency = evt.Currency,
-                CreatedAt = evt.OccurredAt
-            });
+                await this.InsertAsync(new TransactionReportDocument
+                {
+                    Id = evt.TransactionId,
+                    AccountId = evt.AccountId,
+                    Amount = evt.Amount,
+                    Currency = evt.Currency,
+                    CreatedAt = evt.OccurredAt
+                });
+            }
+            catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+            {
+                // Idempotent consumer: duplicate delivery of the same event is ignored.
+            }
         }
     }
 }
