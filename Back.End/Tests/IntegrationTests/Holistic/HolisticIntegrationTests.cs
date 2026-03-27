@@ -53,7 +53,7 @@ namespace Holistic.Integration.Tests
         public async Task Should_Block_Anonymous_Requests()
         {
             var response = await _client.PostAsJsonAsync(
-                "/api/transactions",
+                "/api/v1/transactions",
                 new
                 {
                     AccountId = Guid.NewGuid(),
@@ -68,7 +68,7 @@ namespace Holistic.Integration.Tests
         [Fact]
         public async Task Should_Return_Unauthorized_When_Token_Is_Invalid()
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, "/api/transactions")
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/transactions")
             {
                 Content = JsonContent.Create(new
                 {
@@ -93,7 +93,7 @@ namespace Holistic.Integration.Tests
             var referenceDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
             var response = await _client.GetAsync(
-                $"/api/balance/daily/{accountId}?date={referenceDate:yyyy-MM-dd}");
+                $"/api/v1/balance/daily/{accountId}?date={referenceDate:yyyy-MM-dd}");
 
             Xunit.Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
@@ -103,7 +103,7 @@ namespace Holistic.Integration.Tests
         {
             var readOnlyToken = await _fixture.KeycloakFixture.GetReadOnlyAccessTokenClientIdSecretAsync();
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "/api/transactions")
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/transactions")
             {
                 Content = JsonContent.Create(new
                 {
@@ -167,7 +167,7 @@ namespace Holistic.Integration.Tests
 
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Post, "/api/transactions")
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/transactions")
                 {
                     Content = JsonContent.Create(new
                     {
@@ -218,7 +218,7 @@ namespace Holistic.Integration.Tests
             .GetHttpResiliencePolicy()
             .ExecuteAsync(() =>
             {
-                var request = new HttpRequestMessage(HttpMethod.Post, "/api/transactions")
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/transactions")
                 {
                     Content = JsonContent.Create(objectToRequest)
                 };
@@ -342,7 +342,7 @@ namespace Holistic.Integration.Tests
             var referenceDate = DateOnly.FromDateTime(DateTime.UtcNow);
             const decimal expectedAmount = 250m;
 
-            var createTransactionRequest = new HttpRequestMessage(HttpMethod.Post, "/api/transactions")
+            var createTransactionRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v1/transactions")
             {
                 Content = JsonContent.Create(new
                 {
@@ -364,7 +364,7 @@ namespace Holistic.Integration.Tests
             {
                 var getDailyBalanceRequest = new HttpRequestMessage(
                     HttpMethod.Get,
-                    $"/api/balance/daily/{accountId}?date={referenceDate:yyyy-MM-dd}");
+                    $"/api/v1/balance/daily/{accountId}?date={referenceDate:yyyy-MM-dd}");
                 getDailyBalanceRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
                 using var getDailyBalanceResponse = await _client.SendAsync(getDailyBalanceRequest);

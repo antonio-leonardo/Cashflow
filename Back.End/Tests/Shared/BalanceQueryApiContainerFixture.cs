@@ -6,16 +6,23 @@ namespace Infrastructure.Test
 {
     public class BalanceQueryApiContainerFixture : IAsyncLifetime
     {
-        private readonly HolisticCompleteInfrastructureFixture _infra;
+        private readonly BaseCompleteInfrastructureFixture _infra;
+        private readonly string _keycloakAuthority;
         private IContainer? _container;
 
         public Uri BaseAddress { get; private set; } = default!;
 
         private const string IMAGE_NAME = "cashflow-balance-query-api:latest";
 
-        public BalanceQueryApiContainerFixture(HolisticCompleteInfrastructureFixture infra)
+        public BalanceQueryApiContainerFixture(BaseCompleteInfrastructureFixture infra, string? keycloakAuthority = null)
         {
             _infra = infra;
+            _keycloakAuthority = keycloakAuthority ?? "http://keycloak:8080/realms/cashflow";
+        }
+
+        public BalanceQueryApiContainerFixture(HolisticCompleteInfrastructureFixture infra)
+            : this((BaseCompleteInfrastructureFixture)infra, infra.KeycloakFixture.Authority)
+        {
         }
 
         public async Task InitializeAsync()
@@ -37,7 +44,7 @@ namespace Infrastructure.Test
                 .WithEnvironment("ASPNETCORE_URLS", "http://+:8080")
                 .WithEnvironment("Redis__Connection",
                     _infra.RedisContainerFixture.NetworkConnectionString)
-                .WithEnvironment("Keycloak__Authority", _infra.KeycloakFixture.Authority)
+                .WithEnvironment("Keycloak__Authority", _keycloakAuthority)
                 .WithEnvironment("Keycloak__Audience", "cashflow-api")
                 .Build();
 

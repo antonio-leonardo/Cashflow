@@ -1,24 +1,24 @@
-﻿# ADR-002: Integracao Event-Driven vs Sincrona
+# ADR-002: Integração Event-Driven vs Síncrona
 
-Date: 2026-03-20  
+Date: 2026-03-20
 Status: Accepted
 
 ## Context
-O sistema precisa desacoplar a criacao de transacoes da atualizacao de saldos, relatorios e auditoria, evitando chamadas sincrona em cascata.
+O sistema precisa desacoplar a criação de Transações da atualização de saldos, relatórios e auditoria, evitando chamadas síncronas em cascata.
 
 ## Decision
-Adotar integracao por eventos com Outbox Pattern e mensageria assincrona entre servicos.
+Adotar integração por eventos com Outbox Pattern e mensageria assíncrona entre serviços.
 
 ## Alternatives considered
-- Chamadas HTTP sincrona entre servicos.
+- Chamadas HTTP síncrona entre serviços.
 - Filas internas com polling sem broker.
 
 ## Consequences
 Positivas:
-- Desacoplamento real entre servicos.
-- Maior tolerancia a falhas e backpressure.
+- Desacoplamento real entre serviços.
+- Maior tolerância a falhas e backpressure.
 - Escalabilidade por consumidor.
 
 Negativas:
-- Consistencia eventual.
-- Necessidade de idempotencia e versionamento de eventos.
+- consistência eventual.
+- Necessidade de Idempotência e versionamento de eventos.

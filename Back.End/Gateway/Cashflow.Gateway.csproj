@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Shared\Observability\Providers\OpenTelemetry\Web\DependencyInjection\Cashflow.Shared.Observability.OpenTelemetry.Web.DependencyInjection.csproj" />
+    <ProjectReference Include="..\Shared\Resilience\Cashflow.Shared.Resilience.csproj" />
   </ItemGroup>
 
 </Project>

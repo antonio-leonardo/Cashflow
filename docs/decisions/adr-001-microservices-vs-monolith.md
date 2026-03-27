@@ -1,24 +1,25 @@
-﻿# ADR-001: Microservices vs Monolith
+# ADR-001: Microservices vs Monolith
 
-Date: 2026-03-20  
+Date: 2026-03-20
 Status: Accepted
 
 ## Context
-O dominio de transacoes exige evolucao independente de write e read models, alem de isolamento de falhas entre processos de leitura e de escrita.
+O domínio de Transações exige Evolução independente de write e read models, além de isolamento de falhas entre processos de leitura e de escrita.
 
 ## Decision
-Adotar arquitetura de microsservicos com servicos separados para API de transacoes e workers de leitura, integrados por mensageria.
+Adotar arquitetura de Microsserviços com serviços separados para API de Transações e workers de leitura, integrados por mensageria.
 
 ## Alternatives considered
 - Monolito modular com filas internas.
-- Modular monolith com uma base de dados unica.
+- Modular monolith com uma base de dados única.
 
 ## Consequences
 Positivas:
 - Isolamento de falhas e deploy independente.
-- Escalabilidade horizontal por servico.
-- Evolucao independente de read models.
+- Escalabilidade horizontal por serviço.
+- Evolução independente de read models.
 
 Negativas:
 - Maior complexidade operacional.
-- Observabilidade e testes de integracao mais exigentes.
+- Observabilidade e testes de Integração mais exigentes.
+

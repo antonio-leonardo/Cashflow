@@ -270,7 +270,7 @@ namespace K6.Performance.Tests
             {
                 try
                 {
-                    using var response = await client.GetAsync("http://localhost:5001/api/transactions");
+                    using var response = await client.GetAsync("http://localhost:5001/api/v1/transactions");
 
                     if ((int)response.StatusCode >= 100)
                     {
@@ -305,8 +305,8 @@ namespace K6.Performance.Tests
                $"-e MODE={mode} " +
                $"-e BASE_URL={baseUrl} " +
                $"-e PRIME_BASE_URL={primeBaseUrl} " +
-               $"-e TRANSACTIONS_ENDPOINT=/api/transactions " +
-               $"-e DAILY_BALANCE_ENDPOINT_TEMPLATE=/api/balance/daily/{{accountId}}?date={{date}} " +
+               $"-e TRANSACTIONS_ENDPOINT=/api/v1/transactions " +
+               $"-e DAILY_BALANCE_ENDPOINT_TEMPLATE=/api/v1/balance/daily/{{accountId}}?date={{date}} " +
                $"-e PRIME_WAIT_MS={primeWaitMs} " +
                $"-e PRIME_ACCOUNTS={primeAccounts} " +
                $"-e PRIME_MAX_WAIT_SECONDS={primeMaxWaitSeconds} " +

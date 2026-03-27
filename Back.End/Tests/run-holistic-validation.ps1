@@ -105,8 +105,18 @@ function Invoke-TestSuite {
 
 $suites = @(
     @{
+        Name = "Contract Balance Query"
+        Project = "Back.End/Tests/ContractTests/Balance/Balance.Query.ContractTests.csproj"
+        Filter = ""
+    },
+    @{
         Name = "Contract Gateway"
         Project = "Back.End/Tests/ContractTests/Gateway/Gateway.Transaction.ContractTests.csproj"
+        Filter = ""
+    },
+    @{
+        Name = "Integration Balance API"
+        Project = "Back.End/Tests/IntegrationTests/Balance/Balance.Integration.Tests.csproj"
         Filter = ""
     },
     @{
@@ -143,9 +153,9 @@ $suites = @(
 
 if ($Quick) {
     $suites = @(
-        $suites[1], # Messaging Robustness
-        $suites[2], # Performance NFR Deep
-        $suites[6]  # Holistic Security + Authenticated Flow
+        $suites[3], # Messaging Robustness
+        $suites[4], # Performance NFR Deep
+        $suites[8]  # Holistic Security + Authenticated Flow
     )
 }
 

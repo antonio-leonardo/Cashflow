@@ -108,48 +108,68 @@ namespace Cashflow.Service.Transaction.API
                 app.UseAuthorization();
             }
 
+            var endpointPostTransactionsV1 = app.MapPost(
+                "/api/v1/transactions",
+                CreateTransactionAsync)
+                .WithName("CreateTransactionV1");
 
-            var endpointPostTransactions = app.MapPost("/api/transactions", async (
-                CreateTransactionRequest request,
-                ICreateTransactionHandler handler,
-                HttpContext http,
-                CancellationToken cancellationToken) =>
-            {
-                var correlationId = http.Request.Headers[ObservabilityConstants.CorrelationIdHeaderName].FirstOrDefault()
-                    ?? http.TraceIdentifier;
-                var userId = http.User.FindFirst("sub")?.Value;
+            var endpointGetTransactionsV1 = app.MapGet(
+                "/api/v1/transactions/{id:guid}",
+                GetTransactionAsync)
+                .WithName("GetTransactionV1");
 
-                var command = new CreateTransactionCommand(
-                    TransactionId: Guid.NewGuid(),
-                    request.AccountId,
-                    request.Amount,
-                    request.Currency,
-                    request.Type,
-                    correlationId,
-                    userId);
+            var endpointPostTransactionsLegacy = app.MapPost(
+                "/api/transactions",
+                CreateTransactionAsync)
+                .WithName("CreateTransaction");
 
-                await handler.HandleAsync(command, cancellationToken);
-
-                return Results.Created($"/api/transactions/{command.TransactionId}", new { command.TransactionId });
-            }).WithName("CreateTransaction");
-
-            var endpointGetTransactions = app.MapGet("/api/transactions/{id:guid}", async (
-                HttpContext ctx,
-                Guid id,
-                IGetTransactionQueryHandler handler,
-                CancellationToken cancellationToken) =>
-            {
-                var model = await handler.HandleAsync(new GetTransactionQuery(id), cancellationToken);
-                return model is null ? Results.NotFound() : Results.Ok(model);
-            }).WithName("GetTransaction");
+            var endpointGetTransactionsLegacy = app.MapGet(
+                "/api/transactions/{id:guid}",
+                GetTransactionAsync)
+                .WithName("GetTransaction");
 
             if (!isLocalEnvironment)
             {
-                endpointPostTransactions.RequireAuthorization("TransactionsWrite");
-                endpointGetTransactions.RequireAuthorization("AuthenticatedUser");
+                endpointPostTransactionsV1.RequireAuthorization("TransactionsWrite");
+                endpointGetTransactionsV1.RequireAuthorization("AuthenticatedUser");
+                endpointPostTransactionsLegacy.RequireAuthorization("TransactionsWrite");
+                endpointGetTransactionsLegacy.RequireAuthorization("AuthenticatedUser");
             }
 
             await app.RunAsync();
+        }
+
+        private static async Task<IResult> CreateTransactionAsync(
+            CreateTransactionRequest request,
+            ICreateTransactionHandler handler,
+            HttpContext http,
+            CancellationToken cancellationToken)
+        {
+            var correlationId = http.Request.Headers[ObservabilityConstants.CorrelationIdHeaderName].FirstOrDefault()
+                ?? http.TraceIdentifier;
+            var userId = http.User.FindFirst("sub")?.Value;
+
+            var command = new CreateTransactionCommand(
+                TransactionId: Guid.NewGuid(),
+                request.AccountId,
+                request.Amount,
+                request.Currency,
+                request.Type,
+                correlationId,
+                userId);
+
+            await handler.HandleAsync(command, cancellationToken);
+
+            return Results.Created($"/api/v1/transactions/{command.TransactionId}", new { command.TransactionId });
+        }
+
+        private static async Task<IResult> GetTransactionAsync(
+            Guid id,
+            IGetTransactionQueryHandler handler,
+            CancellationToken cancellationToken)
+        {
+            var model = await handler.HandleAsync(new GetTransactionQuery(id), cancellationToken);
+            return model is null ? Results.NotFound() : Results.Ok(model);
         }
 
         private static bool HasScope(System.Security.Claims.ClaimsPrincipal user, string expectedScope)

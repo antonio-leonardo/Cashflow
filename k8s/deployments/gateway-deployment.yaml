@@ -1,0 +1,134 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: cashflow
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - name: gateway
+        image: ghcr.io/antonio-leonardo/cashflow-gateway:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Production
+        - name: ASPNETCORE_URLS
+          value: http://+:8080
+        - name: Keycloak__Authority
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: KEYCLOAK_AUTHORITY
+        - name: Keycloak__Audience
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: KEYCLOAK_AUDIENCE
+        - name: ReverseProxy__Clusters__transaction-cluster__Destinations__transaction-api__Address
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: TRANSACTION_API_URL
+        - name: ReverseProxy__Clusters__balance-query-cluster__Destinations__balance-query-api__Address
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: BALANCE_QUERY_API_URL
+        - name: OpenTelemetry__Otlp__Endpoint
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: OTEL_ENDPOINT
+        - name: RateLimiting__Global__PermitLimit
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_GLOBAL_PERMIT_LIMIT
+        - name: RateLimiting__Global__WindowSeconds
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_GLOBAL_WINDOW_SECONDS
+        - name: RateLimiting__Global__QueueLimit
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_GLOBAL_QUEUE_LIMIT
+        - name: RateLimiting__Policies__TransactionWrite__PermitLimit
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_TRANSACTION_WRITE_PERMIT_LIMIT
+        - name: RateLimiting__Policies__TransactionWrite__WindowSeconds
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_TRANSACTION_WRITE_WINDOW_SECONDS
+        - name: RateLimiting__Policies__TransactionWrite__QueueLimit
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_TRANSACTION_WRITE_QUEUE_LIMIT
+        - name: RateLimiting__Policies__TransactionRead__PermitLimit
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_TRANSACTION_READ_PERMIT_LIMIT
+        - name: RateLimiting__Policies__TransactionRead__WindowSeconds
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_TRANSACTION_READ_WINDOW_SECONDS
+        - name: RateLimiting__Policies__TransactionRead__QueueLimit
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_TRANSACTION_READ_QUEUE_LIMIT
+        - name: RateLimiting__Policies__BalanceRead__PermitLimit
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_BALANCE_READ_PERMIT_LIMIT
+        - name: RateLimiting__Policies__BalanceRead__WindowSeconds
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_BALANCE_READ_WINDOW_SECONDS
+        - name: RateLimiting__Policies__BalanceRead__QueueLimit
+          valueFrom:
+            configMapKeyRef:
+              name: cashflow-config
+              key: GATEWAY_RATE_LIMIT_BALANCE_READ_QUEUE_LIMIT
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 6
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 6
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi

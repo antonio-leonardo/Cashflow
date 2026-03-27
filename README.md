@@ -1,25 +1,25 @@
-# Cashflow - Sistema de Transacoes Event-Driven
+# Cashflow - Sistema de Transações Event-Driven
 
-**Autor:** Antonio Leonardo  
-**Plataforma:** .NET 10  
-**Estilo arquitetural:** Microsservicos orientados a eventos  
-**Estrategia:** Multicloud portavel (AWS, Azure, GCP)  
-**Execucao local (TDD):** Visual Studio 2026 Community + Docker
+**Autor:** Antonio Leonardo
+**Plataforma:** .NET 10
+**Estilo arquitetural:** Microsserviços orientados a eventos
+**Estratégia:** Multicloud portável (AWS, Azure, GCP)
+**Execução local (TDD):** Visual Studio 2026 Community + Docker
 
 ---
 
-## Indice
+## Índice
 
-1. [Visao geral](#1-visao-geral)
-2. [Decisoes arquiteturais e trade-offs](#2-decisoes-arquiteturais-e-trade-offs)
-3. [Requisitos nao funcionais](#3-requisitos-nao-funcionais)
-4. [Integracao entre componentes](#4-integracao-entre-componentes)
-5. [Stack tecnologica](#5-stack-tecnologica)
+1. [Visão geral](#1-visão-geral)
+2. [Decisões arquiteturais e trade-offs](#2-decisões-arquiteturais-e-trade-offs)
+3. [Requisitos não funcionais](#3-requisitos-não-funcionais)
+4. [Integração entre componentes](#4-integração-entre-componentes)
+5. [Stack tecnológica](#5-stack-tecnológica)
 6. [Arquitetura e diagramas](#6-arquitetura-e-diagramas)
 7. [Fluxo principal](#7-fluxo-principal)
 8. [Versionamento de eventos](#8-versionamento-de-eventos)
 9. [Testes e qualidade](#9-testes-e-qualidade)
-10. [Execucao local](#10-execucao-local)
+10. [Execução local](#10-execução-local)
 11. [Estrutura da solution](#11-estrutura-da-solution)
 12. [CI/CD](#12-cicd)
 13. [SonarQube (Code Smells)](#13-sonarqube-code-smells)
@@ -27,17 +27,17 @@
 
 ---
 
-## 1. Visao geral
+## 1. Visão geral
 
-O **Cashflow** e um sistema de transacoes financeiras construido sobre **Event-Driven Architecture**, **CQRS** e **Clean Architecture**. O objetivo central e garantir resiliencia, escalabilidade e portabilidade real entre clouds, sem lock-in tecnologico.
+O **Cashflow** é um sistema de transações financeiras construído sobre **Event-Driven Architecture**, **CQRS** e **Clean Architecture**. O objetivo central é garantir resiliência, escalabilidade e portabilidade real entre clouds, sem lock-in tecnológico.
 
-Principios fundamentais:
+Princípios fundamentais:
 
-- Event-Driven: eventos imutaveis como contratos entre servicos
-- CQRS: Write Model isolado dos Read Models por servico
-- Clean Architecture: dominio independente de infraestrutura
-- Outbox Pattern: consistencia atomica entre banco e mensageria
-- Idempotencia: consumidores seguros a reentregas
+- Event-Driven: eventos imutáveis como contratos entre serviços
+- CQRS: Write Model isolado dos Read Models por serviço
+- Clean Architecture: domínio independente de infraestrutura
+- Outbox Pattern: consistência atômica entre banco e mensageria
+- Idempotência: consumidores seguros a reentregas
 - Observabilidade: CorrelationId + logs estruturados
 
 ```mermaid
@@ -69,152 +69,153 @@ flowchart LR
 
 ---
 
-## 2. Decisoes arquiteturais e trade-offs
+## 2. Decisões arquiteturais e trade-offs
 
-As decisoes principais estao registradas em ADRs e, para facilitar avaliacao tecnica, estao consolidadas abaixo no README principal.
-Matriz consolidada de decisao/riscos/mitigacoes: `docs/decisions/decision-matrix.md`.
+As decisões principais estão registradas em ADRs e, para facilitar avaliação técnica, estão consolidadas abaixo no README principal.
+Matriz consolidada de decisão/riscos/mitigações: `docs/decisions/decision-matrix.md`.
 
 ### 2.1 ADR-001 - Microservices vs Monolith
 
-Referencia: `docs/decisions/adr-001-microservices-vs-monolith.md`
+Referência: `docs/decisions/adr-001-microservices-vs-monolith.md`
 
 Contexto:
-- O dominio exige evolucao independente entre escrita (transacao) e leitura (saldo, relatorio e auditoria).
+- O domínio exige evolução independente entre escrita (transação) e leitura (saldo, relatório e auditoria).
 - Isolamento de falhas foi tratado como requisito de arquitetura.
 
-Decisao:
-- Adotar microsservicos: `transaction-api`, `balance-query-api`, `outbox-worker`, `balance-worker`, `report-worker`, `audit-worker`.
+Decisão:
+- Adotar microsserviços: `transaction-api`, `balance-query-api`, `outbox-worker`, `balance-worker`, `report-worker`, `audit-worker`.
 
 Alternativas consideradas:
 - Monolito modular com filas internas.
-- Monolito modular com banco unico.
+- Monolito modular com banco único.
 
 Trade-offs:
-- Positivos: isolamento de falhas, deploy independente, escala horizontal por servico.
-- Negativos: maior complexidade operacional e maior exigencia de observabilidade.
+- Positivos: isolamento de falhas, deploy independente, escala horizontal por serviço.
+- Negativos: maior complexidade operacional e maior exigência de observabilidade.
 
-### 2.2 ADR-002 - Integracao Event-Driven vs Sincrona
+### 2.2 ADR-002 - Integração Event-Driven vs Síncrona
 
-Referencia: `docs/decisions/adr-002-event-driven-vs-sync.md`
+Referência: `docs/decisions/adr-002-event-driven-vs-sync.md`
 
 Contexto:
-- Evitar chamada sincronas em cascata no fluxo de consolidacao.
-- Garantir desacoplamento real entre servicos de leitura e escrita.
+- Evitar chamadas síncronas em cascata no fluxo de consolidação.
+- Garantir desacoplamento real entre serviços de leitura e escrita.
 
-Decisao:
-- Integracao assincrona por eventos com `Outbox Pattern` + broker.
+Decisão:
+- Integração assíncrona por eventos com `Outbox Pattern` + broker.
 
 Alternativas consideradas:
-- HTTP sincronico entre servicos.
+- HTTP síncrono entre serviços.
 - Filas internas sem broker e sem envelope de contrato.
 
 Trade-offs:
-- Positivos: desacoplamento, backpressure, maior tolerancia a falhas.
-- Negativos: consistencia eventual, necessidade de idempotencia e versionamento de eventos.
+- Positivos: desacoplamento, backpressure, maior tolerância a falhas.
+- Negativos: consistência eventual, necessidade de idempotência e versionamento de eventos.
 
 ### 2.3 ADR-003 - Database per Service + CQRS
 
-Referencia: `docs/decisions/adr-003-db-per-service-cqrs.md`
+Referência: `docs/decisions/adr-003-db-per-service-cqrs.md`
 
 Contexto:
-- Escrita exige consistencia transacional.
+- Escrita exige consistência transacional.
 - Leitura exige modelos especializados de alta performance.
 
-Decisao:
-- Separar write/read (CQRS) e manter banco por servico.
+Decisão:
+- Separar write/read (CQRS) e manter banco por serviço.
 
 Alternativas consideradas:
-- Banco unico compartilhado.
+- Banco único compartilhado.
 - Read models dentro do mesmo banco transacional.
 
 Trade-offs:
 - Positivos: autonomia de contexto, escalabilidade do read side e menor acoplamento.
-- Negativos: consultas cross-service exigem materializacao por eventos.
+- Negativos: consultas cross-service exigem materialização por eventos.
 
 ### 2.4 ADR-004 - Gateway com Keycloak (OIDC)
 
-Referencia: `docs/decisions/adr-004-gateway-auth-keycloak.md`
+Referência: `docs/decisions/adr-004-gateway-auth-keycloak.md`
 
 Contexto:
-- Autenticacao deve ser centralizada e desacoplada do dominio.
-- Necessidade de politica de acesso unificada na borda.
+- Autenticação deve ser centralizada e desacoplada do domínio.
+- Necessidade de política de acesso unificada na borda.
 
-Decisao:
-- Gateway (YARP) com autenticacao OIDC/OAuth2 via Keycloak.
+Decisão:
+- Gateway (YARP) com autenticação OIDC/OAuth2 via Keycloak.
 
 Alternativas consideradas:
-- Autenticacao distribuida em cada servico.
-- Gateway com provedor proprietario.
+- Autenticação distribuída em cada serviço.
+- Gateway com provedor proprietário.
 
 Trade-offs:
-- Positivos: governanca de acesso, isolamento do dominio e padrao unico de autenticacao.
-- Negativos: dependencia adicional e necessidade de testes de integracao de autenticacao.
+- Positivos: governança de acesso, isolamento do domínio e padrão único de autenticação.
+- Negativos: dependência adicional e necessidade de testes de integração de autenticação.
 
-### 2.5 Encadeamento das decisoes
+### 2.5 Encadeamento das Decisões
 
 ```mermaid
 flowchart LR
-  A["ADR-001: Microsservicos"] --> B["ADR-002: Event-Driven + Outbox"]
+  A["ADR-001: Microsserviços"] --> B["ADR-002: Event-Driven + Outbox"]
   B --> C["ADR-003: CQRS + Database per Service"]
   C --> D["ADR-004: Gateway + Keycloak"]
 ```
 
 ---
 
-## 3. Requisitos nao funcionais
+## 3. Requisitos não funcionais
 
 Escalabilidade:
 
-- Servicos stateless com escalonamento horizontal (API e workers).
-- Filas por evento e processamento assincrono para backpressure.
-- Read models otimizados (Redis, MongoDB, DynamoDB) para consultas rapidas.
-- Politicas de resiliencia (retry, circuit breaker, bulkhead, timeout) via `Cashflow.Shared.Resilience`.
-- Meta operacional validada por carga: `50 req/s` com ate `5%` de perda (`http_req_failed <= 0.05`) e latencia `p95 <= 1500 ms`.
+- Serviços stateless com escalonamento horizontal (API e workers).
+- Filas por evento e processamento assíncrono para backpressure.
+- Read models otimizados (Redis, MongoDB, DynamoDB) para consultas rápidas.
+- Políticas de resiliência (retry, circuit breaker, bulkhead, timeout) via `Cashflow.Shared.Resilience`.
+- Meta operacional validada por carga: `50 req/s` com até `5%` de perda (`http_req_failed <= 0.05`) e latência `p95 <= 1500 ms`.
 
-Resiliencia:
+Resiliência:
 
 - Outbox Pattern para evitar falha parcial entre banco e broker.
 - Consumidores idempotentes e controle de reentrega.
-- DLQ e retry com atraso configuravel por consumidor (RabbitMQ).
-- Recuperacao automatica de conexao no cliente RabbitMQ (`AutomaticRecoveryEnabled` + `TopologyRecoveryEnabled`).
-- Isolamento por servico e por fila para evitar falhas em cascata.
+- DLQ e retry com atraso configurável por consumidor (RabbitMQ).
+- Recuperação automática de conexão no cliente RabbitMQ (`AutomaticRecoveryEnabled` + `TopologyRecoveryEnabled`).
+- Isolamento por serviço e por fila para evitar falhas em cascata.
 
 Disponibilidade:
 
-- Independencia entre servicos: falha de um worker nao bloqueia os demais.
+- Independência entre serviços: falha de um worker não bloqueia os demais.
 - Gateway e API podem evoluir sem downtime dos workers.
-- Endpoints de saude (`/health/live` e `/health/ready`) no Gateway, Transaction API e Balance Query API.
-- Arquitetura preparada para multi-az e multi-cloud com configuracao externa.
+- Endpoints de saúde (`/health/live` e `/health/ready`) no Gateway, Transaction API e Balance Query API.
+- Arquitetura preparada para multi-az e multi-cloud com configuração externa.
 
-Seguranca e observabilidade:
+Segurança e observabilidade:
 
-- Autenticacao centralizada via Keycloak (OIDC/OAuth2).
-- Autorizacao por politica de escopo/role no write path (`transactions.write` / `transactions.writer`).
-- Rate limiting no Gateway e na Transaction API para protecao de borda.
+- Autenticação centralizada via Keycloak (OIDC/OAuth2).
+- Autorização por política de escopo/role no write path (`transactions.write` / `transactions.writer`).
+- Rate limiting no Gateway por política de rota sensível (write/read/balance) e limite global.
+- Contrato HTTP versionado por URL (`/api/v1/...`) com compatibilidade de rota legado.
 - CorrelationId propagado em toda a cadeia de eventos.
-- Logs estruturados e rastreio distribuido com OpenTelemetry.
+- Logs estruturados e rastreio distribuído com OpenTelemetry.
 
-- Metricas operacionais (SLI/SLO) e evidencias: `docs/sli-slo.md`.
+- Métricas operacionais (SLI/SLO) e evidências: `docs/sli-slo.md`.
 ---
 
-## 4. Integracao entre componentes
+## 4. Integração entre componentes
 
-- Comunicacao assincrona via eventos (mensageria com envelopes e metadados).
-- Outbox Worker publica eventos de dominio de forma confiavel.
-- Saga Pattern coordena etapas com compensacoes em caso de falha.
+- Comunicação assíncrona via eventos (mensageria com envelopes e metadados).
+- Outbox Worker publica eventos de domínio de forma confiável.
+- Saga Pattern coordena etapas com compensações em caso de falha.
 - Versionamento de eventos protege contratos sem breaking changes.
-- Validacao de integracao robusta por teste: fan-out entre consumidores independentes e envio para DLQ apos retries.
+- Validação de integração robusta por teste: fan-out entre consumidores independentes e envio para DLQ após retries.
 
-A integracao real ocorre exclusivamente por mensageria. Chamadas sincronas ficam restritas ao Gateway -> Transaction API, preservando desacoplamento entre workers.
+A integração real ocorre exclusivamente por mensageria. Chamadas síncronas ficam restritas ao Gateway -> Transaction API, preservando desacoplamento entre workers.
 
 ---
 
-## 5. Stack tecnologica
+## 5. Stack tecnológica
 
 ```
 Backend        .NET 10 | ASP.NET Core Web API | C#
-Seguranca      Keycloak (OIDC / OAuth2)
-Mensageria     RabbitMQ (local) + abstracoes multicloud
+Segurança      Keycloak (OIDC / OAuth2)
+Mensageria     RabbitMQ (local) + abstrações multicloud
 Containers     Docker | Docker Compose
 Testes         xUnit | Testcontainers | Pact | k6
 CI/CD          GitHub Actions
@@ -261,7 +262,7 @@ flowchart TB
   end
 ```
 
-### 6.2 Diagrama de isolamento de falhas (servico independente)
+### 6.2 Diagrama de isolamento de falhas (serviço independente)
 
 ```mermaid
 flowchart LR
@@ -272,11 +273,15 @@ flowchart LR
   MQ -. atraso localizado .-> BAL["Balance Worker (down)"]
 ```
 
-### 6.3 Referencias complementares
+### 6.3 Referências complementares
 
 - Arquitetura detalhada: `docs/architecture.md`
 - Runbook de carga (k6): `Back.End/Tests/Performance/README.md`
-- Configuracao de ambiente/compose: `docs/docker-compose-config.md`
+- Configuração de ambiente/compose: `docs/docker-compose-config.md`
+- Estratégia de versionamento de API: `docs/api-versioning.md`
+- Runbook HA/failover local: `docs/ha-failover-runbook.md`
+- Runbook TLS end-to-end: `docs/tls-end-to-end.md`
+- Manifests Kubernetes: `k8s/README.md`
 
 ---
 
@@ -295,11 +300,11 @@ sequenceDiagram
   participant RW as Report Worker
   participant AW as Audit Worker
 
-  C->>G: POST /api/transactions
+  C->>G: POST /api/v1/transactions
   G->>T: Forward request (+ Bearer token)
   T->>W: BEGIN - Save Transaction
   T->>O: BEGIN - Save OutboxEvent
-  Note over W,O: Commit atomico - tudo ou nada
+  Note over W,O: Commit atômico - tudo ou nada
   OW->>O: Poll (WHERE ProcessedAt IS NULL)
   OW->>MB: Publish TransactionCreated
   OW->>O: UPDATE ProcessedAt = NOW()
@@ -312,21 +317,20 @@ sequenceDiagram
 
 ## 8. Versionamento de eventos
 
-Eventos sao **contratos imutaveis**. Novas versoes sao adicionadas em paralelo sem quebrar consumidores existentes.
+Eventos são **contratos imutáveis**. Novas versões são adicionadas em paralelo sem quebrar consumidores existentes.
 
 ```
-Cashflow.Shared.Events/
-  Transactions/
-    v1/TransactionCreatedEvent.cs
-    v2/TransactionCreatedEvent.cs
+Back.End/Service/Transaction/Domain/
+  TransactionCreatedEventV1.cs
 ```
 
-Regras de evolucao:
+Regras de Evolução:
 
-- Nunca remover campos em versoes existentes
-- Novos campos obrigatorios exigem nova versao
+- Nunca remover campos em versões existentes
+- Novos campos obrigatórios exigem nova versão
 - Consumidores podem optar por escutar v1, v2 ou ambas
-- O `EventType` publicado inclui a versao
+- O `EventType` publicado inclui a versão
+- Versionamento de HTTP publicado em: `docs/api-versioning.md`
 
 ---
 
@@ -334,18 +338,21 @@ Regras de evolucao:
 
 Tipos e objetivos:
 
-- Unitarios: regras de dominio e validacoes puras
-- Integracao: bancos, mensageria e gateway de autenticacao
+- Unitários: regras de domínio e validações puras
+- Integração: bancos, mensageria e gateway de autenticação
 - E2E: pipeline completo de eventos e read models
-- Contract: compatibilidade entre Gateway e Transaction API
+- Contract: compatibilidade entre Gateway e APIs de escrita/consulta
 
-Novidade: testes de integracao do Gateway com Keycloak garantem autenticacao real por OIDC.
+Novidade: testes de integração do Gateway com Keycloak garantem Autenticação real por OIDC.
 
 Como rodar testes (exemplos):
 
 ```bash
-# Gateway + Keycloak
- dotnet test Back.End/Tests/IntegrationTests/Gateway/Gateway.Integration.Tests.csproj
+# Fluxo holístico (gateway + keycloak + downstreams)
+ dotnet test Back.End/Tests/IntegrationTests/Holistic/Holistic.Integration.Tests.csproj
+
+# Integração dedicada da Balance Query API
+ dotnet test Back.End/Tests/IntegrationTests/Balance/Balance.Integration.Tests.csproj
 
 # E2E completo
  dotnet test Back.End/Tests/E2E
@@ -361,26 +368,28 @@ docker compose up -d
 docker compose --profile perf run --rm k6
 ```
 
-Evidencia gerada:
+Evidência gerada:
 
 - `Back.End/Tests/Performance/results/transactions-throughput-summary.json`
 - `Back.End/Tests/Performance/results/daily-balance-throughput-summary.json`
 - Wrapper para Test Explorer (Visual Studio): `Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj`
-- Cenario NFR aprofundado: indisponibilidade do `balance-worker` sob carga com disponibilidade do write path.
-- Cenario NFR diario: disponibilidade do consolidado diario (`GET /api/balance/daily/{accountId}?date=yyyy-MM-dd`) sob carga.
-- Integracao de mensageria aprofundada: `Back.End/Tests/IntegrationTests/Messaging/RabbitMqDecouplingIntegrationTests.cs`
-- Seguranca de borda validada em integracao (401/403/201): `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
-- Recuperacao de pipeline apos reinicio do Outbox Worker: `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
-- Health endpoints validados em integracao: `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
-- Gates de qualidade (Acao 7): `docs/tests-quality-gates.md`
-- Matriz holistica 1-8 (Acao 8): `docs/holistic-execution-matrix.md`
-- Runner unico de validacao holistica: `Back.End/Tests/run-holistic-validation.ps1`
-- SonarQube local + script de analise: `scripts/sonarqube-local.ps1`
+- cenário NFR aprofundado: indisponibilidade do `balance-worker` sob carga com disponibilidade do write path.
+- cenário NFR diário: disponibilidade do consolidado diário (`GET /api/v1/balance/daily/{accountId}?date=yyyy-MM-dd`) sob carga.
+- Contract tests de consulta: `Back.End/Tests/ContractTests/Balance/GatewayBalanceQueryContractTests.cs`
+- Integração dedicada de consulta: `Back.End/Tests/IntegrationTests/Balance/BalanceApiIntegrationTests.cs`
+- Integração de mensageria aprofundada: `Back.End/Tests/IntegrationTests/Messaging/RabbitMqDecouplingIntegrationTests.cs`
+- Segurança de borda validada em Integração (401/403/201): `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
+- Recuperação de pipeline após reinício do Outbox Worker: `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
+- Health endpoints validados em Integração: `Back.End/Tests/IntegrationTests/Holistic/HolisticIntegrationTests.cs`
+- Gates de qualidade (ação 7): `docs/tests-quality-gates.md`
+- Matriz holística 1-8 (ação 8): `docs/holistic-execution-matrix.md`
+- Runner único de validação holística: `Back.End/Tests/run-holistic-validation.ps1`
+- SonarQube local + script de análise: `scripts/sonarqube-local.ps1`
 - Guia de qualidade com SonarQube: `docs/sonarqube-code-smells.md`
 
 ---
 
-## 10. Execucao local
+## 10. Execução local
 
 Subir infraestrutura:
 
@@ -388,7 +397,7 @@ Subir infraestrutura:
 docker compose up -d
 ```
 
-Servicos principais:
+serviços principais:
 
 - Gateway: `http://localhost:5000`
 - Transaction API: `http://localhost:5001`
@@ -396,7 +405,7 @@ Servicos principais:
 - Keycloak: `http://localhost:8081`
 - Jaeger (traces): `http://localhost:16686`
 
-Documentacao de API (OpenAPI/Swagger):
+Documentação de API (OpenAPI/Swagger):
 
 - Transaction API (UI): `http://localhost:5001/swagger`
 - Transaction API (JSON): `http://localhost:5001/swagger/v1/swagger.json`
@@ -409,13 +418,18 @@ Health checks:
 - Transaction API: `http://localhost:5001/health/live` e `http://localhost:5001/health/ready`
 - Balance Query API: `http://localhost:5002/health/live` e `http://localhost:5002/health/ready`
 
-Observabilidade distribuida (OpenTelemetry + Jaeger):
+Rotas canônicas versionadas:
 
-- Cada servico publica traces e metrics via OTLP para `http://jaeger:4317` no Docker Compose.
-- Para visualizar traces: acesse `http://localhost:16686`, selecione o servico (ex.: `cashflow-gateway`, `cashflow-transaction-api`, `cashflow-balance-query-api`) e clique em **Find Traces**.
-- O `CorrelationId` e propagado no header `X-Correlation-Id` do Gateway ate os servicos e eventos.
+- Write: `POST http://localhost:5000/api/v1/transactions`
+- Read (daily): `GET http://localhost:5000/api/v1/balance/daily/{accountId}?date=yyyy-MM-dd`
 
-Execucao de carga com perfil dedicado:
+Observabilidade distribuída (OpenTelemetry + Jaeger):
+
+- Cada serviço publica traces e metrics via OTLP para `http://jaeger:4317` no Docker Compose.
+- Para visualizar traces: acesse `http://localhost:16686`, selecione o serviço (ex.: `cashflow-gateway`, `cashflow-transaction-api`, `cashflow-balance-query-api`) e clique em **Find Traces**.
+- O `CorrelationId` é propagado no header `X-Correlation-Id` do Gateway até os serviços e eventos.
+
+Execução de carga com perfil dedicado:
 
 - `docker compose --profile perf run --rm k6`
 
@@ -433,8 +447,10 @@ Cashflow.slnx
     Worker (Balance, Report, Audit)
     Shared (Events, Messaging, Logging, Resilience, Contracts)
     Tests
+      ContractTests/Balance
       ContractTests/Gateway
-      IntegrationTests/Gateway
+      IntegrationTests/Balance
+      IntegrationTests/Holistic
       IntegrationTests/Messaging
       IntegrationTests/Transaction
       IntegrationTests/Worker
@@ -451,9 +467,10 @@ Cashflow.slnx
 Pipeline atual:
 
 - Restore e build
-- Testes unitarios, integracao e contract
+- Testes unitários, Integração e contract
+- Testes dedicados de integração/contrato para Balance Query API
 - Build de imagens Docker (incluindo `balance-query-api`)
-- Workflow de qualidade estatica SonarQube: `.github/workflows/sonarqube-analysis.yml`
+- Workflow de qualidade estática SonarQube: `.github/workflows/sonarqube-analysis.yml`
 
 ---
 
@@ -465,7 +482,7 @@ Subir SonarQube local:
 docker compose -f docker-compose.sonarqube.yml up -d
 ```
 
-Executar analise:
+Executar análise:
 
 ```powershell
 $env:SONAR_TOKEN = "SEU_TOKEN"
@@ -480,10 +497,10 @@ Detalhes completos:
 
 ## 14. Roadmap
 
-- Expandir consultas otimizadas para read models de relatorio e auditoria
-- Front-end minimo para exibicao
-- Migracao do `docker compose` para Kubernetes
+- Expandir consultas otimizadas para read models de relatório e auditoria
+- Front-end mínimo para exibição
+- Evoluir baseline Kubernetes com HPA/PDB/NetworkPolicy
 
 ---
 
-Licenca: Projeto de autoria de Antonio Leonardo.
+licença: Projeto de autoria de Antonio Leonardo.

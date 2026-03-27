@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  gateway:
+    environment:
+      ASPNETCORE_URLS: "http://+:8080;https://+:8443"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/gateway.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${TLS_CERT_PASSWORD:-changeit}
+      ReverseProxy__Clusters__transaction-cluster__Destinations__transaction-api__Address: https://transaction-api:8443/
+      ReverseProxy__Clusters__balance-query-cluster__Destinations__balance-query-api__Address: https://balance-query-api:8443/
+      ReverseProxy__Clusters__transaction-cluster__HttpClient__DangerousAcceptAnyServerCertificate: "true"
+      ReverseProxy__Clusters__balance-query-cluster__HttpClient__DangerousAcceptAnyServerCertificate: "true"
+    ports:
+      - "5443:8443"
+    volumes:
+      - ./.appdata/certs/gateway:/https:ro
+
+  transaction-api:
+    environment:
+      ASPNETCORE_URLS: "http://+:8080;https://+:8443"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/transaction-api.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${TLS_CERT_PASSWORD:-changeit}
+    ports:
+      - "5441:8443"
+    volumes:
+      - ./.appdata/certs/transaction-api:/https:ro
+
+  balance-query-api:
+    environment:
+      ASPNETCORE_URLS: "http://+:8080;https://+:8443"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/balance-query-api.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${TLS_CERT_PASSWORD:-changeit}
+    ports:
+      - "5442:8443"
+    volumes:
+      - ./.appdata/certs/balance-query-api:/https:ro

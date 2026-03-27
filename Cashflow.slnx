@@ -83,6 +83,9 @@
     <Project Path="Back.End/Tests/ConcurrencyTests/Transaction/Transaction.Concurrency.Tests.csproj" />
   </Folder>
   <Folder Name="/_Tests/ContractTests/" />
+  <Folder Name="/_Tests/ContractTests/Balance/">
+    <Project Path="Back.End/Tests/ContractTests/Balance/Balance.Query.ContractTests.csproj" />
+  </Folder>
   <Folder Name="/_Tests/ContractTests/Gateway/">
     <Project Path="Back.End/Tests/ContractTests/Gateway/Gateway.Transaction.ContractTests.csproj" />
   </Folder>
@@ -104,6 +107,9 @@
     <Project Path="Back.End/Tests/E2E/Report/E2E.Report.Test.csproj" />
   </Folder>
   <Folder Name="/_Tests/IntegrationTests/" />
+  <Folder Name="/_Tests/IntegrationTests/Balance/">
+    <Project Path="Back.End/Tests/IntegrationTests/Balance/Balance.Integration.Tests.csproj" />
+  </Folder>
   <Folder Name="/_Tests/IntegrationTests/Holistic/">
     <Project Path="Back.End/Tests/IntegrationTests/Holistic/Holistic.Integration.Tests.csproj" />
   </Folder>

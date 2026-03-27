@@ -68,10 +68,12 @@ jobs:
         }
 
         projects=(
+          "Back.End/Tests/ContractTests/Balance/Balance.Query.ContractTests.csproj"
           "Back.End/Tests/DomainTests/Balance/Balance.Domain.Tests.csproj"
           "Back.End/Tests/DomainTests/Transaction/Transaction.Domain.Tests.csproj"
           "Back.End/Tests/ConcurrencyTests/Transaction/Transaction.Concurrency.Tests.csproj"
           "Back.End/Tests/ContractTests/Gateway/Gateway.Transaction.ContractTests.csproj"
+          "Back.End/Tests/IntegrationTests/Balance/Balance.Integration.Tests.csproj"
           "Back.End/Tests/IntegrationTests/Transaction/Transaction.Integration.Tests.csproj"
           "Back.End/Tests/IntegrationTests/Worker/Worker.Integration.Tests.csproj"
           "Back.End/Tests/IntegrationTests/Messaging/Messaging.Integration.Tests.csproj"
