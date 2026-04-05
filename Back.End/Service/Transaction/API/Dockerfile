@@ -1,13 +1,10 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY Back.End/Service/Transaction/API/Cashflow.Service.Transaction.API.csproj Back.End/Service/Transaction/API/
-
-RUN dotnet restore Back.End/Service/Transaction/API/Cashflow.Service.Transaction.API.csproj
-
 COPY . .
 
-RUN dotnet publish Back.End/Service/Transaction/API/Cashflow.Service.Transaction.API.csproj -c Release -o /app/publish
+RUN dotnet restore Service/Transaction/API/Cashflow.Service.Transaction.API.csproj
+RUN dotnet publish Service/Transaction/API/Cashflow.Service.Transaction.API.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app

@@ -6,13 +6,13 @@ namespace Infrastructure.Test
 {
     public class BalanceQueryApiContainerFixture : IAsyncLifetime
     {
+        private const string ImageNamePrefix = "cashflow-balance-query-api";
         private readonly BaseCompleteInfrastructureFixture _infra;
         private readonly string _keycloakAuthority;
+        private readonly string _imageName = $"{ImageNamePrefix}:test-{Guid.NewGuid():N}";
         private IContainer? _container;
 
         public Uri BaseAddress { get; private set; } = default!;
-
-        private const string IMAGE_NAME = "cashflow-balance-query-api:latest";
 
         public BalanceQueryApiContainerFixture(BaseCompleteInfrastructureFixture infra, string? keycloakAuthority = null)
         {
@@ -28,10 +28,9 @@ namespace Infrastructure.Test
         public async Task InitializeAsync()
         {
             var image = new ImageFromDockerfileBuilder()
-                .WithDockerfileDirectory(CommonDirectoryPath.GetSolutionDirectory(), string.Empty)
-                .WithDockerfile("Back.End/Service/Balance/API/Dockerfile")
-                .WithName(IMAGE_NAME)
-                .WithDeleteIfExists(true)
+                .WithDockerfileDirectory(CommonDirectoryPath.GetSolutionDirectory(), "Back.End")
+                .WithDockerfile("Service/Balance/API/Dockerfile")
+                .WithName(_imageName)
                 .Build();
 
             await image.CreateAsync();

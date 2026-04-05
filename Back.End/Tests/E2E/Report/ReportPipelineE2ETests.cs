@@ -17,7 +17,7 @@ namespace E2E.Report.Test
             _factory = new TransactionWebApplicationFactory(_infra);
         }
 
-        [Fact]
+    [Fact]
         public async Task Transaction_Should_Update_Report()
         {
             await _infra.ReportWorkerFixture.StartAsync();

@@ -97,43 +97,43 @@ jobs:
         docker build \
           -t gateway \
           -f ./Back.End/Gateway/Dockerfile \
-          .
+          ./Back.End
           
         echo "Building API..."
         docker build \
           -t transaction-api \
           -f ./Back.End/Service/Transaction/API/Dockerfile \
-          .
+          ./Back.End
 
         echo "Building Balance Query API..."
         docker build \
           -t balance-query-api \
           -f ./Back.End/Service/Balance/API/Dockerfile \
-          .
+          ./Back.End
           
         echo "Building Worker Audit..."
         docker build \
           -t audit-worker \
           -f ./Back.End/Worker/Audit/Dockerfile \
-          .
+          ./Back.End
 
         echo "Building Worker Balance..."
         docker build \
           -t balance-worker \
           -f ./Back.End/Worker/Balance/Dockerfile \
-          .
+          ./Back.End
           
         echo "Building Worker Report..."
         docker build \
           -t report-worker \
           -f ./Back.End/Worker/Report/Dockerfile \
-          .
+          ./Back.End
 
         echo "Building Worker Outbox..."
         docker build \
           -t worker-outbox \
           -f ./Back.End/Outbox/Worker/Dockerfile \
-          .
+          ./Back.End
 
     - name: Collect Docker/Testcontainers Diagnostics (on failure)
       if: ${{ failure() }}

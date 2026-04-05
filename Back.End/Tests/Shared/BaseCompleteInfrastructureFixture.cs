@@ -6,9 +6,7 @@ namespace Infrastructure.Test
     public class BaseCompleteInfrastructureFixture : IAsyncLifetime
     {
         protected virtual bool InitializeOutboxWorkerWithBase => true;
-        public INetwork Network { get; } = new NetworkBuilder()
-            .WithName($"cashflow-test-{Guid.NewGuid()}")
-            .Build();
+        public INetwork Network { get; }
 
         public const string PostgresAlias = "postgres";
         public const string MongoAlias = "mongo";
@@ -23,6 +21,12 @@ namespace Infrastructure.Test
 
         public BaseCompleteInfrastructureFixture()
         {
+            DockerTestEnvironment.EnsureDockerIsReady();
+
+            Network = new NetworkBuilder()
+                .WithName($"cashflow-test-{Guid.NewGuid()}")
+                .Build();
+
             PostgresContainerFixture = new(Network, PostgresAlias);
             MongoDbContainerFixture = new(Network, MongoAlias);
             RabbitMqContainerFixture = new(Network, RabbitMqAlias);
@@ -32,6 +36,8 @@ namespace Infrastructure.Test
 
         public virtual async Task InitializeAsync()
         {
+            await DockerTestEnvironment.EnsureDockerIsReadyAsync();
+
             await Network.CreateAsync();
             await Task.WhenAll(
                 PostgresContainerFixture.InitializeAsync(),

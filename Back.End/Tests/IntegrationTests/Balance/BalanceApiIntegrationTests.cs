@@ -35,7 +35,7 @@ namespace Balance.Integration.Tests
             return Task.CompletedTask;
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Return_NotFound_For_Unmaterialized_Daily_Balance()
         {
             var accountId = Guid.NewGuid();
@@ -46,7 +46,7 @@ namespace Balance.Integration.Tests
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Return_Daily_Balance_From_V1_Route_When_Data_Exists()
         {
             var accountId = Guid.NewGuid();
@@ -68,7 +68,7 @@ namespace Balance.Integration.Tests
             Assert.Equal(380m, payload.NetBalance);
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Keep_Legacy_And_V1_Balance_Routes_Compatible()
         {
             var accountId = Guid.NewGuid();

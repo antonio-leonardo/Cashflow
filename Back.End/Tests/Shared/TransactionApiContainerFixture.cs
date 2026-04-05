@@ -6,12 +6,12 @@ namespace Infrastructure.Test
 {
     public class TransactionApiContainerFixture : IAsyncLifetime
     {
+        private const string ImageNamePrefix = "cashflow-transaction-api";
         private readonly HolisticCompleteInfrastructureFixture _infra;
+        private readonly string _imageName = $"{ImageNamePrefix}:test-{Guid.NewGuid():N}";
         private IContainer? _container;
 
         public Uri BaseAddress { get; private set; } = default!;
-
-        private const string IMAGE_NAME = "cashflow-transaction-api:latest";
 
         public TransactionApiContainerFixture(HolisticCompleteInfrastructureFixture infra)
         {
@@ -21,10 +21,9 @@ namespace Infrastructure.Test
         public async Task InitializeAsync()
         {
             var image = new ImageFromDockerfileBuilder()
-                .WithDockerfileDirectory(CommonDirectoryPath.GetSolutionDirectory(), string.Empty)
-                .WithDockerfile("Back.End/Service/Transaction/API/Dockerfile")
-                .WithName(IMAGE_NAME)
-                .WithDeleteIfExists(true)
+                .WithDockerfileDirectory(CommonDirectoryPath.GetSolutionDirectory(), "Back.End")
+                .WithDockerfile("Service/Transaction/API/Dockerfile")
+                .WithName(_imageName)
                 .Build();
 
             await image.CreateAsync();

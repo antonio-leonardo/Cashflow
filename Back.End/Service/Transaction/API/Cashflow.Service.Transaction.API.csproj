@@ -14,11 +14,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.6" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Shared\Observability\Providers\OpenTelemetry\Web\DependencyInjection\Cashflow.Shared.Observability.OpenTelemetry.Web.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Observability\Providers\OpenTelemetry\Web\Cashflow.Shared.Observability.OpenTelemetry.Web.DependencyInjection.csproj" />
     <ProjectReference Include="..\Application\Cashflow.Service.Transaction.Application.csproj" />
     <ProjectReference Include="..\Infrastructure\Cashflow.Service.Transaction.Infrastructure.csproj" />
     <ProjectReference Include="..\Providers\Postgres\DependencyInjection\Cashflow.Service.Transaction.Postgres.DependencyInjection.csproj" />

@@ -17,7 +17,7 @@ namespace Messaging.Integration.Tests
             _rabbitMqFixture = rabbitMqFixture;
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_FanOut_Event_To_Independent_Consumers()
         {
             var consumerA = CreateBus(consumerName: $"consumer-a-{Guid.NewGuid():N}", retryCount: 1, retryDelaySeconds: 1);
@@ -70,7 +70,7 @@ namespace Messaging.Integration.Tests
             Xunit.Assert.Equal(eventToPublish.AccountId, messageB.Event.AccountId);
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Move_Message_To_Dlq_When_Handler_Always_Fails()
         {
             var consumerName = $"dlq-test-{Guid.NewGuid():N}";

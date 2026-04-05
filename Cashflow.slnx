@@ -61,8 +61,17 @@
   <Folder Name="/Shared/NoSql/Providers/Redis/">
     <Project Path="Back.End/Shared/NoSql/Providers/Redis/Cashflow.Shared.NoSql.Redis.csproj" />
   </Folder>
-  <Folder Name="/Shared/Observability/">
-    <Project Path="Back.End/Shared/Observability/Cashflow.Shared.Observability.csproj" />
+  <Folder Name="/Shared/Observability/" />
+  <Folder Name="/Shared/Observability/Constants/">
+    <Project Path="Back.End/Shared/Observability/Constants/Cashflow.Shared.Observability.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Observability/Providers/" />
+  <Folder Name="/Shared/Observability/Providers/OpenTelemetry/" />
+  <Folder Name="/Shared/Observability/Providers/OpenTelemetry/Web/">
+    <Project Path="Back.End/Shared/Observability/Providers/OpenTelemetry/Web/Cashflow.Shared.Observability.OpenTelemetry.Web.DependencyInjection.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Observability/Providers/OpenTelemetry/Worker/">
+    <Project Path="Back.End/Shared/Observability/Providers/OpenTelemetry/Worker/Cashflow.Shared.Observability.OpenTelemetry.Worker.DependencyInjection.csproj" />
   </Folder>
   <Folder Name="/Shared/Resilience/">
     <Project Path="Back.End/Shared/Resilience/Cashflow.Shared.Resilience.csproj" />

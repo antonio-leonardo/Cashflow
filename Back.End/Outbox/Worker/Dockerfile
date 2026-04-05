@@ -1,13 +1,10 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj Back.End/Outbox/Worker/
-
-RUN dotnet restore Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj
-
 COPY . .
 
-RUN dotnet publish Back.End/Outbox/Worker/Cashflow.Outbox.Worker.csproj -c Release -o /app/publish
+RUN dotnet restore Outbox/Worker/Cashflow.Outbox.Worker.csproj
+RUN dotnet publish Outbox/Worker/Cashflow.Outbox.Worker.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/runtime:10.0
 WORKDIR /app
