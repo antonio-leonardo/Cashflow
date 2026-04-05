@@ -20,7 +20,7 @@
           }
         },
         "method": "GET",
-        "path": "/api/v1/balance/daily/49c68307-44ca-49d8-9466-906ccca99a53",
+        "path": "/api/v1/balance/daily/c8b8fb0f-e3f3-4dba-96d5-ce203ceb62e6",
         "query": {
           "date": [
             "2026-03-26"
@@ -29,7 +29,7 @@
       },
       "response": {
         "body": {
-          "accountId": "49c68307-44ca-49d8-9466-906ccca99a53",
+          "accountId": "c8b8fb0f-e3f3-4dba-96d5-ce203ceb62e6",
           "date": "2026-03-26",
           "netBalance": 1000.4,
           "totalCredits": 1200.5,
