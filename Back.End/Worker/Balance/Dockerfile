@@ -1,13 +1,10 @@
 ﻿FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY Back.End/Worker/Balance/Cashflow.Worker.Balance.csproj Back.End/Worker/Balance/
-
-RUN dotnet restore Back.End/Worker/Balance/Cashflow.Worker.Balance.csproj
-
 COPY . .
 
-RUN dotnet publish Back.End/Worker/Balance/Cashflow.Worker.Balance.csproj -c Release -o /app/publish
+RUN dotnet restore Worker/Balance/Cashflow.Worker.Balance.csproj
+RUN dotnet publish Worker/Balance/Cashflow.Worker.Balance.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/runtime:10.0
 WORKDIR /app

@@ -20,6 +20,6 @@
     <ProjectReference Include="..\..\Shared\Messaging\Abstractions\Cashflow.Shared.Messaging.Abstractions.csproj" />
     <ProjectReference Include="..\..\Shared\Messaging\Providers\RabbitMQ\DependencyInjection\Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection.csproj" />
     <ProjectReference Include="..\..\Shared\NoSql\Providers\MongoDB\Cashflow.Shared.NoSql.MongoDB.csproj" />
-    <ProjectReference Include="..\..\Shared\Observability\Providers\OpenTelemetry\Worker\DependencyInjection\Cashflow.Shared.Observability.OpenTelemetry.Worker.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\Shared\Observability\Providers\OpenTelemetry\Worker\Cashflow.Shared.Observability.OpenTelemetry.Worker.DependencyInjection.csproj" />
   </ItemGroup>
 </Project>

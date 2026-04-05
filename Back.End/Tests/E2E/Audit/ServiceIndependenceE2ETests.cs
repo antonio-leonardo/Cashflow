@@ -18,7 +18,7 @@ namespace E2E.Audit.Test
             _factory = new TransactionWebApplicationFactory(_infra, enableAuditWorker: false);
         }
 
-        [Fact]
+    [Fact]
         public async Task Transaction_Service_Should_Stay_Available_When_Audit_Worker_Is_Down()
         {
             await _infra.AuditWorkerFixture.StopAsync();
@@ -57,7 +57,7 @@ namespace E2E.Audit.Test
             }
         }
 
-        [Fact]
+    [Fact]
         public async Task Audit_Should_Catch_Up_After_Worker_Recovers()
         {
             await _infra.AuditWorkerFixture.StopAsync();

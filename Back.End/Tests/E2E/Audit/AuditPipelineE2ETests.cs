@@ -17,7 +17,7 @@ namespace E2E.Audit.Test
             _factory = new TransactionWebApplicationFactory(_infra, enableAuditWorker: true);
         }
 
-        [Fact]
+    [Fact]
         public async Task Transaction_Should_Create_Audit_Log()
         {
             await _infra.AuditWorkerFixture.StartAsync();

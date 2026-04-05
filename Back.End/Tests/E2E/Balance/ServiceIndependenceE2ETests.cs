@@ -17,7 +17,7 @@ namespace E2E.Balance.Tests
             _factory = new TransactionWebApplicationFactory(_infra, enableBalanceWorker: false);
         }
 
-        [Fact]
+    [Fact]
         public async Task Transaction_Service_Should_Stay_Available_When_Balance_Worker_Is_Down()
         {
             await _infra.WorkerBalanceFixture.StopAsync();
@@ -56,7 +56,7 @@ namespace E2E.Balance.Tests
             }
         }
 
-        [Fact]
+    [Fact]
         public async Task Balance_Should_Catch_Up_After_Worker_Recovers()
         {
             await _infra.WorkerBalanceFixture.StopAsync();

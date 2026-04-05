@@ -18,7 +18,7 @@ namespace E2E.Report.Test
             _factory = new TransactionWebApplicationFactory(_infra, enableReportWorker: false);
         }
 
-        [Fact]
+    [Fact]
         public async Task Transaction_Service_Should_Stay_Available_When_Report_Worker_Is_Down()
         {
             await _infra.ReportWorkerFixture.StopAsync();
@@ -57,7 +57,7 @@ namespace E2E.Report.Test
             }
         }
 
-        [Fact]
+    [Fact]
         public async Task Report_Should_Catch_Up_After_Worker_Recovers()
         {
             await _infra.ReportWorkerFixture.StopAsync();

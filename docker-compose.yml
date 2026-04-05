@@ -1,5 +1,3 @@
-version: "3.9"
-
 networks:
   cashflow-network:
     driver: bridge
@@ -98,8 +96,8 @@ services:
 
   gateway:
     build:
-      context: .
-      dockerfile: Back.End/Gateway/Dockerfile
+      context: ./Back.End
+      dockerfile: Gateway/Dockerfile
     depends_on:
       keycloak:
         condition: service_started
@@ -120,8 +118,8 @@ services:
 
   transaction-api:
     build:
-      context: .
-      dockerfile: Back.End/Service/Transaction/API/Dockerfile
+      context: ./Back.End
+      dockerfile: Service/Transaction/API/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -141,8 +139,8 @@ services:
 
   balance-query-api:
     build:
-      context: .
-      dockerfile: Back.End/Service/Balance/API/Dockerfile
+      context: ./Back.End
+      dockerfile: Service/Balance/API/Dockerfile
     depends_on:
       redis:
         condition: service_healthy
@@ -160,8 +158,8 @@ services:
 
   worker-outbox:
     build:
-      context: .
-      dockerfile: Back.End/Outbox/Worker/Dockerfile
+      context: ./Back.End
+      dockerfile: Outbox/Worker/Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -178,8 +176,8 @@ services:
 
   balance-worker:
     build:
-      context: .
-      dockerfile: Back.End/Worker/Balance/Dockerfile
+      context: ./Back.End
+      dockerfile: Worker/Balance/Dockerfile
     depends_on:
       redis:
         condition: service_healthy
@@ -196,8 +194,8 @@ services:
 
   report-worker:
     build:
-      context: .
-      dockerfile: Back.End/Worker/Report/Dockerfile
+      context: ./Back.End
+      dockerfile: Worker/Report/Dockerfile
     depends_on:
       mongo:
         condition: service_started
@@ -214,8 +212,8 @@ services:
 
   audit-worker:
     build:
-      context: .
-      dockerfile: Back.End/Worker/Audit/Dockerfile
+      context: ./Back.End
+      dockerfile: Worker/Audit/Dockerfile
     depends_on:
       mongo:
         condition: service_started

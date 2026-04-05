@@ -49,7 +49,7 @@ namespace Holistic.Integration.Tests
             await _factory.DisposeAsync();
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Block_Anonymous_Requests()
         {
             var response = await _client.PostAsJsonAsync(
@@ -65,7 +65,7 @@ namespace Holistic.Integration.Tests
             Xunit.Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Return_Unauthorized_When_Token_Is_Invalid()
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/transactions")
@@ -86,7 +86,7 @@ namespace Holistic.Integration.Tests
             Xunit.Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Block_Anonymous_Daily_Balance_Requests()
         {
             var accountId = Guid.NewGuid();
@@ -98,7 +98,7 @@ namespace Holistic.Integration.Tests
             Xunit.Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Return_Forbidden_When_Token_Misses_TransactionsWrite_Scope()
         {
             var readOnlyToken = await _fixture.KeycloakFixture.GetReadOnlyAccessTokenClientIdSecretAsync();
@@ -121,7 +121,7 @@ namespace Holistic.Integration.Tests
             Xunit.Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Expose_Live_And_Ready_Health_Endpoints()
         {
             var gatewayLive = await _client.GetAsync("/health/live");
@@ -155,7 +155,7 @@ namespace Holistic.Integration.Tests
             Xunit.Assert.Equal(HttpStatusCode.OK, balanceApiReady.StatusCode);
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Recover_Event_Pipeline_After_Outbox_Worker_Restart()
         {
             var token = await _fixture.KeycloakFixture.GetAccessTokenClientIdSecretAsync();
@@ -200,7 +200,7 @@ namespace Holistic.Integration.Tests
             }
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Allow_Authenticated_Requests()
         {
             var token = await _fixture.KeycloakFixture.GetAccessTokenClientIdSecretAsync();
@@ -334,7 +334,7 @@ namespace Holistic.Integration.Tests
             //----------------------END: BALANCE----------------------//
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Consume_Daily_Balance_Via_Gateway_After_Authentication()
         {
             var token = await _fixture.KeycloakFixture.GetAccessTokenClientIdSecretAsync();

@@ -31,7 +31,7 @@ namespace K6.Performance.Tests
             _output = output;
         }
 
-        [Fact]
+    [Fact]
         [Trait("Category", "Performance")]
         [Trait("Suite", "K6")]
         public async Task TransactionApi_Should_Handle_50Rps_With_Max_5Percent_Loss()
@@ -57,7 +57,7 @@ namespace K6.Performance.Tests
             }
         }
 
-        [Fact]
+    [Fact]
         [Trait("Category", "Performance")]
         [Trait("Suite", "NFRHotAccount")]
         public async Task TransactionApi_HotAccount_Should_Handle_50Rps_With_Max_5Percent_Loss()
@@ -141,7 +141,7 @@ namespace K6.Performance.Tests
             }
         }
 
-        [Fact]
+    [Fact]
         [Trait("Category", "Performance")]
         [Trait("Suite", "NfrAprofundado")]
         public async Task TransactionApi_Should_Stay_Available_Under_Load_When_BalanceWorker_Is_Down()
@@ -189,7 +189,7 @@ namespace K6.Performance.Tests
             }
         }
 
-        [Fact]
+    [Fact]
         [Trait("Category", "Performance")]
         [Trait("Suite", "NFRDailyConsolidatedBalance")]
         public async Task BalanceDailyApi_Should_Handle_50Rps_With_Max_5Percent_Loss()
@@ -615,6 +615,9 @@ namespace K6.Performance.Tests
                     CreateNoWindow = true
                 }
             };
+
+            process.StartInfo.Environment.Remove("DOCKER_HOST");
+            process.StartInfo.Environment.Remove("DOCKER_CONTEXT");
 
             var outputBuilder = new StringBuilder();
 

@@ -12,7 +12,7 @@ namespace Messaging.Integration.Tests
             _rabbitMqFixture = rabbitMqFixture;
         }
 
-        [Fact]
+    [Fact]
         public async Task Should_Publish_Message()
         {
             var factory = new ConnectionFactory

@@ -25,7 +25,7 @@ namespace E2E.Balance.Tests
             _factory = new TransactionWebApplicationFactory(_infra);
         }
 
-        [Fact]
+    [Fact]
         public async Task Transaction_Should_Update_ReadModels()
         {
             await _infra.WorkerBalanceFixture.StartAsync();
@@ -62,7 +62,7 @@ namespace E2E.Balance.Tests
             Xunit.Assert.NotEmpty(dailyHashEntries);
         }
 
-        [Fact]
+    [Fact]
         public async Task Duplicate_EventId_Redelivery_Should_Be_Applied_Only_Once()
         {
             await _infra.WorkerBalanceFixture.StartAsync();
