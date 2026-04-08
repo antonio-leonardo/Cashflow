@@ -1,5 +1,6 @@
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
-using Testcontainers.MongoDb;
 
 namespace Infrastructure.Test
 {
@@ -7,24 +8,26 @@ namespace Infrastructure.Test
     {
         private const string MongoImage = "mongo:7.0.31";
         private readonly string _alias;
-        public MongoDbContainer Mongo { get; }
+        private readonly IContainer _container;
 
         public MongoDbContainerFixture(INetwork network, string alias)
         {
             _alias = alias;
-            Mongo = new MongoDbBuilder(MongoImage)
+            _container = new ContainerBuilder(MongoImage)
+                .WithPortBinding(27017, true)
                 .WithNetwork(network)
                 .WithNetworkAliases(alias)
+                .WithCommand("--bind_ip_all")
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(27017))
+                .WithOutputConsumer(Consume.RedirectStdoutAndStderrToConsole())
                 .Build();
         }
 
-        public async Task InitializeAsync() => await Mongo.StartAsync();
-        public async Task DisposeAsync() => await Mongo.DisposeAsync();
+        public async Task InitializeAsync() => await _container.StartAsync();
+        public async Task DisposeAsync() => await _container.DisposeAsync();
 
-        public string ConnectionString => Mongo.GetConnectionString();
+        public string ConnectionString => $"mongodb://127.0.0.1:{_container.GetMappedPublicPort(27017)}";
 
-        public string NetworkConnectionString => Mongo.GetConnectionString()
-            .Replace("localhost", _alias)
-            .Replace($":{Mongo.GetMappedPublicPort(27017)}", ":27017");
+        public string NetworkConnectionString => $"mongodb://{_alias}:27017";
     }
 }

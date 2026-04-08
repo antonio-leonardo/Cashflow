@@ -1,5 +1,5 @@
 using Cashflow.Service.Transaction.Postgres.DependencyInjection;
-using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
+using Cashflow.Shared.Infrastructure.DependencyInjection;
 using Cashflow.Shared.Observability;
 
 namespace Cashflow.Outbox.Worker
@@ -12,7 +12,7 @@ namespace Cashflow.Outbox.Worker
             builder.Services.AddCashflowOpenTelemetryForWorker(builder.Configuration, "cashflow-outbox-worker");
             builder.Services.AddPostgresProviderDependencyInjection(builder.Configuration);
             builder.Services.AddDatabaseInfrastructureDependencyInjection(builder.Configuration);
-            builder.Services.AddRabbitMQDependencyInjection(builder.Configuration);
+            builder.Services.AddCashflowMessaging(builder.Configuration);
             builder.Services.AddHostedService<Worker>();
 
             var host = builder.Build();

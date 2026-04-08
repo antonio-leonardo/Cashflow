@@ -23,8 +23,8 @@ namespace Cashflow.Shared.Messaging.RabbitMQ.MessageBus
         private const string TraceParentHeader = "traceparent";
         private const string BaggageHeader = "baggage";
 
-        private static readonly ActivitySource MessagingActivitySource = new("Cashflow.Messaging.RabbitMQ");
-        private static readonly Meter MessagingMeter = new("Cashflow.Messaging.RabbitMQ");
+        private static readonly ActivitySource MessagingActivitySource = new("Cashflow.Messaging");
+        private static readonly Meter MessagingMeter = new("Cashflow.Messaging");
         private static readonly Counter<long> PublishedMessagesCounter =
             MessagingMeter.CreateCounter<long>("cashflow.messaging.rabbitmq.published");
         private static readonly Counter<long> ConsumedMessagesCounter =

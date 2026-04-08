@@ -1,4 +1,6 @@
-﻿using Cashflow.Shared.Logging;
+using Cashflow.Shared.Logging;
+using Cashflow.Shared.Observability;
+using System.Diagnostics;
 
 namespace Cashflow.Service.Transaction.Application.Commands
 {
@@ -18,16 +20,40 @@ namespace Cashflow.Service.Transaction.Application.Commands
 
         public async Task HandleAsync(CreateTransactionCommand command, CancellationToken cancellationToken = default)
         {
-            var transaction = Cashflow.Service.Transaction.Domain.Transaction.Create(
+            using var activity = CashflowBusinessTelemetry.StartCreateTransactionActivity(
                 command.TransactionId,
                 command.AccountId,
-                command.Amount,
                 command.Currency,
-                command.Type,
-                correlationId: command.CorrelationId);
+                command.Type.ToString());
 
-            await _repository.AddAsync(transaction, cancellationToken);
-            await _repository.SaveChangesAsync(cancellationToken);
+            activity?.SetTag("correlation.id", command.CorrelationId);
+            if (!string.IsNullOrWhiteSpace(command.UserId))
+            {
+                activity?.SetTag("enduser.id", command.UserId);
+            }
+
+            try
+            {
+                var transaction = Cashflow.Service.Transaction.Domain.Transaction.Create(
+                    command.TransactionId,
+                    command.AccountId,
+                    command.Amount,
+                    command.Currency,
+                    command.Type,
+                    correlationId: command.CorrelationId);
+
+                await _repository.AddAsync(transaction, cancellationToken);
+                await _repository.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                throw;
+            }
+
+            CashflowBusinessTelemetry.RecordTransactionCreated(
+                command.Currency,
+                command.Type.ToString());
 
             var logContext = new LogContext(
                 ServiceName: _serviceName,

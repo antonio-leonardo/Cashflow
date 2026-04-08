@@ -1,4 +1,5 @@
 using Cashflow.Service.Balance.API.Healthchecks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Moq;
 using StackExchange.Redis;
@@ -20,7 +21,14 @@ public class RedisReadinessHealthCheckTests
             .Setup(m => m.GetDatabase(It.IsAny<int>(), It.IsAny<object?>()))
             .Returns(_databaseMock.Object);
 
-        _sut = new RedisReadinessHealthCheck(_multiplexerMock.Object);
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Providers:Cache"] = "Redis"
+            })
+            .Build();
+
+        _sut = new RedisReadinessHealthCheck(_multiplexerMock.Object, configuration);
 
         _context = new HealthCheckContext
         {

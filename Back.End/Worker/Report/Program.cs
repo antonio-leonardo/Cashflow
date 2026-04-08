@@ -1,4 +1,4 @@
-using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
+using Cashflow.Shared.Infrastructure.DependencyInjection;
 using Cashflow.Shared.NoSql.MongoDB;
 using Cashflow.Shared.Observability;
 
@@ -11,7 +11,7 @@ namespace Cashflow.Worker.Report
             var builder = Host.CreateApplicationBuilder(args);
             builder.Services.AddCashflowOpenTelemetryForWorker(builder.Configuration, "cashflow-report-worker");
 
-            builder.Services.AddRabbitMQDependencyInjection(builder.Configuration);
+            builder.Services.AddCashflowMessaging(builder.Configuration);
 
             builder.Services.AddMongoDBProviderDependencyInjection(builder.Configuration, "cashflow-report");
             builder.Services.AddScoped<TransactionCreatedHandler>();

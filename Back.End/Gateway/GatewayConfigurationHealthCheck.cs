@@ -15,21 +15,32 @@ namespace Cashflow.Gateway
             HealthCheckContext context,
             CancellationToken cancellationToken = default)
         {
-            var authority = _configuration["Keycloak:Authority"];
-            var audience = _configuration["Keycloak:Audience"];
+            var identityProvider = _configuration["Providers:Identity"] ?? "Keycloak";
             var clusterAddress = _configuration["ReverseProxy:Clusters:transaction-cluster:Destinations:transaction-api:Address"];
             var balanceClusterAddress = _configuration["ReverseProxy:Clusters:balance-query-cluster:Destinations:balance-query-api:Address"];
 
-            if (string.IsNullOrWhiteSpace(authority) ||
-                string.IsNullOrWhiteSpace(audience) ||
+            if (!HasValidIdentityProviderConfiguration(identityProvider) ||
                 string.IsNullOrWhiteSpace(clusterAddress) ||
                 string.IsNullOrWhiteSpace(balanceClusterAddress))
             {
                 return Task.FromResult(HealthCheckResult.Unhealthy(
-                    "Gateway configuration is incomplete (Keycloak/ReverseProxy)."));
+                    $"Gateway configuration is incomplete ({identityProvider}/ReverseProxy)."));
             }
 
             return Task.FromResult(HealthCheckResult.Healthy("Gateway configuration loaded."));
+        }
+
+        private bool HasValidIdentityProviderConfiguration(string identityProvider)
+        {
+            if (string.Equals(identityProvider, "EntraId", StringComparison.OrdinalIgnoreCase))
+            {
+                return !string.IsNullOrWhiteSpace(_configuration["EntraId:TenantId"]) &&
+                    !string.IsNullOrWhiteSpace(_configuration["EntraId:ClientId"]) &&
+                    !string.IsNullOrWhiteSpace(_configuration["EntraId:Audience"]);
+            }
+
+            return !string.IsNullOrWhiteSpace(_configuration["Keycloak:Authority"]) &&
+                !string.IsNullOrWhiteSpace(_configuration["Keycloak:Audience"]);
         }
     }
 }

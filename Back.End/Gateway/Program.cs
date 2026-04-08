@@ -1,10 +1,9 @@
+using Cashflow.Shared.Infrastructure.DependencyInjection;
 using Cashflow.Shared.Observability;
 using Cashflow.Shared.Resilience;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
 using Yarp.ReverseProxy.Transforms;
 
@@ -44,22 +43,9 @@ namespace Cashflow.Gateway
 
             builder.Services.AddCashflowOpenTelemetryForWeb(builder.Configuration, "cashflow-gateway");
 
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.Authority = builder.Configuration["Keycloak:Authority"];
-                options.Audience = builder.Configuration["Keycloak:Audience"];
-                options.MapInboundClaims = false;
-                options.RequireHttpsMetadata = !isLocalEnvironment;
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.FromMinutes(1),
-                    RoleClaimType = "roles"
-                };
-            });
+            builder.Services.AddCashflowIdentity(
+                builder.Configuration,
+                requireHttpsMetadata: !isLocalEnvironment);
 
             builder.Services.AddAuthorization(options =>
             {

@@ -1,7 +1,9 @@
 using Infrastructure.Test;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Holistic.Integration.Tests
 {
@@ -23,34 +25,46 @@ namespace Holistic.Integration.Tests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            builder.ConfigureAppConfiguration((context, config) =>
-            {
-                var settings = new Dictionary<string, string?>
-                {
-                    ["Keycloak:Authority"] = _keycloak.Authority,
-                    ["Keycloak:Audience"] = "cashflow-api",
-                    ["ReverseProxy:Routes:transaction-write-route:ClusterId"] = "transaction-cluster",
-                    ["ReverseProxy:Routes:transaction-write-route:Match:Path"] = "/api/transactions/{**catch-all}",
-                    ["ReverseProxy:Routes:transaction-write-route:Match:Methods:0"] = "POST",
-                    ["ReverseProxy:Routes:transaction-write-route:Match:Methods:1"] = "PUT",
-                    ["ReverseProxy:Routes:transaction-write-route:Match:Methods:2"] = "PATCH",
-                    ["ReverseProxy:Routes:transaction-write-route:Match:Methods:3"] = "DELETE",
-                    ["ReverseProxy:Routes:transaction-write-route:AuthorizationPolicy"] = "TransactionsWrite",
-                    ["ReverseProxy:Routes:transaction-read-route:ClusterId"] = "transaction-cluster",
-                    ["ReverseProxy:Routes:transaction-read-route:Match:Path"] = "/api/transactions/{**catch-all}",
-                    ["ReverseProxy:Routes:transaction-read-route:Match:Methods:0"] = "GET",
-                    ["ReverseProxy:Routes:transaction-read-route:AuthorizationPolicy"] = "AuthenticatedUser",
-                    ["ReverseProxy:Routes:balance-daily-read-route:ClusterId"] = "balance-query-cluster",
-                    ["ReverseProxy:Routes:balance-daily-read-route:Match:Path"] = "/api/balance/{**catch-all}",
-                    ["ReverseProxy:Routes:balance-daily-read-route:Match:Methods:0"] = "GET",
-                    ["ReverseProxy:Routes:balance-daily-read-route:AuthorizationPolicy"] = "AuthenticatedUser",
-                    ["ReverseProxy:Clusters:transaction-cluster:Destinations:transaction-api:Address"] =
-                    _transactionDownstream.BaseAddress.ToString().TrimEnd('/'),
-                    ["ReverseProxy:Clusters:balance-query-cluster:Destinations:balance-query-api:Address"] =
-                    _balanceDownstream.BaseAddress.ToString().TrimEnd('/')
-                };
+            builder.UseEnvironment("Testing");
+            builder.UseSetting("Keycloak:Authority", _keycloak.Authority);
+            builder.UseSetting(
+                "ReverseProxy:Clusters:transaction-cluster:Destinations:transaction-api:Address",
+                _transactionDownstream.BaseAddress.ToString());
+            builder.UseSetting(
+                "ReverseProxy:Clusters:balance-query-cluster:Destinations:balance-query-api:Address",
+                _balanceDownstream.BaseAddress.ToString());
 
-                config.AddInMemoryCollection(settings);
+            builder.ConfigureTestServices(services =>
+            {
+                services.PostConfigure<JwtBearerOptions>(
+                    JwtBearerDefaults.AuthenticationScheme,
+                    options =>
+                    {
+                        options.Events = new JwtBearerEvents
+                        {
+                            OnAuthenticationFailed = context =>
+                            {
+                                context.Response.Headers["X-Auth-Failure"] =
+                                    $"{context.Exception.GetType().Name}: {context.Exception.Message}";
+
+                                return Task.CompletedTask;
+                            },
+                            OnChallenge = context =>
+                            {
+                                if (!string.IsNullOrWhiteSpace(context.Options.Authority))
+                                {
+                                    context.Response.Headers["X-Auth-Authority"] = context.Options.Authority;
+                                }
+
+                                if (!string.IsNullOrWhiteSpace(context.ErrorDescription))
+                                {
+                                    context.Response.Headers["X-Auth-Challenge"] = context.ErrorDescription;
+                                }
+
+                                return Task.CompletedTask;
+                            }
+                        };
+                    });
             });
         }
     }

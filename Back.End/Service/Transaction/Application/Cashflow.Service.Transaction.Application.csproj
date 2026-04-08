@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Shared\Logging\Cashflow.Shared.Logging.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Observability\Constants\Cashflow.Shared.Observability.csproj" />
     <ProjectReference Include="..\Domain\Cashflow.Service.Transaction.Domain.csproj" />
   </ItemGroup>
 

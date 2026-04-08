@@ -40,7 +40,7 @@ namespace Infrastructure.Test
         public string Authority => $"{BaseAddress}realms/{RealmName}";
 
         public Uri BaseAddress =>
-            new($"http://{_container.Hostname}:{_container.GetMappedPublicPort(8080)}");
+            new($"http://127.0.0.1:{_container.GetMappedPublicPort(8080)}");
 
         public async Task InitializeAsync()
         {

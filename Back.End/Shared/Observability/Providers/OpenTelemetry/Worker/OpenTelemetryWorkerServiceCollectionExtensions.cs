@@ -1,3 +1,4 @@
+using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Exporter;
@@ -10,12 +11,36 @@ namespace Cashflow.Shared.Observability
 {
     public static class OpenTelemetryWorkerServiceCollectionExtensions
     {
+        private static readonly string[] SupportedTelemetryProviders =
+        [
+            "Jaeger",
+            "Otlp",
+            "ApplicationInsights"
+        ];
+
         public static IServiceCollection AddCashflowOpenTelemetryForWorker(
             this IServiceCollection services,
             IConfiguration configuration,
             string serviceName)
         {
             var serviceVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0";
+            var telemetryProvider = configuration["Providers:Telemetry"] ?? "Jaeger";
+
+            if (!SupportedTelemetryProviders.Any(supported =>
+                    string.Equals(supported, telemetryProvider, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException(
+                    $"Unsupported telemetry provider '{telemetryProvider}'. Supported values: {string.Join(", ", SupportedTelemetryProviders)}.");
+            }
+
+            var applicationInsightsConnectionString = ResolveApplicationInsightsConnectionString(configuration);
+
+            if (string.Equals(telemetryProvider, "ApplicationInsights", StringComparison.OrdinalIgnoreCase) &&
+                string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
+            {
+                throw new InvalidOperationException(
+                    "Configuration 'ApplicationInsights:ConnectionString' or environment variable 'APPLICATIONINSIGHTS_CONNECTION_STRING' is required when 'Providers:Telemetry' is set to 'ApplicationInsights'.");
+            }
 
             var openTelemetry = services.AddOpenTelemetry()
                 .ConfigureResource(resource =>
@@ -31,33 +56,65 @@ namespace Cashflow.Shared.Observability
                         });
                 });
 
-            openTelemetry.WithTracing(tracing =>
+            if (string.Equals(telemetryProvider, "ApplicationInsights", StringComparison.OrdinalIgnoreCase))
             {
-                tracing
-                    .SetSampler(new AlwaysOnSampler())
-                    .AddSource(ObservabilityConstants.MessagingActivitySourceName)
-                    .AddHttpClientInstrumentation(options =>
+                openTelemetry.WithTracing(tracing =>
+                {
+                    tracing
+                        .SetSampler(new AlwaysOnSampler())
+                        .AddSource(ObservabilityConstants.BusinessActivitySourceName)
+                        .AddSource(ObservabilityConstants.MessagingActivitySourceName)
+                        .AddHttpClientInstrumentation(o => o.RecordException = true);
+
+                    if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
                     {
-                        options.RecordException = true;
-                    });
+                        tracing.AddAzureMonitorTraceExporter(o => o.ConnectionString = applicationInsightsConnectionString);
+                    }
+                });
 
-                AddTraceExporter(tracing, configuration);
-            });
+                openTelemetry.WithMetrics(metrics =>
+                {
+                    metrics
+                        .AddMeter(ObservabilityConstants.BusinessMeterName)
+                        .AddMeter(ObservabilityConstants.MessagingMeterName)
+                        .AddRuntimeInstrumentation()
+                        .AddHttpClientInstrumentation();
 
-            openTelemetry.WithMetrics(metrics =>
+                    if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
+                    {
+                        metrics.AddAzureMonitorMetricExporter(o => o.ConnectionString = applicationInsightsConnectionString);
+                    }
+                });
+            }
+            else
             {
-                metrics
-                    .AddMeter(ObservabilityConstants.MessagingMeterName)
-                    .AddRuntimeInstrumentation()
-                    .AddHttpClientInstrumentation();
+                openTelemetry.WithTracing(tracing =>
+                {
+                    tracing
+                        .SetSampler(new AlwaysOnSampler())
+                        .AddSource(ObservabilityConstants.BusinessActivitySourceName)
+                        .AddSource(ObservabilityConstants.MessagingActivitySourceName)
+                        .AddHttpClientInstrumentation(options => options.RecordException = true);
 
-                AddMetricsExporter(metrics, configuration);
-            });
+                    AddOtlpTraceExporter(tracing, configuration);
+                });
+
+                openTelemetry.WithMetrics(metrics =>
+                {
+                    metrics
+                        .AddMeter(ObservabilityConstants.BusinessMeterName)
+                        .AddMeter(ObservabilityConstants.MessagingMeterName)
+                        .AddRuntimeInstrumentation()
+                        .AddHttpClientInstrumentation();
+
+                    AddOtlpMetricsExporter(metrics, configuration);
+                });
+            }
 
             return services;
         }
 
-        private static void AddTraceExporter(TracerProviderBuilder tracing, IConfiguration configuration)
+        private static void AddOtlpTraceExporter(TracerProviderBuilder tracing, IConfiguration configuration)
         {
             if (!TryGetOtlpEndpoint(configuration, out var endpoint))
             {
@@ -71,7 +128,7 @@ namespace Cashflow.Shared.Observability
             });
         }
 
-        private static void AddMetricsExporter(MeterProviderBuilder metrics, IConfiguration configuration)
+        private static void AddOtlpMetricsExporter(MeterProviderBuilder metrics, IConfiguration configuration)
         {
             if (!TryGetOtlpEndpoint(configuration, out var endpoint))
             {
@@ -98,6 +155,13 @@ namespace Cashflow.Shared.Observability
 
             endpoint = default!;
             return false;
+        }
+
+        private static string? ResolveApplicationInsightsConnectionString(IConfiguration configuration)
+        {
+            return configuration["ApplicationInsights:ConnectionString"]
+                ?? configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]
+                ?? Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING");
         }
     }
 }

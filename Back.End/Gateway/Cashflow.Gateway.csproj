@@ -11,12 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Shared\Infrastructure\DependencyInjection\Cashflow.Shared.Infrastructure.DependencyInjection.csproj" />
     <ProjectReference Include="..\Shared\Observability\Providers\OpenTelemetry\Web\Cashflow.Shared.Observability.OpenTelemetry.Web.DependencyInjection.csproj" />
     <ProjectReference Include="..\Shared\Resilience\Cashflow.Shared.Resilience.csproj" />
   </ItemGroup>

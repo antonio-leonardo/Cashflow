@@ -118,7 +118,9 @@ namespace Holistic.Integration.Tests
 
             var response = await _client.SendAsync(request);
 
-            Xunit.Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            Xunit.Assert.True(
+                response.StatusCode == HttpStatusCode.Forbidden,
+                await DescribeResponseAsync(response, HttpStatusCode.Forbidden));
         }
 
     [Fact]
@@ -180,7 +182,9 @@ namespace Holistic.Integration.Tests
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
                 var createResponse = await _client.SendAsync(request);
-                Xunit.Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+                Xunit.Assert.True(
+                    createResponse.StatusCode == HttpStatusCode.Created,
+                    await DescribeResponseAsync(createResponse, HttpStatusCode.Created));
 
                 var redis = CreateRedisConnection(_fixture.RedisContainerFixture.ConnectionString);
                 var redisDb = redis.GetDatabase();
@@ -226,7 +230,9 @@ namespace Holistic.Integration.Tests
                 return _client.SendAsync(request);
             });
 
-            Xunit.Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            Xunit.Assert.True(
+                response.StatusCode == HttpStatusCode.Created,
+                await DescribeResponseAsync(response, HttpStatusCode.Created));
 
             await Task.Delay(10000);
 
@@ -355,7 +361,9 @@ namespace Holistic.Integration.Tests
             createTransactionRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var createResponse = await _client.SendAsync(createTransactionRequest);
-            Xunit.Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+            Xunit.Assert.True(
+                createResponse.StatusCode == HttpStatusCode.Created,
+                await DescribeResponseAsync(createResponse, HttpStatusCode.Created));
 
             GetDailyBalanceResponse? responseBody = null;
             HttpStatusCode? lastStatusCode = null;
@@ -423,6 +431,30 @@ namespace Holistic.Integration.Tests
             }
 
             return RedisValue.Null;
+        }
+
+        private static async Task<string> DescribeResponseAsync(
+            HttpResponseMessage response,
+            HttpStatusCode expectedStatus)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            var authenticateHeaders = string.Join(
+                " | ",
+                response.Headers.WwwAuthenticate.Select(header => header.ToString()));
+            var authFailure = response.Headers.TryGetValues("X-Auth-Failure", out var authFailureValues)
+                ? string.Join(" | ", authFailureValues)
+                : string.Empty;
+            var authChallenge = response.Headers.TryGetValues("X-Auth-Challenge", out var authChallengeValues)
+                ? string.Join(" | ", authChallengeValues)
+                : string.Empty;
+            var authAuthority = response.Headers.TryGetValues("X-Auth-Authority", out var authAuthorityValues)
+                ? string.Join(" | ", authAuthorityValues)
+                : string.Empty;
+
+            return
+                $"Expected {(int)expectedStatus} ({expectedStatus}), got {(int)response.StatusCode} ({response.StatusCode}). " +
+                $"WWW-Authenticate: {authenticateHeaders}. " +
+                $"AuthFailure: {authFailure}. AuthChallenge: {authChallenge}. Authority: {authAuthority}. Body: {body}";
         }
     }
 }

@@ -2,11 +2,10 @@ using Cashflow.Service.Balance.API.Healthchecks;
 using Cashflow.Service.Balance.API.Repositories;
 using Cashflow.Shared.Contracts.Api;
 using Cashflow.Shared.NoSql.Redis;
+using Cashflow.Shared.Infrastructure.DependencyInjection;
 using Cashflow.Shared.Observability;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
 
 namespace Cashflow.Service.Balance.API
@@ -146,22 +145,7 @@ namespace Cashflow.Service.Balance.API
 
         private static void ConfigureAuthentication(WebApplicationBuilder builder)
         {
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.Authority = builder.Configuration["Keycloak:Authority"];
-                    options.Audience = builder.Configuration["Keycloak:Audience"];
-                    options.MapInboundClaims = false;
-                    options.RequireHttpsMetadata = true;
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ClockSkew = TimeSpan.FromMinutes(1),
-                        RoleClaimType = "roles"
-                    };
-                });
+            builder.Services.AddCashflowIdentity(builder.Configuration);
         }
     }
 }

@@ -44,6 +44,10 @@
   </Folder>
   <Folder Name="/Shared/Messaging/Providers/" />
   <Folder Name="/Shared/Messaging/Providers/RabbitMQ/" />
+  <Folder Name="/Shared/Messaging/Providers/AzureServiceBus/">
+    <Project Path="Back.End/Shared/Messaging/Providers/AzureServiceBus/DependencyInjection/Cashflow.Shared.Messaging.AzureServiceBus.DependencyInjection.csproj" />
+    <Project Path="Back.End/Shared/Messaging/Providers/AzureServiceBus/MessageBus/Cashflow.Shared.Messaging.AzureServiceBus.MessageBus.csproj" />
+  </Folder>
   <Folder Name="/Shared/Messaging/Providers/RabbitMQ/DependencyInjection/">
     <Project Path="Back.End/Shared/Messaging/Providers/RabbitMQ/DependencyInjection/Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection.csproj" />
   </Folder>
@@ -60,6 +64,14 @@
   </Folder>
   <Folder Name="/Shared/NoSql/Providers/Redis/">
     <Project Path="Back.End/Shared/NoSql/Providers/Redis/Cashflow.Shared.NoSql.Redis.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Identity/">
+    <Project Path="Back.End/Shared/Identity/Abstractions/Cashflow.Shared.Identity.Abstractions.csproj" />
+    <Project Path="Back.End/Shared/Identity/Providers/EntraId/Cashflow.Shared.Identity.EntraId.DependencyInjection.csproj" />
+    <Project Path="Back.End/Shared/Identity/Providers/Keycloak/Cashflow.Shared.Identity.Keycloak.DependencyInjection.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Infrastructure/">
+    <Project Path="Back.End/Shared/Infrastructure/DependencyInjection/Cashflow.Shared.Infrastructure.DependencyInjection.csproj" />
   </Folder>
   <Folder Name="/Shared/Observability/" />
   <Folder Name="/Shared/Observability/Constants/">

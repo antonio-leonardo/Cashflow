@@ -4,11 +4,10 @@ using Cashflow.Service.Transaction.Application.Queries;
 using Cashflow.Service.Transaction.Domain;
 using Cashflow.Service.Transaction.Infrastructure.Persistence;
 using Cashflow.Service.Transaction.Postgres.DependencyInjection;
+using Cashflow.Shared.Infrastructure.DependencyInjection;
 using Cashflow.Shared.Observability;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
 
 namespace Cashflow.Service.Transaction.API
@@ -195,22 +194,7 @@ namespace Cashflow.Service.Transaction.API
 
         private static void ConfigureAuthentication(WebApplicationBuilder builder)
         {
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.Authority = builder.Configuration["Keycloak:Authority"];
-                    options.Audience = builder.Configuration["Keycloak:Audience"];
-                    options.MapInboundClaims = false;
-                    options.RequireHttpsMetadata = true;
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ClockSkew = TimeSpan.FromMinutes(1),
-                        RoleClaimType = "roles"
-                    };
-                });
+            builder.Services.AddCashflowIdentity(builder.Configuration);
         }
 
         private static async Task InitializeDatabasesAsync(WebApplication app)
