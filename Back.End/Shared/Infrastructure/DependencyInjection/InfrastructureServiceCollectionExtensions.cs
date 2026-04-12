@@ -1,7 +1,15 @@
+using Cashflow.Shared.Contracts.Configuration;
+using Cashflow.Shared.Identity.Abstractions;
 using Cashflow.Shared.Identity.EntraId;
 using Cashflow.Shared.Identity.Keycloak;
+using Cashflow.Shared.Messaging.Abstractions;
 using Cashflow.Shared.Messaging.AzureServiceBus.DependencyInjection;
 using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
+using Cashflow.Shared.Secrets.Abstractions;
+using Cashflow.Shared.Secrets.AzureKeyVault;
+using Cashflow.Shared.Storage.Abstractions;
+using Cashflow.Shared.Storage.AzureBlob;
+using Cashflow.Shared.Storage.Local;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,17 +17,21 @@ namespace Cashflow.Shared.Infrastructure.DependencyInjection
 {
     public static class InfrastructureServiceCollectionExtensions
     {
-        private static readonly string[] SupportedMessagingProviders =
-        [
-            "RabbitMq",
-            "AzureServiceBus"
-        ];
+        public static IServiceCollection AddCashflowSecrets(
+            this IServiceCollection services,
+            ConfigurationManager configuration)
+        {
+            var provider = configuration.GetConfiguredProvider(
+                "Providers:Secrets",
+                SecretsProvider.Local);
 
-        private static readonly string[] SupportedIdentityProviders =
-        [
-            "Keycloak",
-            "EntraId"
-        ];
+            return provider switch
+            {
+                SecretsProvider.AzureKeyVault => AddAzureKeyVaultSecrets(services, configuration),
+                SecretsProvider.Local => services.AddSingleton<ISecretResolver, LocalConfigurationSecretResolver>(),
+                _ => throw new InvalidOperationException($"Unsupported provider '{provider}' configured at 'Providers:Secrets'.")
+            };
+        }
 
         /// <summary>
         /// Registra o provedor de mensageria conforme "Providers:Messaging" no appsettings.
@@ -29,25 +41,18 @@ namespace Cashflow.Shared.Infrastructure.DependencyInjection
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            var provider = ResolveProvider(
-                configuration,
+            var provider = configuration.GetConfiguredProvider(
                 "Providers:Messaging",
-                "RabbitMq",
-                SupportedMessagingProviders);
+                MessagingProvider.RabbitMq);
 
-            if (string.Equals(provider, "AzureServiceBus", StringComparison.OrdinalIgnoreCase))
+            EnsureMessagingConfiguration(configuration, provider);
+
+            return provider switch
             {
-                var useManagedIdentity = configuration.GetValue<bool>("AzureServiceBus:UseManagedIdentity");
-                var requiredKey = useManagedIdentity
-                    ? "AzureServiceBus:Namespace"
-                    : "AzureServiceBus:ConnectionString";
-
-                EnsureConfigured(configuration, requiredKey);
-            }
-
-            return string.Equals(provider, "AzureServiceBus", StringComparison.OrdinalIgnoreCase)
-                ? services.AddAzureServiceBusDependencyInjection(configuration)
-                : services.AddRabbitMQDependencyInjection(configuration);
+                MessagingProvider.AzureServiceBus => services.AddAzureServiceBusDependencyInjection(configuration),
+                MessagingProvider.RabbitMq => services.AddRabbitMQDependencyInjection(configuration),
+                _ => throw new InvalidOperationException($"Unsupported provider '{provider}' configured at 'Providers:Messaging'.")
+            };
         }
 
         /// <summary>
@@ -59,53 +64,62 @@ namespace Cashflow.Shared.Infrastructure.DependencyInjection
             IConfiguration configuration,
             bool requireHttpsMetadata = true)
         {
-            var provider = ResolveProvider(
-                configuration,
+            var provider = configuration.GetConfiguredProvider(
                 "Providers:Identity",
-                "Keycloak",
-                SupportedIdentityProviders);
+                IdentityProvider.Keycloak);
 
-            if (string.Equals(provider, "EntraId", StringComparison.OrdinalIgnoreCase))
-            {
-                EnsureConfigured(configuration, "EntraId:TenantId");
-                EnsureConfigured(configuration, "EntraId:ClientId");
-                EnsureConfigured(configuration, "EntraId:Audience");
-            }
-            else
-            {
-                EnsureConfigured(configuration, "Keycloak:Authority");
-                EnsureConfigured(configuration, "Keycloak:Audience");
-            }
+            EnsureIdentityConfiguration(configuration, provider);
 
-            return string.Equals(provider, "EntraId", StringComparison.OrdinalIgnoreCase)
-                ? services.AddEntraIdAuthentication(configuration, requireHttpsMetadata)
-                : services.AddKeycloakAuthentication(configuration, requireHttpsMetadata);
+            return provider switch
+            {
+                IdentityProvider.EntraId => services.AddEntraIdAuthentication(configuration, requireHttpsMetadata),
+                IdentityProvider.Keycloak => services.AddKeycloakAuthentication(configuration, requireHttpsMetadata),
+                _ => throw new InvalidOperationException($"Unsupported provider '{provider}' configured at 'Providers:Identity'.")
+            };
         }
 
-        private static string ResolveProvider(
-            IConfiguration configuration,
-            string configurationPath,
-            string defaultValue,
-            IReadOnlyCollection<string> supportedProviders)
+        /// <summary>
+        /// Registra o provedor de armazenamento de artefatos conforme "Providers:Storage" no appsettings.
+        /// Valores aceitos: "Local" (default) | "AzureBlob"
+        /// </summary>
+        public static IServiceCollection AddCashflowStorage(
+            this IServiceCollection services,
+            IConfiguration configuration)
         {
-            var provider = configuration[configurationPath];
+            var provider = configuration.GetConfiguredProvider(
+                "Providers:Storage",
+                StorageProvider.Local,
+                "storage provider");
 
-            if (string.IsNullOrWhiteSpace(provider))
+            return provider switch
             {
-                return defaultValue;
-            }
-
-            if (supportedProviders.Any(supported =>
-                    string.Equals(supported, provider, StringComparison.OrdinalIgnoreCase)))
-            {
-                return provider;
-            }
-
-            throw new InvalidOperationException(
-                $"Unsupported provider '{provider}' configured at '{configurationPath}'. Supported values: {string.Join(", ", supportedProviders)}.");
+                StorageProvider.AzureBlob => AddAzureBlobStorage(services, configuration),
+                StorageProvider.Local => services.AddLocalReportArtifactStore(opts =>
+                {
+                    var basePath = configuration["LocalStorage:BasePath"];
+                    if (!string.IsNullOrWhiteSpace(basePath))
+                    {
+                        opts.BasePath = basePath;
+                    }
+                }),
+                _ => throw new InvalidOperationException(
+                    $"Unsupported storage provider '{provider}' configured at 'Providers:Storage'.")
+            };
         }
 
-        private static void EnsureConfigured(IConfiguration configuration, string configurationPath)
+        private static IServiceCollection AddAzureBlobStorage(
+            IServiceCollection services,
+            IConfiguration configuration)
+        {
+            EnsureConfigured(configuration,
+                configuration.GetValue<bool>("AzureBlob:UseManagedIdentity")
+                    ? "AzureBlob:AccountName"
+                    : "AzureBlob:ConnectionString");
+
+            return services.AddAzureBlobReportArtifactStore(configuration);
+        }
+
+        internal static void EnsureConfigured(IConfiguration configuration, string configurationPath)
         {
             if (!string.IsNullOrWhiteSpace(configuration[configurationPath]))
             {
@@ -114,6 +128,60 @@ namespace Cashflow.Shared.Infrastructure.DependencyInjection
 
             throw new InvalidOperationException(
                 $"Configuration '{configurationPath}' is required for the selected provider.");
+        }
+
+        private static IServiceCollection AddAzureKeyVaultSecrets(
+            IServiceCollection services,
+            ConfigurationManager configuration)
+        {
+            EnsureConfigured(configuration, "AzureKeyVault:VaultUri");
+            configuration.AddAzureKeyVaultConfiguration();
+            return services.AddAzureKeyVaultSecretResolver(configuration);
+        }
+
+        private static void EnsureMessagingConfiguration(
+            IConfiguration configuration,
+            MessagingProvider provider)
+        {
+            switch (provider)
+            {
+                case MessagingProvider.AzureServiceBus:
+                    var useManagedIdentity = configuration.GetValue<bool>("AzureServiceBus:UseManagedIdentity");
+                    EnsureConfigured(
+                        configuration,
+                        useManagedIdentity
+                            ? "AzureServiceBus:Namespace"
+                            : "AzureServiceBus:ConnectionString");
+                    break;
+
+                case MessagingProvider.RabbitMq:
+                    break;
+
+                default:
+                    throw new InvalidOperationException($"Unsupported provider '{provider}' configured at 'Providers:Messaging'.");
+            }
+        }
+
+        private static void EnsureIdentityConfiguration(
+            IConfiguration configuration,
+            IdentityProvider provider)
+        {
+            switch (provider)
+            {
+                case IdentityProvider.EntraId:
+                    EnsureConfigured(configuration, "EntraId:TenantId");
+                    EnsureConfigured(configuration, "EntraId:ClientId");
+                    EnsureConfigured(configuration, "EntraId:Audience");
+                    break;
+
+                case IdentityProvider.Keycloak:
+                    EnsureConfigured(configuration, "Keycloak:Authority");
+                    EnsureConfigured(configuration, "Keycloak:Audience");
+                    break;
+
+                default:
+                    throw new InvalidOperationException($"Unsupported provider '{provider}' configured at 'Providers:Identity'.");
+            }
         }
     }
 }

@@ -34,7 +34,9 @@ namespace Cashflow.Service.Transaction.Domain
         }
 
         public Guid TransactionId { get; }
+
         public Guid AccountId { get; }
+
         public decimal Amount { get; }
         public string Currency { get; }
         public TransactionType Type { get; }

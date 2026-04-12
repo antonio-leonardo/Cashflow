@@ -84,7 +84,11 @@ namespace Infrastructure.Test
                     var configuration = context.Configuration;
                     services.AddRabbitMQDependencyInjection(configuration);
                     services.AddMongoDBProviderDependencyInjection(configuration, "cashflow-audit");
+                    services.AddScoped<Cashflow.Worker.Audit.IAuditRepository, Cashflow.Worker.Audit.MongoAuditRepository>();
                     services.AddScoped<Cashflow.Worker.Audit.TransactionCreatedHandler>();
+                    services.AddSingleton<
+                        Cashflow.Shared.Messaging.Abstractions.ITransactionEventProcessor<Cashflow.Service.Transaction.Domain.TransactionCreatedEventV1>,
+                        Cashflow.Worker.Audit.AuditEventProcessor>();
                     services.AddHostedService<Cashflow.Worker.Audit.Worker>();
                 })
                 .Build();

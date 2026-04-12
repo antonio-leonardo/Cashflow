@@ -80,4 +80,23 @@ public class RedisReadinessHealthCheckTests
         Assert.Equal(HealthStatus.Unhealthy, result.Status);
         Assert.IsType<TimeoutException>(result.Exception);
     }
+
+    [Fact]
+    public async Task CheckHealthAsync_ReturnsUnhealthy_WhenCacheProviderSelectionIsUnsupported()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Providers:Cache"] = "Memcached"
+            })
+            .Build();
+
+        var sut = new RedisReadinessHealthCheck(_multiplexerMock.Object, configuration);
+
+        var result = await sut.CheckHealthAsync(_context);
+
+        Assert.Equal(HealthStatus.Unhealthy, result.Status);
+        Assert.NotNull(result.Exception);
+        Assert.Contains("unsupported", result.Description, StringComparison.OrdinalIgnoreCase);
+    }
 }

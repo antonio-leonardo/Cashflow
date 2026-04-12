@@ -16,8 +16,11 @@ namespace Cashflow.Worker.Audit
             builder.Services.AddCashflowMessaging(builder.Configuration);
 
             builder.Services.AddMongoDBProviderDependencyInjection(builder.Configuration, "cashflow-audit");
+            builder.Services.AddScoped<IAuditRepository, MongoAuditRepository>();
             builder.Services.AddScoped<TransactionCreatedHandler>();
-
+            builder.Services.AddSingleton<
+                Cashflow.Shared.Messaging.Abstractions.ITransactionEventProcessor<Cashflow.Service.Transaction.Domain.TransactionCreatedEventV1>,
+                AuditEventProcessor>();
             builder.Services.AddHostedService<Worker>();
 
             var host = builder.Build();

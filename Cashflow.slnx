@@ -70,8 +70,27 @@
     <Project Path="Back.End/Shared/Identity/Providers/EntraId/Cashflow.Shared.Identity.EntraId.DependencyInjection.csproj" />
     <Project Path="Back.End/Shared/Identity/Providers/Keycloak/Cashflow.Shared.Identity.Keycloak.DependencyInjection.csproj" />
   </Folder>
+  <Folder Name="/Shared/Secrets/" />
+  <Folder Name="/Shared/Secrets/Abstractions/">
+    <Project Path="Back.End/Shared/Secrets/Abstractions/Cashflow.Shared.Secrets.Abstractions.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Secrets/Providers/" />
+  <Folder Name="/Shared/Secrets/Providers/AzureKeyVault/">
+    <Project Path="Back.End/Shared/Secrets/Providers/AzureKeyVault/Cashflow.Shared.Secrets.AzureKeyVault.csproj" />
+  </Folder>
   <Folder Name="/Shared/Infrastructure/">
     <Project Path="Back.End/Shared/Infrastructure/DependencyInjection/Cashflow.Shared.Infrastructure.DependencyInjection.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Storage/" />
+  <Folder Name="/Shared/Storage/Abstractions/">
+    <Project Path="Back.End/Shared/Storage/Abstractions/Cashflow.Shared.Storage.Abstractions.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Storage/Providers/" />
+  <Folder Name="/Shared/Storage/Providers/Local/">
+    <Project Path="Back.End/Shared/Storage/Providers/Local/Cashflow.Shared.Storage.Local.csproj" />
+  </Folder>
+  <Folder Name="/Shared/Storage/Providers/AzureBlob/">
+    <Project Path="Back.End/Shared/Storage/Providers/AzureBlob/Cashflow.Shared.Storage.AzureBlob.csproj" />
   </Folder>
   <Folder Name="/Shared/Observability/" />
   <Folder Name="/Shared/Observability/Constants/">
@@ -87,6 +106,13 @@
   </Folder>
   <Folder Name="/Shared/Resilience/">
     <Project Path="Back.End/Shared/Resilience/Cashflow.Shared.Resilience.csproj" />
+  </Folder>
+  <Folder Name="/Functions/" />
+  <Folder Name="/Functions/Balance/">
+    <Project Path="Back.End/Functions/Balance/Cashflow.Functions.Balance.csproj" />
+  </Folder>
+  <Folder Name="/Functions/Report/">
+    <Project Path="Back.End/Functions/Report/Cashflow.Functions.Report.csproj" />
   </Folder>
   <Folder Name="/Worker/" />
   <Folder Name="/Worker/Audit/">
@@ -114,6 +140,9 @@
   <Folder Name="/_Tests/DomainTests/Balance/">
     <Project Path="Back.End/Tests/DomainTests/Balance/Balance.Domain.Tests.csproj" />
   </Folder>
+  <Folder Name="/_Tests/DomainTests/Functions/">
+    <Project Path="Back.End/Tests/DomainTests/Functions/Functions.Domain.Tests.csproj" />
+  </Folder>
   <Folder Name="/_Tests/DomainTests/Transaction/">
     <Project Path="Back.End/Tests/DomainTests/Transaction/Transaction.Domain.Tests.csproj" />
   </Folder>
@@ -137,6 +166,9 @@
   <Folder Name="/_Tests/IntegrationTests/Messaging/">
     <Project Path="Back.End/Tests/IntegrationTests/Messaging/Messaging.Integration.Tests.csproj" />
   </Folder>
+  <Folder Name="/_Tests/IntegrationTests/Storage/">
+    <Project Path="Back.End/Tests/IntegrationTests/Storage/Storage.Integration.Tests.csproj" />
+  </Folder>
   <Folder Name="/_Tests/IntegrationTests/Transaction/">
     <Project Path="Back.End/Tests/IntegrationTests/Transaction/Transaction.Integration.Tests.csproj" />
   </Folder>
@@ -149,5 +181,9 @@
   </Folder>
   <Folder Name="/_Tests/Shared/">
     <Project Path="Back.End/Tests/Shared/Infrastructure.Test.csproj" />
+  </Folder>
+  <Folder Name="/_Tests/SmokeTests/" />
+  <Folder Name="/_Tests/SmokeTests/Azure/">
+    <Project Path="Back.End/Tests/SmokeTests/Azure/Azure.Smoke.Tests.csproj" />
   </Folder>
 </Solution>

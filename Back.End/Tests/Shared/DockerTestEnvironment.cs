@@ -4,6 +4,8 @@ namespace Infrastructure.Test
 {
     internal static class DockerTestEnvironment
     {
+        private static readonly string DockerCliConfigDirectory =
+            Path.Combine(Path.GetTempPath(), "cashflow-docker-cli");
         private static readonly object SyncRoot = new();
         private static bool _dockerReady;
 
@@ -39,25 +41,54 @@ namespace Infrastructure.Test
             return Task.CompletedTask;
         }
 
+        public static string RunDockerCommand(string arguments, int timeoutMs = 10000)
+        {
+            using var process = new Process
+            {
+                StartInfo = CreateDockerProcessStartInfo(arguments)
+            };
+
+            if (!process.Start())
+            {
+                throw new InvalidOperationException($"Failed to start docker {arguments}.");
+            }
+
+            if (!process.WaitForExit(timeoutMs))
+            {
+                try
+                {
+                    process.Kill(true);
+                }
+                catch
+                {
+                    // Best-effort cleanup.
+                }
+
+                throw new TimeoutException($"docker {arguments} timed out.");
+            }
+
+            var output = process.StandardOutput.ReadToEnd();
+            var stderr = process.StandardError.ReadToEnd().Trim();
+
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException(
+                    string.IsNullOrWhiteSpace(stderr)
+                        ? $"docker {arguments} exited with code {process.ExitCode}."
+                        : stderr);
+            }
+
+            return output;
+        }
+
         private static bool TryGetServerVersion(out string? error)
         {
             try
             {
                 using var process = new Process
                 {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "docker",
-                        Arguments = "version --format {{.Server.Version}}",
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }
+                    StartInfo = CreateDockerProcessStartInfo("version --format {{.Server.Version}}")
                 };
-
-                process.StartInfo.Environment.Remove("DOCKER_HOST");
-                process.StartInfo.Environment.Remove("DOCKER_CONTEXT");
 
                 if (!process.Start())
                 {
@@ -118,6 +149,38 @@ namespace Infrastructure.Test
             }
 
             return lastError ?? "unknown error";
+        }
+
+        private static ProcessStartInfo CreateDockerProcessStartInfo(string arguments)
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "docker",
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            startInfo.Environment.Remove("DOCKER_HOST");
+            startInfo.Environment.Remove("DOCKER_CONTEXT");
+            ConfigureDockerCliEnvironment(startInfo.Environment);
+
+            return startInfo;
+        }
+
+        private static void ConfigureDockerCliEnvironment(IDictionary<string, string?> environment)
+        {
+            Directory.CreateDirectory(DockerCliConfigDirectory);
+
+            var configPath = Path.Combine(DockerCliConfigDirectory, "config.json");
+            if (!File.Exists(configPath))
+            {
+                File.WriteAllText(configPath, "{}");
+            }
+
+            environment["DOCKER_CONFIG"] = DockerCliConfigDirectory;
         }
     }
 }

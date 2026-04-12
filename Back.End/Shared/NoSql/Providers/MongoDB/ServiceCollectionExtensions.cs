@@ -1,3 +1,5 @@
+using Cashflow.Shared.Contracts.Configuration;
+using Cashflow.Shared.NoSql.Abstractions;
 using Cashflow.Shared.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,47 +10,53 @@ namespace Cashflow.Shared.NoSql.MongoDB
 {
     public static class ServiceCollectionExtensions
     {
-        private static readonly ConcurrentDictionary<string, IMongoClient> _clients = new();
-        private static readonly string[] SupportedDocumentProviders =
-        [
-            "MongoDB",
-            "CosmosDb"
-        ];
+        private static readonly ConcurrentDictionary<string, IMongoClient> Clients = new();
 
         public static IServiceCollection AddMongoDBProviderDependencyInjection(
             this IServiceCollection services,
             IConfiguration configuration,
             string databaseName)
         {
-            var documentProvider = configuration["Providers:Document"] ?? "MongoDB";
+            var documentProvider = configuration.GetConfiguredProvider(
+                "Providers:Document",
+                DocumentProvider.MongoDB,
+                "document provider");
 
-            if (!SupportedDocumentProviders.Any(supported =>
-                    string.Equals(supported, documentProvider, StringComparison.OrdinalIgnoreCase)))
+            switch (documentProvider)
             {
-                throw new InvalidOperationException(
-                    $"Unsupported document provider '{documentProvider}'. Supported values: {string.Join(", ", SupportedDocumentProviders)}.");
-            }
+                case DocumentProvider.CosmosDb:
+                    ArgumentException.ThrowIfNullOrWhiteSpace(
+                        configuration["CosmosDb:MongoDB:Connection"],
+                        "CosmosDb:MongoDB:Connection");
+                    break;
 
-            if (string.Equals(documentProvider, "CosmosDb", StringComparison.OrdinalIgnoreCase))
-            {
-                ArgumentException.ThrowIfNullOrWhiteSpace(
-                    configuration["CosmosDb:MongoDB:Connection"],
-                    "CosmosDb:MongoDB:Connection");
+                case DocumentProvider.MongoDB:
+                    break;
+
+                default:
+                    throw new InvalidOperationException($"Unsupported document provider '{documentProvider}' configured at 'Providers:Document'.");
             }
 
             services.AddSingleton<IMongoClient>(sp =>
             {
                 var config = sp.GetRequiredService<IConfiguration>();
-                var connectionString = string.Equals(documentProvider, "CosmosDb", StringComparison.OrdinalIgnoreCase)
-                    ? config["CosmosDb:MongoDB:Connection"]
-                    : config["Mongo:Connection"];
+                var connectionString = documentProvider switch
+                {
+                    DocumentProvider.CosmosDb => config["CosmosDb:MongoDB:Connection"],
+                    DocumentProvider.MongoDB => config["Mongo:Connection"],
+                    _ => throw new InvalidOperationException($"Unsupported document provider '{documentProvider}' configured at 'Providers:Document'.")
+                };
 
-                ArgumentException.ThrowIfNullOrWhiteSpace(connectionString,
-                    string.Equals(documentProvider, "CosmosDb", StringComparison.OrdinalIgnoreCase)
-                        ? "CosmosDb:MongoDB:Connection"
-                        : "Mongo:Connection");
+                ArgumentException.ThrowIfNullOrWhiteSpace(
+                    connectionString,
+                    documentProvider switch
+                    {
+                        DocumentProvider.CosmosDb => "CosmosDb:MongoDB:Connection",
+                        DocumentProvider.MongoDB => "Mongo:Connection",
+                        _ => "Providers:Document"
+                    });
 
-                return _clients.GetOrAdd(connectionString, conn => CreateConnection(conn));
+                return Clients.GetOrAdd(connectionString, CreateConnection);
             });
 
             services.AddScoped(sp =>

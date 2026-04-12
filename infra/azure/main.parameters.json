@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": { "value": "dev" },
+    "containerRegistryServer": { "value": "cashflowacr.azurecr.io" },
+    "imageTag": { "value": "latest" },
+    "serviceBusNamespace": { "value": "cashflow-sb.servicebus.windows.net" },
+    "redisEndpoint": { "value": "cashflow-redis.redis.cache.windows.net:6380" },
+    "cosmosDbConnectionString": { "reference": { "keyVault": { "id": "/subscriptions/<sub>/resourceGroups/rg-cashflow/providers/Microsoft.KeyVault/vaults/cashflow-kv" }, "secretName": "CosmosDbMongoConnection" } },
+    "entraIdTenantId": { "value": "<tenant-id>" },
+    "entraIdClientId": { "value": "<client-id>" },
+    "entraIdAudience": { "value": "api://cashflow-api" }
+  }
+}

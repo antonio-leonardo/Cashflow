@@ -1,0 +1,13 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "AzureServiceBus__ConnectionString": "",
+    "AzureServiceBus__ConsumerName": "balance-worker",
+    "AzureServiceBus__TopicName": "transactioncreatedeventv1",
+    "Redis__Connection": "localhost:6379",
+    "Providers__Cache": "Redis",
+    "Providers__Telemetry": "Jaeger",
+    "OpenTelemetry__Otlp__Endpoint": "http://localhost:4317"
+  }
+}

@@ -5,6 +5,7 @@ using Cashflow.Service.Transaction.Domain;
 using Cashflow.Service.Transaction.Infrastructure.Persistence;
 using Cashflow.Service.Transaction.Postgres.DependencyInjection;
 using Cashflow.Shared.Infrastructure.DependencyInjection;
+using Cashflow.Shared.Identity.Abstractions;
 using Cashflow.Shared.Observability;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -22,6 +23,8 @@ namespace Cashflow.Service.Transaction.API
             var builder = WebApplication.CreateBuilder(args);
             var isLocalEnvironment = IsLocalEnvironment(builder.Environment);
 
+            builder.Services.AddCashflowSecrets(builder.Configuration);
+
             builder.Services.AddOpenApi();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
@@ -37,8 +40,8 @@ namespace Cashflow.Service.Transaction.API
                     policy
                         .RequireAuthenticatedUser()
                         .RequireAssertion(context =>
-                            HasScope(context.User, "transactions.write") ||
-                            HasRole(context.User, "transactions.writer")));
+                            context.User.HasScope("transactions.write") ||
+                            context.User.HasRole("transactions.writer")));
             });
 
             builder.Services.AddRateLimiter(options =>
@@ -170,23 +173,6 @@ namespace Cashflow.Service.Transaction.API
             var model = await handler.HandleAsync(new GetTransactionQuery(id), cancellationToken);
             return model is null ? Results.NotFound() : Results.Ok(model);
         }
-
-        private static bool HasScope(System.Security.Claims.ClaimsPrincipal user, string expectedScope)
-        {
-            return user.Claims
-                .Where(claim => claim.Type == "scope" || claim.Type == "scp")
-                .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-                .Any(scope => string.Equals(scope, expectedScope, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private static bool HasRole(System.Security.Claims.ClaimsPrincipal user, string expectedRole)
-        {
-            return user.Claims
-                .Where(claim => claim.Type == "role" || claim.Type == "roles")
-                .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-                .Any(role => string.Equals(role, expectedRole, StringComparison.OrdinalIgnoreCase));
-        }
-
         private static bool IsLocalEnvironment(IHostEnvironment environment)
         {
             return environment.IsDevelopment() || environment.IsEnvironment(TestingEnvironmentName);

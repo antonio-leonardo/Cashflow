@@ -1,4 +1,6 @@
 using Azure.Identity;
+using Cashflow.Shared.Contracts.Configuration;
+using Cashflow.Shared.NoSql.Abstractions;
 using Cashflow.Shared.Resilience;
 using Microsoft.Azure.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
@@ -9,38 +11,40 @@ namespace Cashflow.Shared.NoSql.Redis
 {
     public static class ServiceCollectionExtensions
     {
-        private static readonly string[] SupportedCacheProviders =
-        [
-            "Redis",
-            "AzureRedis"
-        ];
-
         public static IServiceCollection AddRedisProviderDependencyInjection(
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            var cacheProvider = configuration["Providers:Cache"] ?? "Redis";
+            var cacheProvider = configuration.GetConfiguredProvider(
+                "Providers:Cache",
+                CacheProvider.Redis,
+                "cache provider");
 
-            if (!SupportedCacheProviders.Any(supported =>
-                    string.Equals(supported, cacheProvider, StringComparison.OrdinalIgnoreCase)))
+            switch (cacheProvider)
             {
-                throw new InvalidOperationException(
-                    $"Unsupported cache provider '{cacheProvider}'. Supported values: {string.Join(", ", SupportedCacheProviders)}.");
-            }
+                case CacheProvider.AzureRedis:
+                    ArgumentException.ThrowIfNullOrWhiteSpace(
+                        configuration["AzureRedis:Endpoint"],
+                        "AzureRedis:Endpoint");
+                    break;
 
-            if (string.Equals(cacheProvider, "AzureRedis", StringComparison.OrdinalIgnoreCase))
-            {
-                ArgumentException.ThrowIfNullOrWhiteSpace(
-                    configuration["AzureRedis:Endpoint"],
-                    "AzureRedis:Endpoint");
+                case CacheProvider.Redis:
+                    break;
+
+                default:
+                    throw new InvalidOperationException($"Unsupported cache provider '{cacheProvider}' configured at 'Providers:Cache'.");
             }
 
             services.AddSingleton<IConnectionMultiplexer>(sp =>
             {
                 var config = sp.GetRequiredService<IConfiguration>();
-                return string.Equals(cacheProvider, "AzureRedis", StringComparison.OrdinalIgnoreCase)
-                    ? CreateAzureConnection(config)
-                    : CreateLocalConnection(config);
+
+                return cacheProvider switch
+                {
+                    CacheProvider.AzureRedis => CreateAzureConnection(config),
+                    CacheProvider.Redis => CreateLocalConnection(config),
+                    _ => throw new InvalidOperationException($"Unsupported cache provider '{cacheProvider}' configured at 'Providers:Cache'.")
+                };
             });
 
             return services;

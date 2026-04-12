@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace Cashflow.Service.Balance.API.Repositories
 {
-    public sealed class RedisDailyBalanceRepository
+    public sealed class RedisDailyBalanceRepository : IBalanceReadRepository
     {
         private const string DailyBalanceKeyPrefix = "balance:daily:";
 

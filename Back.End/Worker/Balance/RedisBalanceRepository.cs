@@ -5,7 +5,7 @@ using System.Globalization;
 
 namespace Cashflow.Worker.Balance
 {
-    public class RedisBalanceRepository : RedisCommandRepository<TransactionCreatedEventV1>
+    public class RedisBalanceRepository : RedisCommandRepository<TransactionCreatedEventV1>, IBalanceProjectionRepository
     {
         private const string BalanceKeyPrefix = "balance:";
         private const string DailyBalanceKeyPrefix = "balance:daily:";

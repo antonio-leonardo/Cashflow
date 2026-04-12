@@ -15,8 +15,11 @@ namespace Cashflow.Worker.Balance
 
             builder.Services.AddCashflowMessaging(builder.Configuration);
             builder.Services.AddRedisProviderDependencyInjection(builder.Configuration);
-            builder.Services.AddScoped<RedisBalanceRepository>();
+            builder.Services.AddScoped<IBalanceProjectionRepository, RedisBalanceRepository>();
             builder.Services.AddScoped<TransactionCreatedHandler>();
+            builder.Services.AddSingleton<
+                Cashflow.Shared.Messaging.Abstractions.ITransactionEventProcessor<Cashflow.Service.Transaction.Domain.TransactionCreatedEventV1>,
+                BalanceEventProcessor>();
             builder.Services.AddHostedService<Worker>();
 
             var host = builder.Build();

@@ -43,6 +43,9 @@ namespace Infrastructure.Test
                 .WithEnvironment("ASPNETCORE_URLS", "http://+:8080")
                 .WithEnvironment("Redis__Connection",
                     _infra.RedisContainerFixture.NetworkConnectionString)
+                .WithEnvironment("Mongo__Connection",
+                    _infra.MongoDbContainerFixture.NetworkConnectionString)
+                .WithEnvironment("LocalStorage__BasePath", "/tmp/cashflow-reports")
                 .WithEnvironment("Keycloak__Authority", _keycloakAuthority)
                 .WithEnvironment("Keycloak__Audience", "cashflow-api")
                 .Build();

@@ -13,8 +13,14 @@ namespace Cashflow.Worker.Report
 
             builder.Services.AddCashflowMessaging(builder.Configuration);
 
+            builder.Services.AddCashflowStorage(builder.Configuration);
             builder.Services.AddMongoDBProviderDependencyInjection(builder.Configuration, "cashflow-report");
+            builder.Services.AddScoped<IReportRepository, MongoReportRepository>();
             builder.Services.AddScoped<TransactionCreatedHandler>();
+            builder.Services.AddScoped<ReportExportService>();
+            builder.Services.AddSingleton<
+                Cashflow.Shared.Messaging.Abstractions.ITransactionEventProcessor<Cashflow.Service.Transaction.Domain.TransactionCreatedEventV1>,
+                ReportEventProcessor>();
 
             builder.Services.AddHostedService<Worker>();
 

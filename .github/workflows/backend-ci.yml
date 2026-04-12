@@ -47,12 +47,20 @@ jobs:
 
         run_test_project() {
           local project="$1"
+          # Optional filter expression passed as second argument.
+          # Example: "Category!=ServiceBusEmulator&Category!=CosmosEmulator"
+          local filter="${2:-}"
           local max_attempts=2
 
           for attempt in $(seq 1 "${max_attempts}"); do
             echo "==> Running test project: ${project} (attempt ${attempt}/${max_attempts})"
 
-            if dotnet test "${project}" --configuration Release --no-build --verbosity normal -m:1; then
+            local filter_args=()
+            if [[ -n "${filter}" ]]; then
+              filter_args=(--filter "${filter}")
+            fi
+
+            if dotnet test "${project}" --configuration Release --no-build --verbosity normal -m:1 "${filter_args[@]}"; then
               return 0
             fi
 
@@ -67,27 +75,39 @@ jobs:
           return 1
         }
 
+        # Tests that require the Service Bus Emulator (SQL Server sidecar) or the Cosmos DB
+        # Emulator are excluded on resource-constrained runners.  They can be re-enabled by
+        # removing the filter or by running with Category=ServiceBusEmulator / CosmosEmulator
+        # in a dedicated job that has more memory available.
+        EMULATOR_EXCLUSIONS="Category!=ServiceBusEmulator&Category!=CosmosEmulator"
+
         projects=(
-          "Back.End/Tests/ContractTests/Balance/Balance.Query.ContractTests.csproj"
-          "Back.End/Tests/DomainTests/Balance/Balance.Domain.Tests.csproj"
-          "Back.End/Tests/DomainTests/Transaction/Transaction.Domain.Tests.csproj"
-          "Back.End/Tests/ConcurrencyTests/Transaction/Transaction.Concurrency.Tests.csproj"
-          "Back.End/Tests/ContractTests/Gateway/Gateway.Transaction.ContractTests.csproj"
-          "Back.End/Tests/IntegrationTests/Balance/Balance.Integration.Tests.csproj"
-          "Back.End/Tests/IntegrationTests/Transaction/Transaction.Integration.Tests.csproj"
-          "Back.End/Tests/IntegrationTests/Worker/Worker.Integration.Tests.csproj"
-          "Back.End/Tests/IntegrationTests/Messaging/Messaging.Integration.Tests.csproj"
-          "Back.End/Tests/E2E/Balance/E2E.Balance.Tests.csproj"
-          "Back.End/Tests/E2E/Audit/E2E.Audit.Test.csproj"
-          "Back.End/Tests/E2E/Report/E2E.Report.Test.csproj"
-          "Back.End/Tests/IntegrationTests/Holistic/Holistic.Integration.Tests.csproj"
-          "Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj"
+          # project path | optional xUnit filter (empty = run all)
+          "Back.End/Tests/ContractTests/Balance/Balance.Query.ContractTests.csproj|"
+          "Back.End/Tests/DomainTests/Balance/Balance.Domain.Tests.csproj|"
+          "Back.End/Tests/DomainTests/Functions/Functions.Domain.Tests.csproj|"
+          "Back.End/Tests/DomainTests/Transaction/Transaction.Domain.Tests.csproj|"
+          "Back.End/Tests/ConcurrencyTests/Transaction/Transaction.Concurrency.Tests.csproj|"
+          "Back.End/Tests/ContractTests/Gateway/Gateway.Transaction.ContractTests.csproj|"
+          "Back.End/Tests/IntegrationTests/Balance/Balance.Integration.Tests.csproj|"
+          "Back.End/Tests/IntegrationTests/Transaction/Transaction.Integration.Tests.csproj|"
+          "Back.End/Tests/IntegrationTests/Worker/Worker.Integration.Tests.csproj|"
+          "Back.End/Tests/IntegrationTests/Messaging/Messaging.Integration.Tests.csproj|${EMULATOR_EXCLUSIONS}"
+          "Back.End/Tests/IntegrationTests/Storage/Storage.Integration.Tests.csproj|"
+          "Back.End/Tests/E2E/Balance/E2E.Balance.Tests.csproj|"
+          "Back.End/Tests/E2E/Audit/E2E.Audit.Test.csproj|"
+          "Back.End/Tests/E2E/Report/E2E.Report.Test.csproj|"
+          "Back.End/Tests/IntegrationTests/Holistic/Holistic.Integration.Tests.csproj|"
+          "Back.End/Tests/Performance/k6/K6.Performance.Tests.csproj|"
         )
 
         cleanup_testcontainers
 
-        for project in "${projects[@]}"; do
-          run_test_project "${project}"
+        for entry in "${projects[@]}"; do
+          # Split "path|filter" on the pipe character
+          project="${entry%%|*}"
+          filter="${entry##*|}"
+          run_test_project "${project}" "${filter}"
           cleanup_testcontainers
         done
 

@@ -10,6 +10,8 @@ FROM mcr.microsoft.com/dotnet/runtime:10.0
 WORKDIR /app
 
 COPY --from=build /app/publish .
+COPY --from=build /src/Worker/Report/appsettings.json ./
+COPY --from=build /src/Worker/Report/appsettings.Development.json ./
 
 USER app
 

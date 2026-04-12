@@ -4,13 +4,13 @@ namespace Cashflow.Worker.Balance
 {
     public class TransactionCreatedHandler
     {
-        private readonly RedisBalanceRepository _repository;
+        private readonly IBalanceProjectionRepository _repository;
         private readonly ILogger<TransactionCreatedHandler> _logger;
         private const string ConsumerName = "balance-worker";
         private static readonly TimeSpan ProcessedEventTtl = TimeSpan.FromDays(30);
 
         public TransactionCreatedHandler(
-            RedisBalanceRepository repository,
+            IBalanceProjectionRepository repository,
             ILogger<TransactionCreatedHandler> logger)
         {
             _repository = repository;

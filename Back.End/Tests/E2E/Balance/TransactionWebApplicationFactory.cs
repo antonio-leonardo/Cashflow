@@ -51,8 +51,11 @@ namespace E2E.Balance.Tests
 
                 if (_enableBalanceWorker)
                 {
-                    services.AddScoped<Cashflow.Worker.Balance.RedisBalanceRepository>();
+                    services.AddScoped<Cashflow.Worker.Balance.IBalanceProjectionRepository, Cashflow.Worker.Balance.RedisBalanceRepository>();
                     services.AddScoped<Cashflow.Worker.Balance.TransactionCreatedHandler>();
+                    services.AddSingleton<
+                        Cashflow.Shared.Messaging.Abstractions.ITransactionEventProcessor<Cashflow.Service.Transaction.Domain.TransactionCreatedEventV1>,
+                        Cashflow.Worker.Balance.BalanceEventProcessor>();
                     services.AddHostedService<Cashflow.Worker.Balance.Worker>();
                 }
             });

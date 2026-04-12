@@ -1,4 +1,5 @@
 using Azure.Monitor.OpenTelemetry.Exporter;
+using Cashflow.Shared.Contracts.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Exporter;
@@ -11,31 +12,19 @@ namespace Cashflow.Shared.Observability
 {
     public static class OpenTelemetryWorkerServiceCollectionExtensions
     {
-        private static readonly string[] SupportedTelemetryProviders =
-        [
-            "Jaeger",
-            "Otlp",
-            "ApplicationInsights"
-        ];
-
         public static IServiceCollection AddCashflowOpenTelemetryForWorker(
             this IServiceCollection services,
             IConfiguration configuration,
             string serviceName)
         {
             var serviceVersion = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0";
-            var telemetryProvider = configuration["Providers:Telemetry"] ?? "Jaeger";
-
-            if (!SupportedTelemetryProviders.Any(supported =>
-                    string.Equals(supported, telemetryProvider, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new InvalidOperationException(
-                    $"Unsupported telemetry provider '{telemetryProvider}'. Supported values: {string.Join(", ", SupportedTelemetryProviders)}.");
-            }
-
+            var telemetryProvider = configuration.GetConfiguredProvider(
+                "Providers:Telemetry",
+                TelemetryProvider.Jaeger,
+                "telemetry provider");
             var applicationInsightsConnectionString = ResolveApplicationInsightsConnectionString(configuration);
 
-            if (string.Equals(telemetryProvider, "ApplicationInsights", StringComparison.OrdinalIgnoreCase) &&
+            if (telemetryProvider is TelemetryProvider.ApplicationInsights &&
                 string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
             {
                 throw new InvalidOperationException(
@@ -56,59 +45,65 @@ namespace Cashflow.Shared.Observability
                         });
                 });
 
-            if (string.Equals(telemetryProvider, "ApplicationInsights", StringComparison.OrdinalIgnoreCase))
+            switch (telemetryProvider)
             {
-                openTelemetry.WithTracing(tracing =>
-                {
-                    tracing
-                        .SetSampler(new AlwaysOnSampler())
-                        .AddSource(ObservabilityConstants.BusinessActivitySourceName)
-                        .AddSource(ObservabilityConstants.MessagingActivitySourceName)
-                        .AddHttpClientInstrumentation(o => o.RecordException = true);
-
-                    if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
+                case TelemetryProvider.ApplicationInsights:
+                    openTelemetry.WithTracing(tracing =>
                     {
-                        tracing.AddAzureMonitorTraceExporter(o => o.ConnectionString = applicationInsightsConnectionString);
-                    }
-                });
+                        tracing
+                            .SetSampler(new AlwaysOnSampler())
+                            .AddSource(ObservabilityConstants.BusinessActivitySourceName)
+                            .AddSource(ObservabilityConstants.MessagingActivitySourceName)
+                            .AddHttpClientInstrumentation(o => o.RecordException = true);
 
-                openTelemetry.WithMetrics(metrics =>
-                {
-                    metrics
-                        .AddMeter(ObservabilityConstants.BusinessMeterName)
-                        .AddMeter(ObservabilityConstants.MessagingMeterName)
-                        .AddRuntimeInstrumentation()
-                        .AddHttpClientInstrumentation();
+                        if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
+                        {
+                            tracing.AddAzureMonitorTraceExporter(o => o.ConnectionString = applicationInsightsConnectionString);
+                        }
+                    });
 
-                    if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
+                    openTelemetry.WithMetrics(metrics =>
                     {
-                        metrics.AddAzureMonitorMetricExporter(o => o.ConnectionString = applicationInsightsConnectionString);
-                    }
-                });
-            }
-            else
-            {
-                openTelemetry.WithTracing(tracing =>
-                {
-                    tracing
-                        .SetSampler(new AlwaysOnSampler())
-                        .AddSource(ObservabilityConstants.BusinessActivitySourceName)
-                        .AddSource(ObservabilityConstants.MessagingActivitySourceName)
-                        .AddHttpClientInstrumentation(options => options.RecordException = true);
+                        metrics
+                            .AddMeter(ObservabilityConstants.BusinessMeterName)
+                            .AddMeter(ObservabilityConstants.MessagingMeterName)
+                            .AddRuntimeInstrumentation()
+                            .AddHttpClientInstrumentation();
 
-                    AddOtlpTraceExporter(tracing, configuration);
-                });
+                        if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
+                        {
+                            metrics.AddAzureMonitorMetricExporter(o => o.ConnectionString = applicationInsightsConnectionString);
+                        }
+                    });
+                    break;
 
-                openTelemetry.WithMetrics(metrics =>
-                {
-                    metrics
-                        .AddMeter(ObservabilityConstants.BusinessMeterName)
-                        .AddMeter(ObservabilityConstants.MessagingMeterName)
-                        .AddRuntimeInstrumentation()
-                        .AddHttpClientInstrumentation();
+                case TelemetryProvider.Jaeger:
+                case TelemetryProvider.Otlp:
+                    openTelemetry.WithTracing(tracing =>
+                    {
+                        tracing
+                            .SetSampler(new AlwaysOnSampler())
+                            .AddSource(ObservabilityConstants.BusinessActivitySourceName)
+                            .AddSource(ObservabilityConstants.MessagingActivitySourceName)
+                            .AddHttpClientInstrumentation(options => options.RecordException = true);
 
-                    AddOtlpMetricsExporter(metrics, configuration);
-                });
+                        AddOtlpTraceExporter(tracing, configuration);
+                    });
+
+                    openTelemetry.WithMetrics(metrics =>
+                    {
+                        metrics
+                            .AddMeter(ObservabilityConstants.BusinessMeterName)
+                            .AddMeter(ObservabilityConstants.MessagingMeterName)
+                            .AddRuntimeInstrumentation()
+                            .AddHttpClientInstrumentation();
+
+                        AddOtlpMetricsExporter(metrics, configuration);
+                    });
+                    break;
+
+                default:
+                    throw new InvalidOperationException($"Unsupported telemetry provider '{telemetryProvider}' configured at 'Providers:Telemetry'.");
             }
 
             return services;

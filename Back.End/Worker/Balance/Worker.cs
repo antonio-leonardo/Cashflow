@@ -4,43 +4,30 @@ using Cashflow.Shared.Messaging.Abstractions;
 namespace Cashflow.Worker.Balance
 {
     /// <summary>
-    /// Worker de leitura CQRS:
-    /// Read Model Balance
-    /// Consumidor idempotente
+    /// BackgroundService adapter for the Balance read-model worker.
+    /// Business logic lives in <see cref="BalanceEventProcessor"/>; this class
+    /// only bridges IMessageBus.SubscribeAsync to the processor.
     /// </summary>
     public class Worker : BackgroundService
     {
         private readonly IMessageBus _bus;
-        private readonly IServiceProvider _provider;
+        private readonly ITransactionEventProcessor<TransactionCreatedEventV1> _processor;
 
-        public Worker(IMessageBus bus, IServiceProvider provider)
+        public Worker(
+            IMessageBus bus,
+            ITransactionEventProcessor<TransactionCreatedEventV1> processor)
         {
-            _bus = bus;
-            _provider = provider;
+            _bus       = bus;
+            _processor = processor;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             await _bus.SubscribeAsync<TransactionCreatedEventV1>(
-                HandleTransactionCreated,
+                _processor.ProcessAsync,
                 stoppingToken);
 
             await Task.Delay(Timeout.Infinite, stoppingToken);
-        }
-
-        private async Task HandleTransactionCreated(
-            EventEnvelope<TransactionCreatedEventV1> envelope,
-            CancellationToken ct)
-        {
-            using (var scope = _provider.CreateScope())
-            {
-                var handler = scope.ServiceProvider
-                .GetRequiredService<TransactionCreatedHandler>();
-                await handler.HandleAsync(
-                    envelope.Event,
-                    envelope.Event.EventId.ToString("N"),
-                    ct);
-            }
         }
     }
 }

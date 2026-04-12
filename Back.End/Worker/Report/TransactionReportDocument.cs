@@ -8,6 +8,7 @@ namespace Cashflow.Worker.Report
         [BsonRepresentation(BsonType.String)]
         public Guid Id { get; set; }
 
+        [BsonGuidRepresentation(GuidRepresentation.Standard)]
         public Guid AccountId { get; set; }
 
         public decimal Amount { get; set; }

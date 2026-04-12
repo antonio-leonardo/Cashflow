@@ -23,7 +23,9 @@ namespace Cashflow.Shared.Events
         }
 
         public Guid EventId { get; }
+
         public Guid CorrelationId { get; }
+
         public DateTime OccurredAt { get; }
         public string EventType { get; }
         public int Version { get; }

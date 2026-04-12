@@ -3,35 +3,29 @@ using Cashflow.Shared.Messaging.Abstractions;
 
 namespace Cashflow.Worker.Report
 {
+    /// <summary>
+    /// BackgroundService adapter for the Report worker.
+    /// Business logic lives in <see cref="ReportEventProcessor"/>; this class
+    /// only bridges IMessageBus.SubscribeAsync to the processor.
+    /// </summary>
     public class Worker : BackgroundService
     {
         private readonly IMessageBus _bus;
-        private readonly IServiceProvider _provider;
+        private readonly ITransactionEventProcessor<TransactionCreatedEventV1> _processor;
 
-        public Worker(IMessageBus bus, IServiceProvider provider)
+        public Worker(
+            IMessageBus bus,
+            ITransactionEventProcessor<TransactionCreatedEventV1> processor)
         {
-            _bus = bus;
-            _provider = provider;
+            _bus       = bus;
+            _processor = processor;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             await _bus.SubscribeAsync<TransactionCreatedEventV1>(
-                HandleTransactionCreated,
+                _processor.ProcessAsync,
                 stoppingToken);
-        }
-
-        private async Task HandleTransactionCreated(
-            EventEnvelope<TransactionCreatedEventV1> envelope,
-            CancellationToken ct)
-        {
-            using (var scope = _provider.CreateScope())
-            {
-                var handler = scope.ServiceProvider
-                    .GetRequiredService<TransactionCreatedHandler>();
-
-                await handler.HandleAsync(envelope.Event, ct);
-            }
         }
     }
 }

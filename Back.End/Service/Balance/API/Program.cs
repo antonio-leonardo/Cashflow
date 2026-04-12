@@ -2,11 +2,13 @@ using Cashflow.Service.Balance.API.Healthchecks;
 using Cashflow.Service.Balance.API.Repositories;
 using Cashflow.Shared.Contracts.Api;
 using Cashflow.Shared.NoSql.Redis;
+using Cashflow.Shared.NoSql.MongoDB;
 using Cashflow.Shared.Infrastructure.DependencyInjection;
 using Cashflow.Shared.Observability;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Threading.RateLimiting;
+using Cashflow.Worker.Report;
 
 namespace Cashflow.Service.Balance.API
 {
@@ -20,12 +22,17 @@ namespace Cashflow.Service.Balance.API
             var builder = WebApplication.CreateBuilder(args);
             var isLocalEnvironment = IsLocalEnvironment(builder.Environment);
 
+            builder.Services.AddCashflowSecrets(builder.Configuration);
+
             builder.Services.AddOpenApi();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddCashflowOpenTelemetryForWeb(builder.Configuration, "cashflow-balance-query-api");
             builder.Services.AddRedisProviderDependencyInjection(builder.Configuration);
-            builder.Services.AddScoped<RedisDailyBalanceRepository>();
+            builder.Services.AddCashflowStorage(builder.Configuration);
+            builder.Services.AddMongoDBProviderDependencyInjection(builder.Configuration, "cashflow-report");
+            builder.Services.AddScoped<IBalanceReadRepository, RedisDailyBalanceRepository>();
+            builder.Services.AddScoped<ReportExportService>();
 
             builder.Services.AddAuthorization(options =>
             {
@@ -106,10 +113,22 @@ namespace Cashflow.Service.Balance.API
                     GetDailyBalanceAsync)
                 .WithName("GetDailyBalance");
 
+            var endpointExportDailyReportV1 = app.MapGet(
+                    "/api/v1/balance/reports/daily/{accountId:guid}",
+                    ExportDailyReportAsync)
+                .WithName("ExportDailyReportV1");
+
+            var endpointExportDailyReportLegacy = app.MapGet(
+                    "/api/balance/reports/daily/{accountId:guid}",
+                    ExportDailyReportAsync)
+                .WithName("ExportDailyReport");
+
             if (!isLocalEnvironment)
             {
                 endpointGetDailyBalanceV1.RequireAuthorization("AuthenticatedUser");
                 endpointGetDailyBalanceLegacy.RequireAuthorization("AuthenticatedUser");
+                endpointExportDailyReportV1.RequireAuthorization("AuthenticatedUser");
+                endpointExportDailyReportLegacy.RequireAuthorization("AuthenticatedUser");
             }
 
             app.Run();
@@ -118,7 +137,7 @@ namespace Cashflow.Service.Balance.API
         private static async Task<IResult> GetDailyBalanceAsync(
             Guid accountId,
             DateOnly? date,
-            RedisDailyBalanceRepository repository,
+            IBalanceReadRepository repository,
             CancellationToken cancellationToken)
         {
             var referenceDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
@@ -136,6 +155,33 @@ namespace Cashflow.Service.Balance.API
                     dailyBalance.TotalDebits,
                     dailyBalance.NetBalance))
                 : Results.NotFound();
+        }
+
+        private static async Task<IResult> ExportDailyReportAsync(
+            Guid accountId,
+            DateOnly? date,
+            int? downloadLinkExpiryMinutes,
+            ReportExportService reportExportService,
+            CancellationToken cancellationToken)
+        {
+            var referenceDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
+            TimeSpan? expiry = downloadLinkExpiryMinutes is > 0
+                ? TimeSpan.FromMinutes(downloadLinkExpiryMinutes.Value)
+                : null;
+
+            var result = await reportExportService.ExportDailyAsync(
+                accountId,
+                referenceDate,
+                expiry,
+                cancellationToken);
+
+            return Results.Ok(new GetDailyReportExportResponse(
+                accountId,
+                referenceDate,
+                result.Path,
+                result.DownloadUri,
+                result.TransactionCount,
+                result.GeneratedAt));
         }
 
         private static bool IsLocalEnvironment(IHostEnvironment environment)

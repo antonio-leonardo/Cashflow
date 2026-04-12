@@ -1,5 +1,6 @@
-﻿using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
+using Cashflow.Shared.Messaging.RabbitMQ.DependencyInjection;
 using Cashflow.Shared.NoSql.MongoDB;
+using Cashflow.Shared.Storage.Local;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -84,7 +85,13 @@ namespace Infrastructure.Test
                     var configuration = context.Configuration;
                     services.AddRabbitMQDependencyInjection(configuration);
                     services.AddMongoDBProviderDependencyInjection(configuration, "cashflow-report");
+                    services.AddLocalReportArtifactStore();
+                    services.AddScoped<Cashflow.Worker.Report.IReportRepository, Cashflow.Worker.Report.MongoReportRepository>();
                     services.AddScoped<Cashflow.Worker.Report.TransactionCreatedHandler>();
+                    services.AddScoped<Cashflow.Worker.Report.ReportExportService>();
+                    services.AddSingleton<
+                        Cashflow.Shared.Messaging.Abstractions.ITransactionEventProcessor<Cashflow.Service.Transaction.Domain.TransactionCreatedEventV1>,
+                        Cashflow.Worker.Report.ReportEventProcessor>();
                     services.AddHostedService<Cashflow.Worker.Report.Worker>();
                 })
                 .Build();

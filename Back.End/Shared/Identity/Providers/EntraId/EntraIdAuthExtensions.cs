@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Cashflow.Shared.Identity.EntraId
 {
@@ -22,6 +23,13 @@ namespace Cashflow.Shared.Identity.EntraId
                     options.RequireHttpsMetadata = false;
                 });
             }
+
+            services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                options.MapInboundClaims = false;
+                options.TokenValidationParameters ??= new TokenValidationParameters();
+                options.TokenValidationParameters.RoleClaimType = "roles";
+            });
 
             return services;
         }

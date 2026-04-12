@@ -1,32 +1,17 @@
 using Cashflow.Service.Transaction.Domain;
-using Cashflow.Shared.NoSql.MongoDB;
-using MongoDB.Bson;
-using MongoDB.Driver;
 
 namespace Cashflow.Worker.Audit
 {
-    public class TransactionCreatedHandler : MongoCommandRepository<AuditDocument>
+    public class TransactionCreatedHandler
     {
-        public TransactionCreatedHandler(IMongoDatabase database) : base(database, "events")
+        private readonly IAuditRepository _repository;
+
+        public TransactionCreatedHandler(IAuditRepository repository)
         {
+            _repository = repository;
         }
 
-        public async Task HandleAsync(TransactionCreatedEventV1 evt, CancellationToken ct)
-        {
-            try
-            {
-                await this.InsertAsync(new AuditDocument
-                {
-                    EventId = evt.EventId,
-                    EventType = evt.EventType,
-                    OccurredAt = evt.OccurredAt,
-                    Payload = @evt.ToBsonDocument()
-                });
-            }
-            catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
-            {
-                // Idempotent consumer: duplicate delivery of the same event is ignored.
-            }
-        }
+        public Task HandleAsync(TransactionCreatedEventV1 evt, CancellationToken ct)
+            => _repository.RecordAsync(evt, ct);
     }
 }

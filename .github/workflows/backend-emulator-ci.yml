@@ -1,0 +1,67 @@
+name: Cashflow Backend Emulator CI
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 5 * * *'
+
+jobs:
+  service-bus-emulator:
+    name: Service Bus emulator tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build Cashflow.slnx -c Release -v minimal
+
+      - name: Run Service Bus emulator tests
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+          DOTNET_NOLOGO: "1"
+          TESTCONTAINERS_REUSE_ENABLE: "false"
+        run: |
+          dotnet test \
+            Back.End/Tests/IntegrationTests/Messaging/Messaging.Integration.Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --filter "Category=ServiceBusEmulator"
+
+  cosmos-emulator:
+    name: Cosmos emulator tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build Cashflow.slnx -c Release -v minimal
+
+      - name: Run Cosmos emulator tests
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+          DOTNET_NOLOGO: "1"
+          TESTCONTAINERS_REUSE_ENABLE: "false"
+        run: |
+          dotnet test \
+            Back.End/Tests/DomainTests/Balance/Balance.Domain.Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --filter "Category=CosmosEmulator"

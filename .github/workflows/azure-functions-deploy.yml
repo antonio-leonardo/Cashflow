@@ -1,0 +1,64 @@
+name: Cashflow Azure Functions Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options: [ dev, staging, prod ]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DEPLOY_ENV: ${{ github.event.inputs.environment || 'dev' }}
+
+jobs:
+  deploy-functions:
+    name: Deploy Azure Functions
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish Balance Function
+        run: dotnet publish Back.End/Functions/Balance/Cashflow.Functions.Balance.csproj -c Release -o ./artifacts/functions/balance
+
+      - name: Publish Report Function
+        run: dotnet publish Back.End/Functions/Report/Cashflow.Functions.Report.csproj -c Release -o ./artifacts/functions/report
+
+      - name: Create deployment packages
+        run: |
+          cd artifacts/functions/balance && zip -r ../../../balance-function.zip .
+          cd ../report && zip -r ../../../report-function.zip .
+
+      - name: Deploy Balance Function package
+        run: |
+          az functionapp deployment source config-zip \
+            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+            --name ${{ vars.AZURE_BALANCE_FUNCTION_APP_NAME }} \
+            --src balance-function.zip
+
+      - name: Deploy Report Function package
+        run: |
+          az functionapp deployment source config-zip \
+            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+            --name ${{ vars.AZURE_REPORT_FUNCTION_APP_NAME }} \
+            --src report-function.zip

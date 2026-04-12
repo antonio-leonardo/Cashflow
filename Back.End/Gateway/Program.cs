@@ -1,4 +1,5 @@
 using Cashflow.Shared.Infrastructure.DependencyInjection;
+using Cashflow.Shared.Identity.Abstractions;
 using Cashflow.Shared.Observability;
 using Cashflow.Shared.Resilience;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -17,6 +18,8 @@ namespace Cashflow.Gateway
         {
             var builder = WebApplication.CreateBuilder(args);
             var isLocalEnvironment = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
+
+            builder.Services.AddCashflowSecrets(builder.Configuration);
 
             builder.Services
                 .AddReverseProxy()
@@ -56,8 +59,8 @@ namespace Cashflow.Gateway
                     policy
                         .RequireAuthenticatedUser()
                         .RequireAssertion(context =>
-                            HasScope(context.User, "transactions.write") ||
-                            HasRole(context.User, "transactions.writer")));
+                            context.User.HasScope("transactions.write") ||
+                            context.User.HasRole("transactions.writer")));
             });
 
             var downstreamReadyTimeoutSeconds =
@@ -272,22 +275,6 @@ namespace Cashflow.Gateway
         {
             configuration.GetSection(sectionPath).Bind(defaults);
             return defaults;
-        }
-
-        private static bool HasScope(System.Security.Claims.ClaimsPrincipal user, string expectedScope)
-        {
-            return user.Claims
-                .Where(claim => claim.Type == "scope" || claim.Type == "scp")
-                .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-                .Any(scope => string.Equals(scope, expectedScope, StringComparison.OrdinalIgnoreCase));
-        }
-
-        private static bool HasRole(System.Security.Claims.ClaimsPrincipal user, string expectedRole)
-        {
-            return user.Claims
-                .Where(claim => claim.Type == "role" || claim.Type == "roles")
-                .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-                .Any(role => string.Equals(role, expectedRole, StringComparison.OrdinalIgnoreCase));
         }
     }
 

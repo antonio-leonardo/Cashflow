@@ -67,7 +67,11 @@ namespace E2E.Report.Test
 
                 if (_enableReportWorker)
                 {
+                    services.AddScoped<Cashflow.Worker.Report.IReportRepository, Cashflow.Worker.Report.MongoReportRepository>();
                     services.AddScoped<Cashflow.Worker.Report.TransactionCreatedHandler>();
+                    services.AddSingleton<
+                        Cashflow.Shared.Messaging.Abstractions.ITransactionEventProcessor<Cashflow.Service.Transaction.Domain.TransactionCreatedEventV1>,
+                        Cashflow.Worker.Report.ReportEventProcessor>();
                     services.AddHostedService<Cashflow.Worker.Report.Worker>();
                 }
             });

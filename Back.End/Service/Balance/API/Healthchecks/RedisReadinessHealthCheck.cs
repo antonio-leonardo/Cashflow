@@ -1,3 +1,5 @@
+using Cashflow.Shared.Contracts.Configuration;
+using Cashflow.Shared.NoSql.Abstractions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using StackExchange.Redis;
 
@@ -20,7 +22,21 @@ namespace Cashflow.Service.Balance.API.Healthchecks
             HealthCheckContext context,
             CancellationToken cancellationToken = default)
         {
-            var cacheProvider = _configuration["Providers:Cache"] ?? "Redis";
+            CacheProvider cacheProvider;
+
+            try
+            {
+                cacheProvider = _configuration.GetConfiguredProvider(
+                    "Providers:Cache",
+                    CacheProvider.Redis,
+                    "cache provider");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return HealthCheckResult.Unhealthy(
+                    "Cache provider selection is unsupported for daily balance queries.",
+                    ex);
+            }
 
             try
             {

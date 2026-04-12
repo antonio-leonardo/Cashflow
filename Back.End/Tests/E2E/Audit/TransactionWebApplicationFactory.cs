@@ -67,7 +67,11 @@ namespace E2E.Audit.Test
 
                 if (_enableAuditWorker)
                 {
+                    services.AddScoped<Cashflow.Worker.Audit.IAuditRepository, Cashflow.Worker.Audit.MongoAuditRepository>();
                     services.AddScoped<Cashflow.Worker.Audit.TransactionCreatedHandler>();
+                    services.AddSingleton<
+                        Cashflow.Shared.Messaging.Abstractions.ITransactionEventProcessor<Cashflow.Service.Transaction.Domain.TransactionCreatedEventV1>,
+                        Cashflow.Worker.Audit.AuditEventProcessor>();
                     services.AddHostedService<Cashflow.Worker.Audit.Worker>();
                 }
             });

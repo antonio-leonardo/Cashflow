@@ -16,6 +16,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Resilience\Cashflow.Shared.Resilience.csproj" />
+    <ProjectReference Include="..\..\Abstractions\Cashflow.Shared.NoSql.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Contracts\Cashflow.Shared.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

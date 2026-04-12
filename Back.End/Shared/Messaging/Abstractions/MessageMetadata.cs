@@ -7,5 +7,6 @@ namespace Cashflow.Shared.Messaging.Abstractions
         string? TenantId,
         DateTime CreatedAtUtc,
         string? TraceParent = null,
-        string? Baggage = null);
+        string? Baggage = null,
+        string? SessionId = null);
 }

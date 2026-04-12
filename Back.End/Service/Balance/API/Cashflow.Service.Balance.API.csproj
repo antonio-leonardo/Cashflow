@@ -11,6 +11,25 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Update="..\..\..\Worker\Report\appsettings.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+    <Content Update="..\..\..\Worker\Report\appsettings.Development.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+    <None Update="..\..\..\Worker\Report\appsettings.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+    <None Update="..\..\..\Worker\Report\appsettings.Development.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
@@ -19,8 +38,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Shared\Contracts\Cashflow.Shared.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Shared\NoSql\Providers\Redis\Cashflow.Shared.NoSql.Redis.csproj" />
+    <ProjectReference Include="..\..\..\Shared\NoSql\Providers\MongoDB\Cashflow.Shared.NoSql.MongoDB.csproj" />
     <ProjectReference Include="..\..\..\Shared\Infrastructure\DependencyInjection\Cashflow.Shared.Infrastructure.DependencyInjection.csproj" />
     <ProjectReference Include="..\..\..\Shared\Observability\Providers\OpenTelemetry\Web\Cashflow.Shared.Observability.OpenTelemetry.Web.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\..\Worker\Report\Cashflow.Worker.Report.csproj" />
   </ItemGroup>
 
 </Project>

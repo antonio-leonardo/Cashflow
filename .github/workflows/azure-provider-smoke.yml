@@ -1,0 +1,60 @@
+name: Cashflow Azure Provider Smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 5 * * *'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  AZURE_SMOKE_KEYVAULT_URI: ${{ vars.AZURE_SMOKE_KEYVAULT_URI }}
+  AZURE_SMOKE_KEYVAULT_CONFIGURATION_KEY: ${{ vars.AZURE_SMOKE_KEYVAULT_CONFIGURATION_KEY }}
+  AZURE_SMOKE_KEYVAULT_SECRET_NAME: ${{ vars.AZURE_SMOKE_KEYVAULT_SECRET_NAME }}
+  AZURE_SMOKE_ENTRA_TENANT_ID: ${{ vars.AZURE_SMOKE_ENTRA_TENANT_ID }}
+  AZURE_SMOKE_ENTRA_CLIENT_ID: ${{ vars.AZURE_SMOKE_ENTRA_CLIENT_ID }}
+  AZURE_SMOKE_ENTRA_AUDIENCE: ${{ vars.AZURE_SMOKE_ENTRA_AUDIENCE }}
+  AZURE_SMOKE_ENTRA_SCOPE: ${{ vars.AZURE_SMOKE_ENTRA_SCOPE }}
+  AZURE_SMOKE_BLOB_CONNECTION_STRING: ${{ secrets.AZURE_SMOKE_BLOB_CONNECTION_STRING }}
+  AZURE_SMOKE_BLOB_CONTAINER: ${{ vars.AZURE_SMOKE_BLOB_CONTAINER }}
+  AZURE_SMOKE_COSMOS_MONGODB_CONNECTION: ${{ secrets.AZURE_SMOKE_COSMOS_MONGODB_CONNECTION }}
+  AZURE_SMOKE_SERVICEBUS_CONNECTION_STRING: ${{ secrets.AZURE_SMOKE_SERVICEBUS_CONNECTION_STRING }}
+  AZURE_SMOKE_SERVICEBUS_SUBSCRIPTION: ${{ vars.AZURE_SMOKE_SERVICEBUS_SUBSCRIPTION }}
+  APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
+
+jobs:
+  azure-smoke:
+    name: Azure smoke tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build Cashflow.slnx -c Release -v minimal
+
+      - name: Run Azure smoke tests
+        run: |
+          dotnet test \
+            Back.End/Tests/SmokeTests/Azure/Azure.Smoke.Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --filter "Category=AzureSmoke"
