@@ -28,7 +28,7 @@ namespace Storage.Integration.Tests
         }
 
         [Fact]
-        public async Task UploadAsync_CreatesFile_AndReturnsPath()
+        public async Task UploadAsync_CreatesFile_AndReturnsMetadata()
         {
             var path  = $"account1/2024/01/report.csv";
             var bytes = Encoding.UTF8.GetBytes("id,amount");
@@ -36,7 +36,10 @@ namespace Storage.Integration.Tests
             using var stream = new MemoryStream(bytes);
             var returned = await _store.UploadAsync(path, stream, "text/csv");
 
-            Assert.Equal(path, returned);
+            Assert.Equal(path, returned.Path);
+            Assert.Equal("text/csv", returned.ContentType);
+            Assert.Equal(bytes.Length, returned.SizeBytes);
+            Assert.False(string.IsNullOrWhiteSpace(returned.Version));
             Assert.True(File.Exists(Path.Combine(_tempDir, "account1", "2024", "01", "report.csv")));
         }
 
@@ -95,14 +98,15 @@ namespace Storage.Integration.Tests
             var path = $"{Guid.NewGuid():N}/overwrite.csv";
 
             using var first = new MemoryStream(Encoding.UTF8.GetBytes("first"));
-            await _store.UploadAsync(path, first, "text/csv");
+            var firstArtifact = await _store.UploadAsync(path, first, "text/csv");
 
             using var second = new MemoryStream(Encoding.UTF8.GetBytes("second"));
-            await _store.UploadAsync(path, second, "text/csv");
+            var secondArtifact = await _store.UploadAsync(path, second, "text/csv");
 
             await using var download = await _store.DownloadAsync(path);
             using var reader = new StreamReader(download);
             Assert.Equal("second", await reader.ReadToEndAsync());
+            Assert.NotEqual(firstArtifact.Version, secondArtifact.Version);
         }
     }
 }

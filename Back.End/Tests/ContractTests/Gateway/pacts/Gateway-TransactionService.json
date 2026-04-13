@@ -7,7 +7,7 @@
       "description": "Create Transaction Request",
       "request": {
         "body": {
-          "accountId": "4016ca03-839e-4198-84f3-87e666232602",
+          "accountId": "3424fbbc-3f5d-4c53-830c-89205fd7b337",
           "amount": 100,
           "currency": "BRL",
           "type": 1

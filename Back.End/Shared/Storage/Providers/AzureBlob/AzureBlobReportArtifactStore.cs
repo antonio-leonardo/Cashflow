@@ -15,20 +15,30 @@ namespace Cashflow.Shared.Storage.AzureBlob
             _container = CreateContainerClient(options);
         }
 
-        public async Task<string> UploadAsync(
+        public async Task<ReportArtifactMetadata> UploadAsync(
             string path,
             Stream content,
             string contentType,
             CancellationToken cancellationToken = default)
         {
             var blob = _container.GetBlobClient(path);
+            var sizeBytes = content.CanSeek
+                ? content.Length - content.Position
+                : (long?)null;
 
-            await blob.UploadAsync(content, new BlobUploadOptions
+            var response = await blob.UploadAsync(content, new BlobUploadOptions
             {
                 HttpHeaders = new BlobHttpHeaders { ContentType = contentType }
             }, cancellationToken);
 
-            return path;
+            sizeBytes ??= (await blob.GetPropertiesAsync(cancellationToken: cancellationToken)).Value.ContentLength;
+
+            return new ReportArtifactMetadata(
+                Path: path,
+                ContentType: contentType,
+                SizeBytes: sizeBytes.Value,
+                CreatedAt: response.Value.LastModified,
+                Version: response.Value.ETag.ToString());
         }
 
         public async Task<Stream> DownloadAsync(

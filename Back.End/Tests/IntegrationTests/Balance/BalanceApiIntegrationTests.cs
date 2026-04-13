@@ -116,6 +116,9 @@ namespace Balance.Integration.Tests
             Assert.Equal(date, payload.Date);
             Assert.Equal(2, payload.TransactionCount);
             Assert.Equal($"{accountId}/{date:yyyy/MM/dd}/report.csv", payload.Path);
+            Assert.Equal("text/csv", payload.ContentType);
+            Assert.True(payload.SizeBytes > 0);
+            Assert.False(string.IsNullOrWhiteSpace(payload.Version));
             Assert.True(payload.DownloadUri.IsAbsoluteUri);
         }
 

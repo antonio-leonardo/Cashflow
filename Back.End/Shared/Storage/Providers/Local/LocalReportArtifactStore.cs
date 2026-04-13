@@ -17,7 +17,7 @@ namespace Cashflow.Shared.Storage.Local
             _basePath = options.BasePath;
         }
 
-        public async Task<string> UploadAsync(
+        public async Task<ReportArtifactMetadata> UploadAsync(
             string path,
             Stream content,
             string contentType,
@@ -25,10 +25,20 @@ namespace Cashflow.Shared.Storage.Local
         {
             var fullPath = Resolve(path);
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+            var storedAt = DateTimeOffset.UtcNow;
 
             await using var file = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None);
             await content.CopyToAsync(file, cancellationToken);
-            return path;
+            await file.FlushAsync(cancellationToken);
+            File.SetLastWriteTimeUtc(fullPath, storedAt.UtcDateTime);
+
+            var fileInfo = new FileInfo(fullPath);
+            return new ReportArtifactMetadata(
+                Path: path,
+                ContentType: contentType,
+                SizeBytes: fileInfo.Length,
+                CreatedAt: storedAt,
+                Version: CreateVersionToken(fileInfo, storedAt));
         }
 
         public Task<Stream> DownloadAsync(
@@ -62,6 +72,9 @@ namespace Cashflow.Shared.Storage.Local
             string path,
             CancellationToken cancellationToken = default)
             => Task.FromResult(File.Exists(Resolve(path)));
+
+        private static string CreateVersionToken(FileInfo fileInfo, DateTimeOffset storedAt)
+            => $"local-{storedAt.ToUnixTimeMilliseconds():x}-{fileInfo.Length:x}";
 
         private string Resolve(string path)
             => Path.Combine(_basePath, path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));

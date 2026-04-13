@@ -65,3 +65,41 @@ jobs:
             --configuration Release \
             --no-build \
             --filter "Category=CosmosEmulator"
+
+  jaeger-observability-smoke:
+    name: Jaeger observability smoke
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build Cashflow.slnx -c Release -v minimal
+
+      - name: Start Jaeger
+        run: docker compose up -d jaeger
+
+      - name: Run Jaeger smoke tests
+        env:
+          DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+          DOTNET_NOLOGO: "1"
+          OTLP_SMOKE_ENDPOINT: "http://127.0.0.1:4317"
+          JAEGER_SMOKE_QUERY_ENDPOINT: "http://127.0.0.1:16686"
+        run: |
+          dotnet test \
+            Back.End/Tests/SmokeTests/Azure/Azure.Smoke.Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --filter "Category=OtlpSmoke"
+
+      - name: Stop Jaeger
+        if: always()
+        run: docker compose down --remove-orphans

@@ -15,6 +15,11 @@ on:
         default: 'dev'
         type: choice
         options: [ dev, staging, prod ]
+      deploy_apim:
+        description: 'Deploy Azure API Management'
+        required: true
+        default: false
+        type: boolean
       image_tag:
         description: 'Image tag (default: git SHA)'
         required: false
@@ -30,6 +35,9 @@ env:
   RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}        # e.g. rg-cashflow
   IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
   DEPLOY_ENV: ${{ github.event.inputs.environment || 'dev' }}
+  DEPLOY_APIM: ${{ github.event.inputs.deploy_apim || 'false' }}
+  APIM_PUBLISHER_NAME: ${{ vars.AZURE_APIM_PUBLISHER_NAME || 'Cashflow Team' }}
+  APIM_PUBLISHER_EMAIL: ${{ vars.AZURE_APIM_PUBLISHER_EMAIL || 'cashflow@example.com' }}
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────────
@@ -132,7 +140,10 @@ jobs:
             --template-file  infra/azure/main.bicep \
             --parameters     infra/azure/main.parameters.json \
             --parameters     imageTag=${{ env.IMAGE_TAG }} \
-                             environment=${{ env.DEPLOY_ENV }}
+                             environment=${{ env.DEPLOY_ENV }} \
+                             deployApiManagement=${{ env.DEPLOY_APIM }} \
+                             apimPublisherName="${{ env.APIM_PUBLISHER_NAME }}" \
+                             apimPublisherEmail="${{ env.APIM_PUBLISHER_EMAIL }}"
 
       - name: Bicep deploy
         run: |
@@ -142,7 +153,38 @@ jobs:
             --parameters     infra/azure/main.parameters.json \
             --parameters     imageTag=${{ env.IMAGE_TAG }} \
                              environment=${{ env.DEPLOY_ENV }} \
+                             deployApiManagement=${{ env.DEPLOY_APIM }} \
+                             apimPublisherName="${{ env.APIM_PUBLISHER_NAME }}" \
+                             apimPublisherEmail="${{ env.APIM_PUBLISHER_EMAIL }}" \
             --mode           Incremental
+
+      - name: Verify Container Apps were provisioned
+        run: |
+          APPS=(
+            "cashflow-${{ env.DEPLOY_ENV }}-gateway"
+            "cashflow-${{ env.DEPLOY_ENV }}-balance-api"
+            "cashflow-${{ env.DEPLOY_ENV }}-transaction-api"
+            "cashflow-${{ env.DEPLOY_ENV }}-worker-balance"
+            "cashflow-${{ env.DEPLOY_ENV }}-worker-audit"
+            "cashflow-${{ env.DEPLOY_ENV }}-worker-report"
+          )
+
+          for APP in "${APPS[@]}"; do
+            az containerapp show \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "$APP" \
+              --query "name" \
+              --output tsv
+          done
+
+      - name: Verify API Management was provisioned
+        if: ${{ env.DEPLOY_APIM == 'true' }}
+        run: |
+          az apim show \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "cashflow-${{ env.DEPLOY_ENV }}-apim" \
+            --query "name" \
+            --output tsv
 
   # ─────────────────────────────────────────────────────────────────────────────
   smoke-tests:
@@ -179,3 +221,12 @@ jobs:
         run: |
           curl --fail --max-time 30 \
             "https://${{ steps.fqdn.outputs.fqdn }}/health/ready"
+
+      - name: Show API Management endpoint
+        if: ${{ env.DEPLOY_APIM == 'true' }}
+        run: |
+          az deployment group show \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --name main \
+            --query properties.outputs.apiManagementGatewayUrl.value \
+            --output tsv

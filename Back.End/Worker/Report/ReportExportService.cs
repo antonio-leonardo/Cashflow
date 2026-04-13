@@ -40,18 +40,19 @@ namespace Cashflow.Worker.Report
             var path = $"{accountId}/{date:yyyy/MM/dd}/report.csv";
 
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
-            await _store.UploadAsync(path, stream, "text/csv", cancellationToken);
+            var artifact = await _store.UploadAsync(path, stream, "text/csv", cancellationToken);
 
             var downloadUri = await _store.GetDownloadUriAsync(
-                path,
+                artifact.Path,
                 downloadLinkExpiry ?? TimeSpan.FromHours(1),
                 cancellationToken);
 
             return new ReportExportResult(
-                Path: path,
+                Path: artifact.Path,
                 DownloadUri: downloadUri,
                 TransactionCount: transactions.Count,
-                GeneratedAt: DateTimeOffset.UtcNow);
+                GeneratedAt: DateTimeOffset.UtcNow,
+                Artifact: artifact);
         }
 
         private static string BuildCsv(IEnumerable<TransactionReportDocument> rows)
@@ -77,5 +78,6 @@ namespace Cashflow.Worker.Report
         string Path,
         Uri DownloadUri,
         int TransactionCount,
-        DateTimeOffset GeneratedAt);
+        DateTimeOffset GeneratedAt,
+        ReportArtifactMetadata Artifact);
 }

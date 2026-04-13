@@ -35,6 +35,10 @@ param redisEndpoint string
 @secure()
 param cosmosDbConnectionString string
 
+@description('Postgres connection string used by the Transaction API (from Key Vault reference or passed directly).')
+@secure()
+param postgresConnectionString string
+
 @description('Entra ID Tenant ID for API authentication.')
 param entraIdTenantId string
 
@@ -44,9 +48,24 @@ param entraIdClientId string
 @description('Entra ID Audience (e.g. api://cashflow-api).')
 param entraIdAudience string
 
+@description('Whether to deploy Azure API Management alongside Container Apps.')
+param deployApiManagement bool = false
+
+@description('API Management publisher name.')
+param apimPublisherName string = 'Cashflow Team'
+
+@description('API Management publisher email.')
+param apimPublisherEmail string = 'cashflow@example.com'
+
 // ── Shared infrastructure ─────────────────────────────────────────────────────
 
 var prefix = 'cashflow-${environment}'
+var gatewayAppName = '${prefix}-gateway'
+var balanceApiAppName = '${prefix}-balance-api'
+var transactionApiAppName = '${prefix}-transaction-api'
+var balanceWorkerAppName = '${prefix}-worker-balance'
+var auditWorkerAppName = '${prefix}-worker-audit'
+var reportWorkerAppName = '${prefix}-worker-report'
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: '${prefix}-logs'
@@ -80,7 +99,7 @@ resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' 
 // ── Gateway ───────────────────────────────────────────────────────────────────
 
 resource gatewayApp 'Microsoft.App/containerApps@2024-03-01' = {
-  name: '${prefix}-gateway'
+  name: gatewayAppName
   location: location
   identity: {
     type: 'UserAssigned'
@@ -115,6 +134,8 @@ resource gatewayApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'EntraId__Audience',           value: entraIdAudience }
             { name: 'AzureServiceBus__Namespace',  value: serviceBusNamespace }
             { name: 'AzureServiceBus__UseManagedIdentity', value: 'true' }
+            { name: 'ReverseProxy__Clusters__transaction-cluster__Destinations__transaction-api__Address', value: 'http://${transactionApiAppName}/' }
+            { name: 'ReverseProxy__Clusters__balance-query-cluster__Destinations__balance-query-api__Address', value: 'http://${balanceApiAppName}/' }
           ]
         }
       ]
@@ -126,7 +147,7 @@ resource gatewayApp 'Microsoft.App/containerApps@2024-03-01' = {
 // ── Balance Query API ─────────────────────────────────────────────────────────
 
 resource balanceApp 'Microsoft.App/containerApps@2024-03-01' = {
-  name: '${prefix}-balance-api'
+  name: balanceApiAppName
   location: location
   identity: {
     type: 'UserAssigned'
@@ -168,10 +189,54 @@ resource balanceApp 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
+// ── Transaction API ───────────────────────────────────────────────────────────
+
+resource transactionApp 'Microsoft.App/containerApps@2024-03-01' = {
+  name: transactionApiAppName
+  location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: { '${identity.id}': {} }
+  }
+  properties: {
+    environmentId: containerAppsEnv.id
+    configuration: {
+      ingress: {
+        external: false
+        targetPort: 8080
+        transport: 'http'
+      }
+      registries: [
+        { server: containerRegistryServer, identity: identity.id }
+      ]
+    }
+    template: {
+      containers: [
+        {
+          name: 'transaction-api'
+          image: '${containerRegistryServer}/cashflow-transaction-api:${imageTag}'
+          resources: { cpu: json('0.25'), memory: '0.5Gi' }
+          env: [
+            { name: 'ASPNETCORE_ENVIRONMENT',      value: environment }
+            { name: 'Providers__Identity',         value: 'EntraId' }
+            { name: 'Providers__Secrets',          value: 'Local' }
+            { name: 'Providers__Telemetry',        value: 'ApplicationInsights' }
+            { name: 'EntraId__TenantId',           value: entraIdTenantId }
+            { name: 'EntraId__ClientId',           value: entraIdClientId }
+            { name: 'EntraId__Audience',           value: entraIdAudience }
+            { name: 'ConnectionStrings__Postgres', value: postgresConnectionString }
+          ]
+        }
+      ]
+      scale: { minReplicas: 1, maxReplicas: 5 }
+    }
+  }
+}
+
 // ── Worker — Balance ──────────────────────────────────────────────────────────
 
 resource balanceWorker 'Microsoft.App/containerApps@2024-03-01' = {
-  name: '${prefix}-worker-balance'
+  name: balanceWorkerAppName
   location: location
   identity: {
     type: 'UserAssigned'
@@ -211,7 +276,7 @@ resource balanceWorker 'Microsoft.App/containerApps@2024-03-01' = {
 // ── Worker — Audit ────────────────────────────────────────────────────────────
 
 resource auditWorker 'Microsoft.App/containerApps@2024-03-01' = {
-  name: '${prefix}-worker-audit'
+  name: auditWorkerAppName
   location: location
   identity: {
     type: 'UserAssigned'
@@ -250,7 +315,7 @@ resource auditWorker 'Microsoft.App/containerApps@2024-03-01' = {
 // ── Worker — Report ───────────────────────────────────────────────────────────
 
 resource reportWorker 'Microsoft.App/containerApps@2024-03-01' = {
-  name: '${prefix}-worker-report'
+  name: reportWorkerAppName
   location: location
   identity: {
     type: 'UserAssigned'
@@ -289,7 +354,26 @@ resource reportWorker 'Microsoft.App/containerApps@2024-03-01' = {
   }
 }
 
+// ── API Management (optional) ────────────────────────────────────────────────
+
+module apiManagement 'apim.bicep' = if (deployApiManagement) {
+  name: '${prefix}-apim'
+  params: {
+    location: location
+    environment: environment
+    publisherName: apimPublisherName
+    publisherEmail: apimPublisherEmail
+    gatewayHostname: gatewayApp.properties.configuration.ingress.fqdn
+  }
+}
+
 // ── Outputs ───────────────────────────────────────────────────────────────────
 
 output gatewayFqdn string = gatewayApp.properties.configuration.ingress.fqdn
 output identityClientId string = identity.properties.clientId
+output apiManagementGatewayUrl string = deployApiManagement
+  ? apiManagement.outputs.apiManagementGatewayUrl
+  : ''
+output apiManagementPublishedApiPath string = deployApiManagement
+  ? apiManagement.outputs.publishedApiPath
+  : ''

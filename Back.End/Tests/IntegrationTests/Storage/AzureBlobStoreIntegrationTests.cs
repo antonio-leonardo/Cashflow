@@ -37,7 +37,7 @@ namespace Storage.Integration.Tests
         }
 
         [Fact]
-        public async Task UploadAsync_ShouldStoreBlob_AndReturnPath()
+        public async Task UploadAsync_ShouldStoreBlob_AndReturnMetadata()
         {
             var store   = await CreateStoreAsync();
             var path    = $"test/{Guid.NewGuid():N}/report.csv";
@@ -46,7 +46,10 @@ namespace Storage.Integration.Tests
             using var stream = new MemoryStream(content);
             var returned = await store.UploadAsync(path, stream, "text/csv");
 
-            Assert.Equal(path, returned);
+            Assert.Equal(path, returned.Path);
+            Assert.Equal("text/csv", returned.ContentType);
+            Assert.Equal(content.Length, returned.SizeBytes);
+            Assert.False(string.IsNullOrWhiteSpace(returned.Version));
         }
 
         [Fact]

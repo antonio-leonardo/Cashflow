@@ -6,8 +6,8 @@ namespace Cashflow.Shared.Storage.Abstractions
     /// </summary>
     public interface IReportArtifactStore
     {
-        /// <summary>Uploads report bytes and returns the stored artifact path.</summary>
-        Task<string> UploadAsync(
+        /// <summary>Uploads report bytes and returns the stored artifact metadata.</summary>
+        Task<ReportArtifactMetadata> UploadAsync(
             string path,
             Stream content,
             string contentType,

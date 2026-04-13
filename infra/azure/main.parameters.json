@@ -8,8 +8,12 @@
     "serviceBusNamespace": { "value": "cashflow-sb.servicebus.windows.net" },
     "redisEndpoint": { "value": "cashflow-redis.redis.cache.windows.net:6380" },
     "cosmosDbConnectionString": { "reference": { "keyVault": { "id": "/subscriptions/<sub>/resourceGroups/rg-cashflow/providers/Microsoft.KeyVault/vaults/cashflow-kv" }, "secretName": "CosmosDbMongoConnection" } },
+    "postgresConnectionString": { "reference": { "keyVault": { "id": "/subscriptions/<sub>/resourceGroups/rg-cashflow/providers/Microsoft.KeyVault/vaults/cashflow-kv" }, "secretName": "PostgresConnectionString" } },
     "entraIdTenantId": { "value": "<tenant-id>" },
     "entraIdClientId": { "value": "<client-id>" },
-    "entraIdAudience": { "value": "api://cashflow-api" }
+    "entraIdAudience": { "value": "api://cashflow-api" },
+    "deployApiManagement": { "value": false },
+    "apimPublisherName": { "value": "Cashflow Team" },
+    "apimPublisherEmail": { "value": "cashflow@example.com" }
   }
 }

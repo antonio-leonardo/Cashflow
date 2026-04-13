@@ -90,7 +90,8 @@ public sealed class CosmosRepositoriesIntegrationTests
 
         var store = new Mock<IReportArtifactStore>();
         store.Setup(s => s.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string path, Stream _, string _, CancellationToken _) => path);
+            .ReturnsAsync((string path, Stream _, string contentType, CancellationToken _) =>
+                new ReportArtifactMetadata(path, contentType, 256, DateTimeOffset.UtcNow, "cosmos-export-v1"));
         store.Setup(s => s.GetDownloadUriAsync(It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Uri("https://reports.example.com/daily.csv"));
 
@@ -100,5 +101,6 @@ public sealed class CosmosRepositoriesIntegrationTests
         Assert.Equal(1, result.TransactionCount);
         Assert.Equal($"{accountId}/{date:yyyy/MM/dd}/report.csv", result.Path);
         Assert.Equal(new Uri("https://reports.example.com/daily.csv"), result.DownloadUri);
+        Assert.Equal("cosmos-export-v1", result.Artifact.Version);
     }
 }

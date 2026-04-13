@@ -25,6 +25,13 @@ public class ReportExportServiceTests
     private IMongoDatabase GetDatabase() =>
         new MongoClient(_mongo.ConnectionString).GetDatabase($"report-export-{Guid.NewGuid():N}");
 
+    private static ReportArtifactMetadata CreateArtifact(
+        string path,
+        string contentType = "text/csv",
+        long sizeBytes = 256,
+        string? version = "artifact-v1")
+        => new(path, contentType, sizeBytes, DateTimeOffset.UtcNow, version);
+
     // ── CSV path generation ───────────────────────────────────────────────────
 
     [Fact]
@@ -36,7 +43,7 @@ public class ReportExportServiceTests
         var date      = new DateOnly(2025, 6, 15);
 
         store.Setup(s => s.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync((string p, Stream _, string _, CancellationToken _) => p);
+             .ReturnsAsync((string p, Stream _, string contentType, CancellationToken _) => CreateArtifact(p, contentType));
 
         store.Setup(s => s.GetDownloadUriAsync(It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(new Uri("https://example.com/report.csv"));
@@ -45,6 +52,7 @@ public class ReportExportServiceTests
         var result = await sut.ExportDailyAsync(accountId, date);
 
         Assert.Equal($"{accountId}/2025/06/15/report.csv", result.Path);
+        Assert.Equal(result.Path, result.Artifact.Path);
     }
 
     [Fact]
@@ -54,7 +62,7 @@ public class ReportExportServiceTests
         var store     = new Mock<IReportArtifactStore>();
 
         store.Setup(s => s.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync((string p, Stream _, string _, CancellationToken _) => p);
+             .ReturnsAsync((string p, Stream _, string contentType, CancellationToken _) => CreateArtifact(p, contentType));
 
         store.Setup(s => s.GetDownloadUriAsync(It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(new Uri("https://example.com/report.csv"));
@@ -115,7 +123,7 @@ public class ReportExportServiceTests
         });
 
         store.Setup(s => s.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync((string p, Stream _, string _, CancellationToken _) => p);
+             .ReturnsAsync((string p, Stream _, string contentType, CancellationToken _) => CreateArtifact(p, contentType));
 
         store.Setup(s => s.GetDownloadUriAsync(It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(new Uri("https://example.com/report.csv"));
@@ -135,7 +143,7 @@ public class ReportExportServiceTests
         var store = new Mock<IReportArtifactStore>();
 
         store.Setup(s => s.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync((string p, Stream _, string _, CancellationToken _) => p);
+             .ReturnsAsync((string p, Stream _, string contentType, CancellationToken _) => CreateArtifact(p, contentType));
 
         store.Setup(s => s.GetDownloadUriAsync(It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(new Uri("https://example.com/report.csv"));
@@ -160,7 +168,7 @@ public class ReportExportServiceTests
         var expectedUri    = new Uri("https://reports.example.com/file.csv?sas=abc");
 
         store.Setup(s => s.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync((string p, Stream _, string _, CancellationToken _) => p);
+             .ReturnsAsync((string p, Stream _, string contentType, CancellationToken _) => CreateArtifact(p, contentType));
 
         store.Setup(s => s.GetDownloadUriAsync(It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(expectedUri);
@@ -179,7 +187,7 @@ public class ReportExportServiceTests
         var expiry  = TimeSpan.FromHours(24);
 
         store.Setup(s => s.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync((string p, Stream _, string _, CancellationToken _) => p);
+             .ReturnsAsync((string p, Stream _, string contentType, CancellationToken _) => CreateArtifact(p, contentType));
 
         store.Setup(s => s.GetDownloadUriAsync(It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(new Uri("https://example.com/report.csv"));
@@ -200,7 +208,7 @@ public class ReportExportServiceTests
         var store = new Mock<IReportArtifactStore>();
 
         store.Setup(s => s.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync((string p, Stream _, string _, CancellationToken _) => p);
+             .ReturnsAsync((string p, Stream _, string contentType, CancellationToken _) => CreateArtifact(p, contentType));
 
         store.Setup(s => s.GetDownloadUriAsync(It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(new Uri("https://example.com/report.csv"));
@@ -224,7 +232,7 @@ public class ReportExportServiceTests
         var before = DateTimeOffset.UtcNow;
 
         store.Setup(s => s.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync((string p, Stream _, string _, CancellationToken _) => p);
+             .ReturnsAsync((string p, Stream _, string contentType, CancellationToken _) => CreateArtifact(p, contentType));
 
         store.Setup(s => s.GetDownloadUriAsync(It.IsAny<string>(), It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
              .ReturnsAsync(new Uri("https://example.com/report.csv"));
@@ -234,5 +242,30 @@ public class ReportExportServiceTests
         var after  = DateTimeOffset.UtcNow;
 
         Assert.InRange(result.GeneratedAt, before, after);
+    }
+
+    [Fact]
+    public async Task ExportDailyAsync_ReturnsArtifactMetadata_FromStore()
+    {
+        var db = GetDatabase();
+        var store = new Mock<IReportArtifactStore>();
+        var expectedArtifact = CreateArtifact(
+            path: $"{Guid.NewGuid()}/2025/06/15/report.csv",
+            contentType: "text/csv",
+            sizeBytes: 1024,
+            version: "etag-123");
+
+        store.Setup(s => s.UploadAsync(It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(expectedArtifact);
+
+        store.Setup(s => s.GetDownloadUriAsync(expectedArtifact.Path, It.IsAny<TimeSpan?>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(new Uri("https://example.com/report.csv"));
+
+        var sut = new Cashflow.Worker.Report.ReportExportService(db, store.Object);
+        var result = await sut.ExportDailyAsync(Guid.NewGuid(), new DateOnly(2025, 6, 15));
+
+        Assert.Equal(expectedArtifact, result.Artifact);
+        Assert.Equal(expectedArtifact.Version, result.Artifact.Version);
+        Assert.Equal(expectedArtifact.SizeBytes, result.Artifact.SizeBytes);
     }
 }

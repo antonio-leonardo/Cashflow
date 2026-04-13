@@ -4,6 +4,10 @@ namespace Cashflow.Shared.Contracts.Api
         Guid AccountId,
         DateOnly Date,
         string Path,
+        string ContentType,
+        long SizeBytes,
+        DateTimeOffset StoredAt,
+        string? Version,
         Uri DownloadUri,
         int TransactionCount,
         DateTimeOffset GeneratedAt);

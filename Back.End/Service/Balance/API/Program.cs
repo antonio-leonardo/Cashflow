@@ -179,6 +179,10 @@ namespace Cashflow.Service.Balance.API
                 accountId,
                 referenceDate,
                 result.Path,
+                result.Artifact.ContentType,
+                result.Artifact.SizeBytes,
+                result.Artifact.CreatedAt,
+                result.Artifact.Version,
                 result.DownloadUri,
                 result.TransactionCount,
                 result.GeneratedAt));

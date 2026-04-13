@@ -36,9 +36,11 @@ namespace Azure.Smoke.Tests
 
             var path = $"smoke/{Guid.NewGuid():N}/report.csv";
             await using var upload = new MemoryStream(Encoding.UTF8.GetBytes("id,amount\n1,100"));
-            await store.UploadAsync(path, upload, "text/csv");
+            var artifact = await store.UploadAsync(path, upload, "text/csv");
 
             Assert.True(await store.ExistsAsync(path));
+            Assert.Equal(path, artifact.Path);
+            Assert.False(string.IsNullOrWhiteSpace(artifact.Version));
             var downloadUri = await store.GetDownloadUriAsync(path, TimeSpan.FromMinutes(15));
             Assert.True(downloadUri.IsAbsoluteUri);
         }
@@ -142,11 +144,16 @@ namespace Azure.Smoke.Tests
         {
             public string StoredContent { get; private set; } = string.Empty;
 
-            public Task<string> UploadAsync(string path, Stream content, string contentType, CancellationToken cancellationToken = default)
+            public Task<ReportArtifactMetadata> UploadAsync(string path, Stream content, string contentType, CancellationToken cancellationToken = default)
             {
                 using var reader = new StreamReader(content, Encoding.UTF8, leaveOpen: true);
                 StoredContent = reader.ReadToEnd();
-                return Task.FromResult(path);
+                return Task.FromResult(new ReportArtifactMetadata(
+                    path,
+                    contentType,
+                    Encoding.UTF8.GetByteCount(StoredContent),
+                    DateTimeOffset.UtcNow,
+                    "in-memory-v1"));
             }
 
             public Task<Stream> DownloadAsync(string path, CancellationToken cancellationToken = default)
